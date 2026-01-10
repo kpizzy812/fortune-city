@@ -16,9 +16,8 @@ model User {
   firstName   String?  @map("first_name")
   lastName    String?  @map("last_name")
 
-  // Balances
+  // Balance (only $FORTUNE, USDT converts on deposit/withdrawal)
   fortuneBalance Decimal @default(0) @map("fortune_balance") @db.Decimal(20, 8)
-  usdtBalance    Decimal @default(0) @map("usdt_balance") @db.Decimal(20, 8)
 
   // Progression
   maxTierReached Int     @default(0) @map("max_tier_reached")
@@ -114,8 +113,9 @@ model FundSource {
   machineId String @unique @map("machine_id")
   machine   Machine @relation(fields: [machineId], references: [id])
 
-  freshUsdtAmount     Decimal @map("fresh_usdt_amount") @db.Decimal(20, 8)
-  profitDerivedAmount Decimal @map("profit_derived_amount") @db.Decimal(20, 8)
+  // Tracks where FORTUNE came from (for tax calculation on withdrawal)
+  freshDepositAmount  Decimal @map("fresh_deposit_amount") @db.Decimal(20, 8)  // From USDT deposits
+  profitDerivedAmount Decimal @map("profit_derived_amount") @db.Decimal(20, 8) // From machine profits
   sourceMachineIds    String[] @map("source_machine_ids")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -141,9 +141,9 @@ model Transaction {
   taxRate   Decimal @default(0) @map("tax_rate") @db.Decimal(5, 4)
   netAmount Decimal @map("net_amount") @db.Decimal(20, 8)
 
-  // Source tracking
-  fromFreshUsdt Decimal @default(0) @map("from_fresh_usdt") @db.Decimal(20, 8)
-  fromProfit    Decimal @default(0) @map("from_profit") @db.Decimal(20, 8)
+  // Source tracking (for tax calculation)
+  fromFreshDeposit Decimal @default(0) @map("from_fresh_deposit") @db.Decimal(20, 8)
+  fromProfit       Decimal @default(0) @map("from_profit") @db.Decimal(20, 8)
 
   // Blockchain (for deposits/withdrawals)
   chain  String?

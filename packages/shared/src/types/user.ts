@@ -5,9 +5,8 @@ export interface User {
   firstName?: string;
   lastName?: string;
 
-  // Balances
-  fortuneBalance: number;  // In-game currency
-  usdtBalance: number;     // Withdrawable
+  // Balance (only $FORTUNE - USDT converts on deposit/withdrawal)
+  fortuneBalance: number;
 
   // Progression
   maxTierReached: number;

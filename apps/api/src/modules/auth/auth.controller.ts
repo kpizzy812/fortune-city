@@ -62,7 +62,6 @@ export class AuthController {
       firstName: user.firstName,
       lastName: user.lastName,
       fortuneBalance: user.fortuneBalance.toString(),
-      usdtBalance: user.usdtBalance.toString(),
       maxTierReached: user.maxTierReached,
       currentTaxRate: user.currentTaxRate.toString(),
     };

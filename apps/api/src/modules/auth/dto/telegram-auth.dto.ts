@@ -52,7 +52,6 @@ export class AuthResponseDto {
     firstName: string | null;
     lastName: string | null;
     fortuneBalance: string;
-    usdtBalance: string;
     maxTierReached: number;
     currentTaxRate: string;
   };

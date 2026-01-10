@@ -89,7 +89,7 @@ export default function Home() {
         </h1>
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className="text-sm text-[#b0b0b0]">Balance</p>
+            <p className="text-sm text-[#b0b0b0]">$FORTUNE</p>
             <p className="text-[#ffd700] font-mono">
               ${parseFloat(user.fortuneBalance).toFixed(2)}
             </p>
@@ -120,17 +120,11 @@ export default function Home() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-3 gap-4 mt-6">
           <div className="bg-[#1a0a2e] rounded-lg p-4">
-            <p className="text-sm text-[#b0b0b0]">FORTUNE</p>
+            <p className="text-sm text-[#b0b0b0]">$FORTUNE</p>
             <p className="text-xl font-mono text-[#ffd700]">
               ${parseFloat(user.fortuneBalance).toFixed(2)}
-            </p>
-          </div>
-          <div className="bg-[#1a0a2e] rounded-lg p-4">
-            <p className="text-sm text-[#b0b0b0]">USDT</p>
-            <p className="text-xl font-mono text-[#00d4ff]">
-              ${parseFloat(user.usdtBalance).toFixed(2)}
             </p>
           </div>
           <div className="bg-[#1a0a2e] rounded-lg p-4">
