@@ -1,8 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Synthwave palette */
+  --fc-primary: #ff2d95;
+  --fc-secondary: #00d4ff;
+  --fc-gold: #ffd700;
+  --fc-bg-dark: #1a0a2e;
+  --fc-bg-card: #2a1a4e;
+  --fc-bg-elevated: #3a2a5e;
+  --fc-text-primary: #ffffff;
+  --fc-text-muted: #b0b0b0;
+  --fc-text-dim: #6b6b6b;
+
+  /* States */
+  --fc-success: #00ff88;
+  --fc-warning: #ffaa00;
+  --fc-error: #ff4444;
+
+  /* Gradients */
+  --fc-gradient-primary: linear-gradient(135deg, #ff2d95, #00d4ff);
+  --fc-gradient-gold: linear-gradient(135deg, #ffd700, #ff8c00);
+
+  /* Shadows / Glows */
+  --fc-glow-pink: 0 0 20px rgba(255, 45, 149, 0.5);
+  --fc-glow-blue: 0 0 20px rgba(0, 212, 255, 0.5);
+  --fc-glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+
+  /* Legacy */
+  --background: #1a0a2e;
+  --foreground: #ffffff;
 }
 
 @theme inline {
@@ -12,15 +38,53 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--fc-bg-dark);
+  color: var(--fc-text-primary);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Utility classes */
+.text-gradient {
+  background: var(--fc-gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-gold {
+  background: var(--fc-gradient-gold);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow-pink {
+  box-shadow: var(--fc-glow-pink);
+}
+
+.glow-blue {
+  box-shadow: var(--fc-glow-blue);
+}
+
+.glow-gold {
+  box-shadow: var(--fc-glow-gold);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--fc-bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--fc-bg-elevated);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fc-primary);
 }

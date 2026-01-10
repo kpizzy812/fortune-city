@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { TelegramProvider } from '@/providers/TelegramProvider';
+import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -28,7 +29,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#1a0a2e] text-white min-h-screen`}
       >
-        <TelegramProvider>{children}</TelegramProvider>
+        <TelegramProvider>
+          <AuthenticatedLayout>{children}</AuthenticatedLayout>
+        </TelegramProvider>
       </body>
     </html>
   );

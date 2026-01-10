@@ -1,3 +1,13 @@
+import type {
+  TierInfo,
+  Machine,
+  MachineIncome,
+  CollectResult,
+  CanAffordResponse,
+  PurchaseResult,
+  Transaction,
+} from '@/types';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 interface FetchOptions extends RequestInit {
@@ -38,7 +48,10 @@ class ApiClient {
     return response.json();
   }
 
+  // ============================================
   // Auth endpoints
+  // ============================================
+
   async authWithInitData(initData: string) {
     return this.request<AuthResponse>('/auth/telegram/init-data', {
       method: 'POST',
@@ -56,11 +69,94 @@ class ApiClient {
   async getMe(token: string) {
     return this.request<UserData>('/auth/me', { token });
   }
+
+  // ============================================
+  // Tiers endpoints
+  // ============================================
+
+  async getTiers(): Promise<TierInfo[]> {
+    return this.request<TierInfo[]>('/machines/tiers');
+  }
+
+  async getTierById(tier: number): Promise<TierInfo | null> {
+    return this.request<TierInfo | null>(`/machines/tiers/${tier}`);
+  }
+
+  // ============================================
+  // Machines endpoints
+  // ============================================
+
+  async getMachines(token: string, status?: string): Promise<Machine[]> {
+    const query = status ? `?status=${status}` : '';
+    return this.request<Machine[]>(`/machines${query}`, { token });
+  }
+
+  async getActiveMachines(token: string): Promise<Machine[]> {
+    return this.request<Machine[]>('/machines/active', { token });
+  }
+
+  async getMachineById(token: string, machineId: string): Promise<Machine> {
+    return this.request<Machine>(`/machines/${machineId}`, { token });
+  }
+
+  async getMachineIncome(token: string, machineId: string): Promise<MachineIncome> {
+    return this.request<MachineIncome>(`/machines/${machineId}/income`, { token });
+  }
+
+  async collectCoins(token: string, machineId: string): Promise<CollectResult> {
+    return this.request<CollectResult>(`/machines/${machineId}/collect`, {
+      token,
+      method: 'POST',
+    });
+  }
+
+  // ============================================
+  // Economy endpoints
+  // ============================================
+
+  async canAfford(token: string, tier: number): Promise<CanAffordResponse> {
+    return this.request<CanAffordResponse>(`/economy/can-afford/${tier}`, { token });
+  }
+
+  async purchaseMachine(
+    token: string,
+    tier: number,
+    reinvestRound?: number
+  ): Promise<PurchaseResult> {
+    return this.request<PurchaseResult>('/economy/purchase', {
+      token,
+      method: 'POST',
+      body: JSON.stringify({ tier, reinvestRound }),
+    });
+  }
+
+  async getTransactions(
+    token: string,
+    limit = 50,
+    offset = 0
+  ): Promise<Transaction[]> {
+    return this.request<Transaction[]>(
+      `/economy/transactions?limit=${limit}&offset=${offset}`,
+      { token }
+    );
+  }
+
+  async getTransactionStats(token: string): Promise<{
+    totalDeposits: number;
+    totalWithdrawals: number;
+    totalMachinesPurchased: number;
+    totalEarnings: number;
+  }> {
+    return this.request(`/economy/transactions/stats`, { token });
+  }
 }
 
 export const api = new ApiClient(API_URL);
 
-// Types
+// ============================================
+// Types (keep for backward compatibility)
+// ============================================
+
 export interface UserData {
   id: string;
   telegramId: string;
