@@ -1,14 +1,13 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { validate, parse } from '@tma.js/init-data-node';
 import * as crypto from 'crypto';
 import { UsersService, TelegramUserData } from '../users/users.service';
-import { TelegramLoginWidgetDto, AuthResponseDto } from './dto/telegram-auth.dto';
+import {
+  TelegramLoginWidgetDto,
+  AuthResponseDto,
+} from './dto/telegram-auth.dto';
 import { User } from '@prisma/client';
 
 export interface JwtPayload {
@@ -51,8 +50,8 @@ export class AuthService {
 
       const user = parsedData.user;
       const telegramUser: TelegramUserData = {
-        id: user.id as number,
-        username: user.username as string | undefined,
+        id: user.id,
+        username: user.username,
         first_name: user.firstName as string | undefined,
         last_name: user.lastName as string | undefined,
       };
@@ -68,7 +67,9 @@ export class AuthService {
    * Авторизация через Telegram Login Widget (Web)
    * https://core.telegram.org/widgets/login#checking-authorization
    */
-  async authWithLoginWidget(data: TelegramLoginWidgetDto): Promise<AuthResponseDto> {
+  async authWithLoginWidget(
+    data: TelegramLoginWidgetDto,
+  ): Promise<AuthResponseDto> {
     // Проверка времени авторизации (не старше 1 дня)
     const authDate = data.auth_date;
     const now = Math.floor(Date.now() / 1000);
@@ -103,8 +104,14 @@ export class AuthService {
     // Создаём строку для проверки
     const dataCheckString = Object.keys(dataWithoutHash)
       .sort()
-      .filter((key) => dataWithoutHash[key as keyof typeof dataWithoutHash] !== undefined)
-      .map((key) => `${key}=${dataWithoutHash[key as keyof typeof dataWithoutHash]}`)
+      .filter(
+        (key) =>
+          dataWithoutHash[key as keyof typeof dataWithoutHash] !== undefined,
+      )
+      .map(
+        (key) =>
+          `${key}=${dataWithoutHash[key as keyof typeof dataWithoutHash]}`,
+      )
       .join('\n');
 
     // Создаём secret key из bot token
@@ -125,7 +132,9 @@ export class AuthService {
   /**
    * Общая логика аутентификации пользователя
    */
-  private async authenticateUser(telegramUser: TelegramUserData): Promise<AuthResponseDto> {
+  private async authenticateUser(
+    telegramUser: TelegramUserData,
+  ): Promise<AuthResponseDto> {
     // Найти или создать пользователя
     const user = await this.usersService.findOrCreateFromTelegram(telegramUser);
 

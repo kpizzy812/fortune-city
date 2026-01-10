@@ -6,6 +6,7 @@ export const MACHINE_TIERS = [
     price: 10,
     lifespanDays: 7,
     yieldPercent: 135,
+    imageUrl: '/machines/tier-1.png',
   },
   {
     tier: 2,
@@ -14,6 +15,7 @@ export const MACHINE_TIERS = [
     price: 30,
     lifespanDays: 10,
     yieldPercent: 150,
+    imageUrl: '/machines/tier-2.png',
   },
   {
     tier: 3,
@@ -22,6 +24,7 @@ export const MACHINE_TIERS = [
     price: 80,
     lifespanDays: 14,
     yieldPercent: 170,
+    imageUrl: '/machines/tier-3.png',
   },
   {
     tier: 4,
@@ -30,6 +33,7 @@ export const MACHINE_TIERS = [
     price: 220,
     lifespanDays: 18,
     yieldPercent: 190,
+    imageUrl: '/machines/tier-4.png',
   },
   {
     tier: 5,
@@ -38,6 +42,7 @@ export const MACHINE_TIERS = [
     price: 600,
     lifespanDays: 22,
     yieldPercent: 210,
+    imageUrl: '/machines/tier-5.png',
   },
   {
     tier: 6,
@@ -46,6 +51,7 @@ export const MACHINE_TIERS = [
     price: 1800,
     lifespanDays: 27,
     yieldPercent: 235,
+    imageUrl: '/machines/tier-6.png',
   },
   {
     tier: 7,
@@ -54,6 +60,7 @@ export const MACHINE_TIERS = [
     price: 5500,
     lifespanDays: 32,
     yieldPercent: 260,
+    imageUrl: '/machines/tier-7.png',
   },
   {
     tier: 8,
@@ -62,6 +69,7 @@ export const MACHINE_TIERS = [
     price: 18000,
     lifespanDays: 37,
     yieldPercent: 285,
+    imageUrl: '/machines/tier-8.png',
   },
   {
     tier: 9,
@@ -70,6 +78,7 @@ export const MACHINE_TIERS = [
     price: 60000,
     lifespanDays: 42,
     yieldPercent: 310,
+    imageUrl: '/machines/tier-9.png',
   },
   {
     tier: 10,
@@ -78,10 +87,23 @@ export const MACHINE_TIERS = [
     price: 200000,
     lifespanDays: 48,
     yieldPercent: 340,
+    imageUrl: '/machines/tier-10.png',
   },
 ] as const;
 
 export type MachineTier = (typeof MACHINE_TIERS)[number];
+
+export function getTierConfig(tier: number): MachineTier | undefined {
+  return MACHINE_TIERS.find((t) => t.tier === tier);
+}
+
+export function getTierConfigOrThrow(tier: number): MachineTier {
+  const config = getTierConfig(tier);
+  if (!config) {
+    throw new Error(`Invalid tier: ${tier}. Must be between 1 and 10`);
+  }
+  return config;
+}
 
 // Tax rates by max tier reached
 export const TAX_RATES_BY_TIER: Record<number, number> = {

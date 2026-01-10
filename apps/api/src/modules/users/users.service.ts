@@ -40,7 +40,9 @@ export class UsersService {
     });
   }
 
-  async findOrCreateFromTelegram(telegramUser: TelegramUserData): Promise<User> {
+  async findOrCreateFromTelegram(
+    telegramUser: TelegramUserData,
+  ): Promise<User> {
     const telegramId = String(telegramUser.id);
 
     let user = await this.findByTelegramId(telegramId);
