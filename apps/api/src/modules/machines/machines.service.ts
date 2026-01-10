@@ -123,10 +123,18 @@ export class MachinesService {
     coinBoxCurrent: number;
     isFull: boolean;
     secondsUntilFull: number;
+    isExpired: boolean;
+    canCollect: boolean;
   }> {
     const machine = await this.findByIdOrThrow(machineId);
 
-    if (machine.status !== 'active') {
+    const now = new Date();
+    const lastCalc = new Date(machine.lastCalculatedAt);
+    const expiresAt = new Date(machine.expiresAt);
+    const isExpired = now >= expiresAt || machine.status === 'expired';
+
+    // For sold_early machines, return current values without recalculation
+    if (machine.status === 'sold_early') {
       return {
         accumulated: Number(machine.accumulatedIncome),
         ratePerSecond: Number(machine.ratePerSecond),
@@ -134,28 +142,24 @@ export class MachinesService {
         coinBoxCurrent: Number(machine.coinBoxCurrent),
         isFull: true,
         secondsUntilFull: 0,
+        isExpired: true,
+        canCollect: Number(machine.coinBoxCurrent) > 0,
       };
     }
 
-    const now = new Date();
-    const lastCalc = new Date(machine.lastCalculatedAt);
-    const elapsedSeconds = Math.floor(
-      (now.getTime() - lastCalc.getTime()) / 1000,
-    );
-
-    // Check if machine expired
-    const expiresAt = new Date(machine.expiresAt);
-    const isExpired = now >= expiresAt;
-
+    // Calculate new income since last calculation
     let newIncome: Prisma.Decimal;
     if (isExpired) {
-      // Calculate remaining income until expiry
+      // Calculate income only until expiry time
       const secondsUntilExpiry = Math.max(
         0,
         Math.floor((expiresAt.getTime() - lastCalc.getTime()) / 1000),
       );
       newIncome = machine.ratePerSecond.mul(secondsUntilExpiry);
     } else {
+      const elapsedSeconds = Math.floor(
+        (now.getTime() - lastCalc.getTime()) / 1000,
+      );
       newIncome = machine.ratePerSecond.mul(elapsedSeconds);
     }
 
@@ -163,11 +167,15 @@ export class MachinesService {
     const isFull = currentCoinBox.gte(machine.coinBoxCapacity);
     const actualCoinBox = isFull ? machine.coinBoxCapacity : currentCoinBox;
 
-    // Calculate seconds until full
+    // Calculate seconds until full (only for active machines)
     const remaining = machine.coinBoxCapacity.sub(actualCoinBox);
-    const secondsUntilFull = isFull
-      ? 0
-      : Math.ceil(Number(remaining.div(machine.ratePerSecond)));
+    const secondsUntilFull =
+      isFull || isExpired
+        ? 0
+        : Math.ceil(Number(remaining.div(machine.ratePerSecond)));
+
+    // Can collect: expired machines always, active only when full
+    const canCollect = isExpired || isFull;
 
     return {
       accumulated: Number(machine.accumulatedIncome.add(actualCoinBox)),
@@ -176,6 +184,8 @@ export class MachinesService {
       coinBoxCurrent: Number(actualCoinBox),
       isFull,
       secondsUntilFull,
+      isExpired,
+      canCollect,
     };
   }
 
@@ -197,6 +207,7 @@ export class MachinesService {
   ): Promise<{
     collected: number;
     machine: Machine;
+    newBalance: number;
   }> {
     const machine = await this.findByIdOrThrow(machineId);
 
@@ -204,29 +215,75 @@ export class MachinesService {
       throw new BadRequestException('Machine does not belong to user');
     }
 
-    // Update coin box first
-    await this.updateCoinBox(machineId);
-    const updatedMachine = await this.findByIdOrThrow(machineId);
+    // Calculate current income state
+    const incomeState = await this.calculateIncome(machineId);
 
-    const collected = Number(updatedMachine.coinBoxCurrent);
-
-    if (collected === 0) {
-      return { collected: 0, machine: updatedMachine };
+    // Check if collection is allowed
+    if (!incomeState.canCollect) {
+      throw new BadRequestException(
+        `CoinBox is not full yet. Wait ${incomeState.secondsUntilFull} seconds.`,
+      );
     }
 
-    // Move coins from coinBox to accumulated and reset coinBox
-    const resultMachine = await this.prisma.machine.update({
-      where: { id: machineId },
-      data: {
-        accumulatedIncome: {
-          increment: updatedMachine.coinBoxCurrent,
+    const collected = incomeState.coinBoxCurrent;
+
+    if (collected === 0) {
+      const currentMachine = await this.findByIdOrThrow(machineId);
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+      return {
+        collected: 0,
+        machine: currentMachine,
+        newBalance: Number(user?.fortuneBalance ?? 0),
+      };
+    }
+
+    // Atomic transaction: coinBox → fortuneBalance + create transaction record
+    const result = await this.prisma.$transaction(async (tx) => {
+      // 1. Update machine: reset coinBox, update lastCalculatedAt
+      const updatedMachine = await tx.machine.update({
+        where: { id: machineId },
+        data: {
+          coinBoxCurrent: 0,
+          lastCalculatedAt: new Date(),
         },
-        coinBoxCurrent: 0,
-        lastCalculatedAt: new Date(),
-      },
+      });
+
+      // 2. Add to user balance
+      const updatedUser = await tx.user.update({
+        where: { id: userId },
+        data: {
+          fortuneBalance: {
+            increment: collected,
+          },
+        },
+      });
+
+      // 3. Create transaction record
+      await tx.transaction.create({
+        data: {
+          userId,
+          machineId,
+          type: 'machine_income',
+          amount: collected,
+          currency: 'FORTUNE',
+          netAmount: collected,
+          status: 'completed',
+        },
+      });
+
+      return {
+        machine: updatedMachine,
+        newBalance: Number(updatedUser.fortuneBalance),
+      };
     });
 
-    return { collected, machine: resultMachine };
+    return {
+      collected,
+      machine: result.machine,
+      newBalance: result.newBalance,
+    };
   }
 
   async expireMachine(machineId: string): Promise<Machine> {

@@ -1,7 +1,7 @@
 # Fortune City - Progress
 
 **Последнее обновление:** 2026-01-11
-**Текущий этап:** Phase 1 — EconomyModule готов, следующий шаг: cron для истечения машин + UI
+**Текущий этап:** Phase 1 — MachineLifecycleModule готов, следующий шаг: UI + порядок выплат
 
 ## Архитектура платформ
 
@@ -64,11 +64,20 @@
     - GET /economy/transactions - история транзакций
     - GET /economy/transactions/stats - статистика
     - GET /economy/purchase-history - история покупок
-- [ ] Истечение срока машин (cron job)
+- [x] MachineLifecycleModule (cron для истечения машин) ✅
+  - @nestjs/schedule — cron каждые 5 минут
+  - Автоматическая пометка машин как expired
+  - collectCoins обновлён:
+    - Активные машины: collect только при полном coinBox
+    - Expired машины: collect доступен сразу (остаток)
+    - coinBox → fortuneBalance (атомарная транзакция)
+    - Создание transaction записи
+  - 4 новых теста (всего 49 тестов, все проходят)
 
 ### Экономика базовая
 - [x] Единый баланс $FORTUNE (USDT конвертируется при deposit/withdrawal) ✅
 - [x] История транзакций ✅
+- [x] Перенос дохода на баланс при collectCoins ✅
 - [ ] Базовый UI в synthwave стиле
 
 ---

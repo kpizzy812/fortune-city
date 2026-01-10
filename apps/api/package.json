@@ -28,6 +28,7 @@
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.0.1",
+    "@nestjs/schedule": "^6.1.0",
     "@nestjs/websockets": "^11.0.1",
     "@prisma/client": "^6.2.1",
     "@tma.js/init-data-node": "^2.0.6",

@@ -124,7 +124,9 @@ describe('PurchaseService', () => {
 
   describe('purchaseMachine', () => {
     it('should successfully purchase a tier 1 machine', async () => {
-      const mockUser = createMockUser({ fortuneBalance: new Prisma.Decimal(100) });
+      const mockUser = createMockUser({
+        fortuneBalance: new Prisma.Decimal(100),
+      });
       const mockMachine = createMockMachine();
       const mockTransaction = createMockTransaction();
       const updatedUser = createMockUser({
@@ -132,12 +134,14 @@ describe('PurchaseService', () => {
       });
 
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (fundSourceService.calculateSourceBreakdown as jest.Mock).mockReturnValue({
-        freshDeposit: 10,
-        profitDerived: 0,
-        totalAmount: 10,
-        profitPercentage: 0,
-      });
+      (fundSourceService.calculateSourceBreakdown as jest.Mock).mockReturnValue(
+        {
+          freshDeposit: 10,
+          profitDerived: 0,
+          totalAmount: 10,
+          profitPercentage: 0,
+        },
+      );
 
       (prismaService.$transaction as jest.Mock).mockImplementation(
         async (callback: (tx: unknown) => Promise<unknown>) => {
@@ -173,7 +177,9 @@ describe('PurchaseService', () => {
     });
 
     it('should throw BadRequestException for insufficient balance', async () => {
-      const mockUser = createMockUser({ fortuneBalance: new Prisma.Decimal(5) });
+      const mockUser = createMockUser({
+        fortuneBalance: new Prisma.Decimal(5),
+      });
 
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
 
@@ -225,12 +231,14 @@ describe('PurchaseService', () => {
       });
 
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (fundSourceService.calculateSourceBreakdown as jest.Mock).mockReturnValue({
-        freshDeposit: 30,
-        profitDerived: 0,
-        totalAmount: 30,
-        profitPercentage: 0,
-      });
+      (fundSourceService.calculateSourceBreakdown as jest.Mock).mockReturnValue(
+        {
+          freshDeposit: 30,
+          profitDerived: 0,
+          totalAmount: 30,
+          profitPercentage: 0,
+        },
+      );
 
       (prismaService.$transaction as jest.Mock).mockImplementation(
         async (callback: (tx: unknown) => Promise<unknown>) => {
@@ -260,7 +268,9 @@ describe('PurchaseService', () => {
     });
 
     it('should accept reinvestRound parameter', async () => {
-      const mockUser = createMockUser({ fortuneBalance: new Prisma.Decimal(100) });
+      const mockUser = createMockUser({
+        fortuneBalance: new Prisma.Decimal(100),
+      });
       const mockMachine = createMockMachine({ reinvestRound: 3 });
       const mockTransaction = createMockTransaction();
       const updatedUser = createMockUser({
@@ -268,12 +278,14 @@ describe('PurchaseService', () => {
       });
 
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (fundSourceService.calculateSourceBreakdown as jest.Mock).mockReturnValue({
-        freshDeposit: 10,
-        profitDerived: 0,
-        totalAmount: 10,
-        profitPercentage: 0,
-      });
+      (fundSourceService.calculateSourceBreakdown as jest.Mock).mockReturnValue(
+        {
+          freshDeposit: 10,
+          profitDerived: 0,
+          totalAmount: 10,
+          profitPercentage: 0,
+        },
+      );
 
       (prismaService.$transaction as jest.Mock).mockImplementation(
         async (callback: (tx: unknown) => Promise<unknown>) => {
@@ -372,9 +384,12 @@ describe('PurchaseService', () => {
       const result = await service.getPurchaseHistory(mockUserId);
 
       expect(result).toEqual(mockTransactions);
-      expect(transactionsService.findByUserId).toHaveBeenCalledWith(mockUserId, {
-        type: 'machine_purchase',
-      });
+      expect(transactionsService.findByUserId).toHaveBeenCalledWith(
+        mockUserId,
+        {
+          type: 'machine_purchase',
+        },
+      );
     });
 
     it('should pass limit and offset options', async () => {
@@ -382,11 +397,14 @@ describe('PurchaseService', () => {
 
       await service.getPurchaseHistory(mockUserId, { limit: 10, offset: 5 });
 
-      expect(transactionsService.findByUserId).toHaveBeenCalledWith(mockUserId, {
-        type: 'machine_purchase',
-        limit: 10,
-        offset: 5,
-      });
+      expect(transactionsService.findByUserId).toHaveBeenCalledWith(
+        mockUserId,
+        {
+          type: 'machine_purchase',
+          limit: 10,
+          offset: 5,
+        },
+      );
     });
   });
 });

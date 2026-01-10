@@ -50,6 +50,10 @@ describe('MachinesService', () => {
               update: jest.fn(),
               updateMany: jest.fn(),
             },
+            user: {
+              findUnique: jest.fn(),
+            },
+            $transaction: jest.fn(),
           },
         },
       ],
@@ -227,9 +231,11 @@ describe('MachinesService', () => {
       expect(result.ratePerSecond).toBeCloseTo(0.0000223214, 8);
       expect(result.coinBoxCurrent).toBeGreaterThan(0);
       expect(result.isFull).toBe(false);
+      expect(result.isExpired).toBe(false);
+      expect(result.canCollect).toBe(false); // Not full yet
     });
 
-    it('should cap income at coin box capacity', async () => {
+    it('should cap income at coin box capacity and allow collect', async () => {
       const now = new Date();
       const startedAt = new Date(now.getTime() - 48 * 3600 * 1000); // 48 hours ago
       const mockMachine = createMockMachine({
@@ -249,13 +255,21 @@ describe('MachinesService', () => {
       expect(result.isFull).toBe(true);
       expect(result.coinBoxCurrent).toBe(0.1);
       expect(result.secondsUntilFull).toBe(0);
+      expect(result.canCollect).toBe(true); // Full, so can collect
     });
 
-    it('should return existing values for expired machine', async () => {
+    it('should calculate income for expired machine and allow collect', async () => {
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() - 3600 * 1000); // Expired 1 hour ago
+      const lastCalc = new Date(now.getTime() - 2 * 3600 * 1000); // Last calc 2 hours ago
       const mockMachine = createMockMachine({
         status: 'expired',
-        accumulatedIncome: new Prisma.Decimal(13.5),
-        coinBoxCurrent: new Prisma.Decimal(0.5),
+        expiresAt,
+        lastCalculatedAt: lastCalc,
+        accumulatedIncome: new Prisma.Decimal(10),
+        coinBoxCurrent: new Prisma.Decimal(0.3),
+        ratePerSecond: new Prisma.Decimal(0.0001),
+        coinBoxCapacity: new Prisma.Decimal(1),
       });
       (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
         mockMachine,
@@ -263,34 +277,140 @@ describe('MachinesService', () => {
 
       const result = await service.calculateIncome('machine-123');
 
-      expect(result.accumulated).toBe(13.5);
-      expect(result.isFull).toBe(true);
+      expect(result.isExpired).toBe(true);
+      expect(result.canCollect).toBe(true); // Expired, so can collect any amount
     });
-  });
 
-  describe('collectCoins', () => {
-    it('should collect coins and reset coinBox', async () => {
+    it('should return values without recalculation for sold_early machine', async () => {
       const mockMachine = createMockMachine({
-        coinBoxCurrent: new Prisma.Decimal(0.5),
+        status: 'sold_early',
+        accumulatedIncome: new Prisma.Decimal(5),
+        coinBoxCurrent: new Prisma.Decimal(0.2),
       });
       (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
         mockMachine,
       );
-      (prismaService.machine.update as jest.Mock).mockResolvedValue({
-        ...mockMachine,
-        coinBoxCurrent: new Prisma.Decimal(0),
-        accumulatedIncome: new Prisma.Decimal(0.5),
+
+      const result = await service.calculateIncome('machine-123');
+
+      expect(result.accumulated).toBe(5);
+      expect(result.coinBoxCurrent).toBe(0.2);
+      expect(result.isExpired).toBe(true);
+      expect(result.canCollect).toBe(true);
+    });
+  });
+
+  describe('collectCoins', () => {
+    it('should throw error if coinBox not full for active machine', async () => {
+      const now = new Date();
+      const mockMachine = createMockMachine({
+        status: 'active',
+        coinBoxCurrent: new Prisma.Decimal(0.1),
+        coinBoxCapacity: new Prisma.Decimal(1), // Not full
+        lastCalculatedAt: now,
+        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
       });
+      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
+        mockMachine,
+      );
+
+      await expect(
+        service.collectCoins('machine-123', mockUserId),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should collect coins when coinBox is full', async () => {
+      const now = new Date();
+      const mockMachine = createMockMachine({
+        status: 'active',
+        coinBoxCurrent: new Prisma.Decimal(0.64),
+        coinBoxCapacity: new Prisma.Decimal(0.64), // Full
+        lastCalculatedAt: now,
+        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+      });
+      const mockUser = {
+        id: mockUserId,
+        fortuneBalance: new Prisma.Decimal(100),
+      };
+
+      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
+        mockMachine,
+      );
+      (prismaService.$transaction as jest.Mock) = jest
+        .fn()
+        .mockImplementation(async (callback) => {
+          const mockTx = {
+            machine: {
+              update: jest.fn().mockResolvedValue({
+                ...mockMachine,
+                coinBoxCurrent: new Prisma.Decimal(0),
+              }),
+            },
+            user: {
+              update: jest.fn().mockResolvedValue({
+                ...mockUser,
+                fortuneBalance: new Prisma.Decimal(100.64),
+              }),
+            },
+            transaction: {
+              create: jest.fn().mockResolvedValue({}),
+            },
+          };
+          return callback(mockTx);
+        });
 
       const result = await service.collectCoins('machine-123', mockUserId);
 
-      expect(result.collected).toBe(0.5);
-      expect(prismaService.machine.update).toHaveBeenCalledWith({
-        where: { id: 'machine-123' },
-        data: expect.objectContaining({
-          coinBoxCurrent: 0,
-        }),
+      expect(result.collected).toBe(0.64);
+      expect(result.newBalance).toBe(100.64);
+    });
+
+    it('should allow collect for expired machine with partial coinBox', async () => {
+      const now = new Date();
+      // Set lastCalculatedAt = expiresAt so no additional income is calculated
+      const expiresAt = new Date(now.getTime() - 1000);
+      const mockMachine = createMockMachine({
+        status: 'expired',
+        coinBoxCurrent: new Prisma.Decimal(0.3),
+        coinBoxCapacity: new Prisma.Decimal(1),
+        lastCalculatedAt: expiresAt, // Already at expiry time
+        expiresAt,
       });
+      const mockUser = {
+        id: mockUserId,
+        fortuneBalance: new Prisma.Decimal(50),
+      };
+
+      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
+        mockMachine,
+      );
+      (prismaService.$transaction as jest.Mock) = jest
+        .fn()
+        .mockImplementation(async (callback) => {
+          const mockTx = {
+            machine: {
+              update: jest.fn().mockResolvedValue({
+                ...mockMachine,
+                coinBoxCurrent: new Prisma.Decimal(0),
+              }),
+            },
+            user: {
+              update: jest.fn().mockResolvedValue({
+                ...mockUser,
+                fortuneBalance: new Prisma.Decimal(50.3),
+              }),
+            },
+            transaction: {
+              create: jest.fn().mockResolvedValue({}),
+            },
+          };
+          return callback(mockTx);
+        });
+
+      const result = await service.collectCoins('machine-123', mockUserId);
+
+      expect(result.collected).toBe(0.3);
+      expect(result.newBalance).toBe(50.3);
     });
 
     it('should throw error if machine belongs to different user', async () => {
