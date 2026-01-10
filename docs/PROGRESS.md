@@ -1,7 +1,7 @@
 # Fortune City - Progress
 
 **Последнее обновление:** 2026-01-11
-**Текущий этап:** Phase 1 — MachineLifecycleModule готов, следующий шаг: UI + порядок выплат
+**Текущий этап:** Phase 1 завершён — UI готов, следующий шаг: порядок выплат + досрочный вывод
 
 ## Архитектура платформ
 
@@ -12,7 +12,7 @@
 
 ---
 
-## Phase 1: MVP Foundation
+## Phase 1: MVP Foundation ✅
 
 ### Инфраструктура ✅
 - [x] Монорепозиторий (pnpm workspaces + turbo)
@@ -30,7 +30,7 @@
 - [x] @tma.js/init-data-node — валидация initData на бэкенде
 - [x] ~~@telegram-apps/sdk-react~~ — удалено (низкоуровневое)
 
-### Core Game Loop
+### Core Game Loop ✅
 - [x] Аутентификация через Telegram (Web + Mini App) ✅
   - AuthModule: initData validation + Login Widget hash verification
   - JWT стратегия с guards
@@ -74,11 +74,31 @@
     - Создание transaction записи
   - 4 новых теста (всего 49 тестов, все проходят)
 
-### Экономика базовая
+### Экономика базовая ✅
 - [x] Единый баланс $FORTUNE (USDT конвертируется при deposit/withdrawal) ✅
 - [x] История транзакций ✅
 - [x] Перенос дохода на баланс при collectCoins ✅
-- [ ] Базовый UI в synthwave стиле
+- [x] Базовый UI в synthwave стиле ✅
+
+### Frontend UI ✅
+- [x] CSS Variables (synthwave palette: #ff2d95, #00d4ff, #ffd700)
+- [x] UI компоненты (Button, Modal, ProgressBar)
+- [x] Types (TierInfo, Machine, MachineIncome, CanAffordResponse)
+- [x] API client расширен (getTiers, getMachines, collectCoins, purchaseMachine)
+- [x] machines.store.ts (Zustand) — state management
+- [x] useInterval hook для real-time интерполяции дохода
+- [x] Компоненты машин:
+  - IncomeCounter — анимированный счётчик дохода
+  - MachineCard — карточка с прогрессом и кнопкой сбора
+  - MachineGrid — grid машин с empty state
+- [x] Компоненты магазина:
+  - TierCard — карточка тира с ценой и yield
+  - TierGrid — список всех 10 тиров
+  - PurchaseModal — модалка подтверждения покупки
+- [x] BottomNavigation (Hall, Shop, Wheel, Refs, Cash)
+- [x] Страницы:
+  - `/` — Dashboard с машинами и real-time доходом
+  - `/shop` — Магазин с покупкой машин
 
 ---
 
@@ -88,7 +108,7 @@
 - [x] Тиры 1-10 (все сконфигурированы) ✅
 - [x] Реинвест штраф (REINVEST_REDUCTION) ✅
 - [x] Отслеживание источников средств (FundSourceService) ✅
-- [ ] Порядок выплат (прибыль → тело)
+- [ ] Порядок выплат (прибыль → тело) ← **следующий шаг**
 - [ ] Досрочный вывод с комиссией
 
 ### Апгрейды + Рефералы
@@ -155,3 +175,25 @@ pnpm db:studio    # GUI для БД
 | Realtime | Socket.io |
 | Platform | Web (основная) + Telegram Mini App (доп.) |
 | TG Integration | telegram-ui, react-telegram-web-app, tma.js/init-data-node |
+
+## Frontend Structure (New)
+
+```
+apps/web/src/
+├── app/
+│   ├── page.tsx          # Dashboard с машинами
+│   ├── shop/page.tsx     # Магазин тиров
+│   └── layout.tsx        # Layout с BottomNavigation
+├── components/
+│   ├── ui/               # Button, Modal, ProgressBar
+│   ├── machines/         # IncomeCounter, MachineCard, MachineGrid
+│   ├── shop/             # TierCard, TierGrid, PurchaseModal
+│   └── layout/           # BottomNavigation, AuthenticatedLayout
+├── stores/
+│   ├── auth.store.ts     # Auth state (Zustand)
+│   └── machines.store.ts # Machines state (Zustand)
+├── hooks/
+│   └── useInterval.ts    # Real-time income interpolation
+└── types/
+    └── index.ts          # Frontend types
+```
