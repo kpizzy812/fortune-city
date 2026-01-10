@@ -1,0 +1,230 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============== USERS ==============
+
+model User {
+  id          String   @id @default(cuid())
+  telegramId  String   @unique @map("telegram_id")
+  username    String?
+  firstName   String?  @map("first_name")
+  lastName    String?  @map("last_name")
+
+  // Balances
+  fortuneBalance Decimal @default(0) @map("fortune_balance") @db.Decimal(20, 8)
+  usdtBalance    Decimal @default(0) @map("usdt_balance") @db.Decimal(20, 8)
+
+  // Progression
+  maxTierReached Int     @default(0) @map("max_tier_reached")
+  currentTaxRate Decimal @default(0.5) @map("current_tax_rate") @db.Decimal(5, 4)
+
+  // Referral
+  referralCode String  @unique @map("referral_code")
+  referredById String? @map("referred_by_id")
+  referredBy   User?   @relation("Referrals", fields: [referredById], references: [id])
+  referrals    User[]  @relation("Referrals")
+
+  // Wheel
+  freeSpinsRemaining Int       @default(0) @map("free_spins_remaining")
+  lastSpinAt         DateTime? @map("last_spin_at")
+
+  // Relations
+  machines          Machine[]
+  transactions      Transaction[]
+  depositAddresses  DepositAddress[]
+  referralBonuses   ReferralBonus[]    @relation("ReferralReceiver")
+  referralBonusesSent ReferralBonus[]  @relation("ReferralSource")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+// ============== MACHINES ==============
+
+model Machine {
+  id     String @id @default(cuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+  tier   Int
+
+  // Financials
+  purchasePrice Decimal @map("purchase_price") @db.Decimal(20, 8)
+  totalYield    Decimal @map("total_yield") @db.Decimal(20, 8)
+  profitAmount  Decimal @map("profit_amount") @db.Decimal(20, 8)
+
+  // Lifecycle
+  lifespanDays Int      @map("lifespan_days")
+  startedAt    DateTime @map("started_at")
+  expiresAt    DateTime @map("expires_at")
+
+  // Income tracking (on-demand calculation)
+  ratePerSecond    Decimal  @map("rate_per_second") @db.Decimal(20, 12)
+  accumulatedIncome Decimal @default(0) @map("accumulated_income") @db.Decimal(20, 8)
+  lastCalculatedAt DateTime @default(now()) @map("last_calculated_at")
+
+  // Payout tracking (profit first, then principal)
+  profitPaidOut    Decimal @default(0) @map("profit_paid_out") @db.Decimal(20, 8)
+  principalPaidOut Decimal @default(0) @map("principal_paid_out") @db.Decimal(20, 8)
+
+  // Reinvest tracking
+  reinvestRound        Int     @default(1) @map("reinvest_round")
+  profitReductionRate  Decimal @default(0) @map("profit_reduction_rate") @db.Decimal(5, 4)
+
+  // Coin box
+  coinBoxLevel    Int     @default(1) @map("coin_box_level")
+  coinBoxCapacity Decimal @map("coin_box_capacity") @db.Decimal(20, 8)
+  coinBoxCurrent  Decimal @default(0) @map("coin_box_current") @db.Decimal(20, 8)
+
+  status MachineStatus @default(active)
+
+  // Fund source tracking
+  fundSource FundSource?
+
+  // Relations
+  transactions Transaction[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("machines")
+}
+
+enum MachineStatus {
+  active
+  expired
+  sold_early
+}
+
+// ============== FUND SOURCES ==============
+// Critical for correct taxation: tracks where funds came from
+
+model FundSource {
+  id        String @id @default(cuid())
+  machineId String @unique @map("machine_id")
+  machine   Machine @relation(fields: [machineId], references: [id])
+
+  freshUsdtAmount     Decimal @map("fresh_usdt_amount") @db.Decimal(20, 8)
+  profitDerivedAmount Decimal @map("profit_derived_amount") @db.Decimal(20, 8)
+  sourceMachineIds    String[] @map("source_machine_ids")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("fund_sources")
+}
+
+// ============== TRANSACTIONS ==============
+
+model Transaction {
+  id        String @id @default(cuid())
+  userId    String @map("user_id")
+  user      User   @relation(fields: [userId], references: [id])
+  machineId String? @map("machine_id")
+  machine   Machine? @relation(fields: [machineId], references: [id])
+
+  type     TransactionType
+  amount   Decimal @db.Decimal(20, 8)
+  currency Currency
+
+  // Tax info
+  taxAmount Decimal @default(0) @map("tax_amount") @db.Decimal(20, 8)
+  taxRate   Decimal @default(0) @map("tax_rate") @db.Decimal(5, 4)
+  netAmount Decimal @map("net_amount") @db.Decimal(20, 8)
+
+  // Source tracking
+  fromFreshUsdt Decimal @default(0) @map("from_fresh_usdt") @db.Decimal(20, 8)
+  fromProfit    Decimal @default(0) @map("from_profit") @db.Decimal(20, 8)
+
+  // Blockchain (for deposits/withdrawals)
+  chain  String?
+  txHash String? @map("tx_hash")
+
+  status TransactionStatus @default(pending)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  deposit
+  withdrawal
+  machine_purchase
+  machine_income
+  machine_early_sell
+  referral_bonus
+  wheel_prize
+  upgrade_purchase
+}
+
+enum TransactionStatus {
+  pending
+  completed
+  failed
+  cancelled
+}
+
+enum Currency {
+  FORTUNE
+  USDT
+}
+
+// ============== DEPOSIT ADDRESSES ==============
+
+model DepositAddress {
+  id       String @id @default(cuid())
+  userId   String @map("user_id")
+  user     User   @relation(fields: [userId], references: [id])
+
+  chain    Chain
+  address  String
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, chain])
+  @@index([address])
+  @@map("deposit_addresses")
+}
+
+enum Chain {
+  ton
+  solana
+  bsc
+  tron
+}
+
+// ============== REFERRAL BONUSES ==============
+
+model ReferralBonus {
+  id         String @id @default(cuid())
+  receiverId String @map("receiver_id")
+  receiver   User   @relation("ReferralReceiver", fields: [receiverId], references: [id])
+  sourceId   String @map("source_id")
+  source     User   @relation("ReferralSource", fields: [sourceId], references: [id])
+
+  level  Int // 1, 2, or 3
+  amount Decimal @db.Decimal(20, 8)
+
+  // Original transaction that triggered this bonus
+  triggerAmount Decimal @map("trigger_amount") @db.Decimal(20, 8)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([receiverId])
+  @@map("referral_bonuses")
+}
