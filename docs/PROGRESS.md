@@ -1,6 +1,7 @@
 # Fortune City - Progress
 
 **Последнее обновление:** 2026-01-10
+**Текущий этап:** Phase 1 — Аутентификация завершена, следующий шаг: тиры машин 1-3
 
 ## Архитектура платформ
 
@@ -30,7 +31,12 @@
 - [x] ~~@telegram-apps/sdk-react~~ — удалено (низкоуровневое)
 
 ### Core Game Loop
-- [ ] Аутентификация через Telegram (Web + Mini App)
+- [x] Аутентификация через Telegram (Web + Mini App) ✅
+  - AuthModule: initData validation + Login Widget hash verification
+  - JWT стратегия с guards
+  - UsersModule: findOrCreate по telegram_id
+  - Frontend: API client, Zustand store, TelegramProvider
+  - 10 unit tests (все проходят)
 - [ ] Тиры 1-3 машин
 - [ ] Покупка машин
 - [ ] Real-time расчёт дохода
