@@ -1,7 +1,7 @@
 # Fortune City - Progress
 
 **Последнее обновление:** 2026-01-10
-**Текущий этап:** Phase 1 — Аутентификация завершена, следующий шаг: тиры машин 1-3
+**Текущий этап:** Phase 1 — MachinesModule CRUD готов, следующий шаг: покупка машин
 
 ## Архитектура платформ
 
@@ -37,11 +37,22 @@
   - UsersModule: findOrCreate по telegram_id
   - Frontend: API client, Zustand store, TelegramProvider
   - 10 unit tests (все проходят)
-- [ ] Тиры 1-3 машин
-- [ ] Покупка машин
-- [ ] Real-time расчёт дохода
-- [ ] Сбор монет (Coin Box)
-- [ ] Истечение срока машин
+- [x] MachinesModule CRUD ✅
+  - MachinesService: create, findById, findByUserId, getActiveMachines
+  - Real-time income calculation (ratePerSecond)
+  - Coin Box с capacity limits и collectCoins
+  - Reinvest rounds с profit reduction
+  - Auto-expire check для машин
+  - imageUrl для каждого тира (10 машин)
+  - 18 unit tests (все проходят)
+  - REST endpoints:
+    - GET /machines/tiers - все тиры
+    - GET /machines - машины пользователя
+    - GET /machines/:id/income - текущий доход
+    - POST /machines - создать машину
+    - POST /machines/:id/collect - собрать монеты
+- [ ] Покупка машин (списание с баланса)
+- [ ] Истечение срока машин (cron job)
 
 ### Экономика базовая
 - [ ] Балансы FORTUNE/USDT
