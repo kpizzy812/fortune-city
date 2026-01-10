@@ -9,4 +9,4 @@ async function bootstrap() {
 
   console.log(`🎰 Fortune City API running on http://localhost:${port}`);
 }
-bootstrap();
+void bootstrap();

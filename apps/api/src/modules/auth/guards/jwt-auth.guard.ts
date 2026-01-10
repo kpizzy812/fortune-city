@@ -8,11 +8,9 @@ import { Request } from 'express';
 import { AuthService, JwtPayload } from '../auth.service';
 
 // Расширяем Request для типизации user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: JwtPayload;
-    }
+declare module 'express' {
+  interface Request {
+    user?: JwtPayload;
   }
 }
 
@@ -20,7 +18,7 @@ declare global {
 export class JwtAuthGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
     const token = this.extractTokenFromHeader(request);
 
@@ -29,7 +27,7 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.authService.validateJwt(token);
+      const payload = this.authService.validateJwt(token);
       request.user = payload;
       return true;
     } catch {

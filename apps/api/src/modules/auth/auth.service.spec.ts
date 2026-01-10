@@ -198,8 +198,8 @@ describe('AuthService', () => {
   });
 
   describe('validateJwt', () => {
-    it('should return payload for valid token', async () => {
-      const result = await service.validateJwt('valid-token');
+    it('should return payload for valid token', () => {
+      const result = service.validateJwt('valid-token');
 
       expect(jwtService.verify).toHaveBeenCalledWith('valid-token');
       expect(result).toEqual({
@@ -209,12 +209,12 @@ describe('AuthService', () => {
       });
     });
 
-    it('should throw UnauthorizedException for invalid token', async () => {
+    it('should throw UnauthorizedException for invalid token', () => {
       jwtService.verify.mockImplementation(() => {
         throw new Error('Invalid token');
       });
 
-      await expect(service.validateJwt('invalid-token')).rejects.toThrow(
+      expect(() => service.validateJwt('invalid-token')).toThrow(
         UnauthorizedException,
       );
     });

@@ -58,7 +58,8 @@ export class AuthService {
 
       return this.authenticateUser(telegramUser);
     } catch (error) {
-      this.logger.error(`InitData validation failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`InitData validation failed: ${message}`);
       throw new UnauthorizedException('Invalid initData');
     }
   }
@@ -156,7 +157,7 @@ export class AuthService {
   /**
    * Валидация JWT и получение пользователя
    */
-  async validateJwt(token: string): Promise<JwtPayload> {
+  validateJwt(token: string): JwtPayload {
     try {
       return this.jwtService.verify<JwtPayload>(token);
     } catch {
