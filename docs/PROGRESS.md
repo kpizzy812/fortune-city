@@ -1,7 +1,7 @@
 # Fortune City - Progress
 
-**Последнее обновление:** 2026-01-10
-**Текущий этап:** Phase 1 — MachinesModule CRUD готов, следующий шаг: покупка машин
+**Последнее обновление:** 2026-01-11
+**Текущий этап:** Phase 1 — EconomyModule готов, следующий шаг: cron для истечения машин + UI
 
 ## Архитектура платформ
 
@@ -51,23 +51,35 @@
     - GET /machines/:id/income - текущий доход
     - POST /machines - создать машину
     - POST /machines/:id/collect - собрать монеты
-- [ ] Покупка машин (списание с баланса)
+- [x] EconomyModule (покупка машин) ✅
+  - TransactionsService: CRUD транзакций
+  - FundSourceService: отслеживание источников средств
+  - PurchaseService: покупка с проверкой баланса
+  - Атомарные транзакции (баланс → машина → transaction → fund_source)
+  - Проверка доступности тира (maxTierReached + 1)
+  - 12 unit tests (все проходят)
+  - REST endpoints:
+    - POST /economy/purchase - купить машину
+    - GET /economy/can-afford/:tier - проверить возможность покупки
+    - GET /economy/transactions - история транзакций
+    - GET /economy/transactions/stats - статистика
+    - GET /economy/purchase-history - история покупок
 - [ ] Истечение срока машин (cron job)
 
 ### Экономика базовая
 - [x] Единый баланс $FORTUNE (USDT конвертируется при deposit/withdrawal) ✅
+- [x] История транзакций ✅
 - [ ] Базовый UI в synthwave стиле
-- [ ] История транзакций
 
 ---
 
 ## Phase 2: Полный функционал
 
 ### Механики
-- [ ] Тиры 4-10
-- [ ] Реинвест штраф
+- [x] Тиры 1-10 (все сконфигурированы) ✅
+- [x] Реинвест штраф (REINVEST_REDUCTION) ✅
+- [x] Отслеживание источников средств (FundSourceService) ✅
 - [ ] Порядок выплат (прибыль → тело)
-- [ ] Отслеживание источников средств
 - [ ] Досрочный вывод с комиссией
 
 ### Апгрейды + Рефералы
