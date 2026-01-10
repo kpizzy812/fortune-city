@@ -1,16 +1,22 @@
 'use client';
 
-import { ButtonHTMLAttributes, forwardRef } from 'react';
+import { ReactNode, forwardRef } from 'react';
 import { motion } from 'framer-motion';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'gold' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
   fullWidth?: boolean;
+  disabled?: boolean;
+  className?: string;
+  children: ReactNode;
+  onClick?: () => void;
+  type?: 'button' | 'submit' | 'reset';
+  title?: string;
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
@@ -42,7 +48,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled,
       className = '',
       children,
-      ...props
+      onClick,
+      type = 'button',
+      title,
     },
     ref
   ) => {
@@ -51,6 +59,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <motion.button
         ref={ref}
+        type={type}
+        title={title}
         whileTap={{ scale: isDisabled ? 1 : 0.97 }}
         whileHover={{ scale: isDisabled ? 1 : 1.02 }}
         className={`
@@ -63,7 +73,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           ${className}
         `}
         disabled={isDisabled}
-        {...props}
+        onClick={onClick}
       >
         {loading && (
           <svg
