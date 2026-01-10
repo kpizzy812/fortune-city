@@ -2,6 +2,15 @@
 
 **Последнее обновление:** 2026-01-10
 
+## Архитектура платформ
+
+| Платформа | Роль | Авторизация |
+|-----------|------|-------------|
+| **Web** | Основная | Telegram Login Widget |
+| **Telegram Mini App** | Дополнение | initData validation |
+
+---
+
 ## Phase 1: MVP Foundation
 
 ### Инфраструктура ✅
@@ -13,10 +22,15 @@
 - [x] Docker Compose (postgres:5433 + redis:6379)
 - [x] Типы: Machine, User, Transaction, MachineTier
 - [x] Константы: MACHINE_TIERS, TAX_RATES, REINVEST_REDUCTION
-- [ ] Telegram Mini App интеграция
+
+### Telegram интеграция ✅
+- [x] @telegram-apps/telegram-ui — UI компоненты в стиле Telegram
+- [x] @vkruglikov/react-telegram-web-app — хуки (MainButton, BackButton и др.)
+- [x] @tma.js/init-data-node — валидация initData на бэкенде
+- [x] ~~@telegram-apps/sdk-react~~ — удалено (низкоуровневое)
 
 ### Core Game Loop
-- [ ] Аутентификация через Telegram
+- [ ] Аутентификация через Telegram (Web + Mini App)
 - [ ] Тиры 1-3 машин
 - [ ] Покупка машин
 - [ ] Real-time расчёт дохода
@@ -98,7 +112,8 @@ pnpm db:studio    # GUI для БД
 
 | Layer | Tech |
 |-------|------|
-| Frontend | Next.js 16, React 19, Tailwind, Zustand |
-| Backend | NestJS 11, Prisma, PostgreSQL, Redis |
+| Frontend | Next.js 16, React 19, Tailwind, Zustand, Framer Motion |
+| Backend | NestJS 11, Prisma 6, PostgreSQL, Redis |
 | Realtime | Socket.io |
-| Platform | Telegram Mini App |
+| Platform | Web (основная) + Telegram Mini App (доп.) |
+| TG Integration | telegram-ui, react-telegram-web-app, tma.js/init-data-node |

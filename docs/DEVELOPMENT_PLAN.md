@@ -4,7 +4,11 @@
 
 **Fortune City** - геймифицированный пресейл с механикой idle-тайкуна в стиле ретро-Vegas 80s.
 
-**Платформы**: Telegram Mini App (приоритет) + Web PWA
+**Платформы**:
+- **Web (основная)** — полноценный веб-интерфейс, доступный всем
+- **Telegram Mini App (дополнение)** — для удобства пользователей Telegram
+
+**Авторизация**: Telegram Login Widget (для обеих платформ)
 **Депозиты**: USDT мультичейн (SOL, BEP-20, TON, TRC-20)
 **Команда**: Минимальная (разработчик + архитектор)
 
@@ -19,8 +23,16 @@
 | UI | **React 19 + Tailwind CSS** | Server Components, Actions, synthwave-эстетика |
 | Состояние | **Zustand** | Легковесный, простой для real-time |
 | Real-time | **Socket.io Client** | Обновления дохода, уведомления |
-| Telegram SDK | **@telegram-apps/sdk** | Интеграция с Telegram Mini App |
 | Анимации | **Framer Motion** | Slot машины, неоновые эффекты |
+
+#### Telegram интеграция
+| Компонент | Технология | Обоснование |
+|-----------|------------|-------------|
+| UI Kit | **@telegram-apps/telegram-ui** | Готовые компоненты в стиле Telegram |
+| TG API хуки | **@vkruglikov/react-telegram-web-app** | Простые хуки: MainButton, BackButton, HapticFeedback |
+| Валидация initData | **@tma.js/init-data-node** (backend) | Безопасная проверка данных от Telegram |
+
+> **Примечание**: `@telegram-apps/sdk-react` — низкоуровневая библиотека, заменена на более простые решения.
 
 ### Backend
 | Компонент | Технология | Обоснование |
@@ -31,6 +43,7 @@
 | Кэш/Очереди | **Redis** | Сессии, real-time счётчики, очереди |
 | ORM | **Prisma** | Type-safe, миграции |
 | Очереди задач | **BullMQ** | Background jobs |
+| TG Auth | **@tma.js/init-data-node** | Валидация initData от Telegram Mini App |
 
 ### Мультичейн инфраструктура
 | Сеть | Для депозитов | Для вывода |
@@ -48,9 +61,11 @@
 ┌──────────────────────────────────────────────────────────────┐
 │                      КЛИЕНТЫ                                  │
 │  ┌─────────────────┐     ┌─────────────────┐                 │
-│  │ Telegram Mini   │     │    Web PWA      │                 │
-│  │     App         │     │   (Next.js)     │                 │
+│  │   Web (основн.) │     │ Telegram Mini   │                 │
+│  │   (Next.js)     │     │  App (доп.)     │                 │
 │  └────────┬────────┘     └────────┬────────┘                 │
+│           │                       │                          │
+│  Telegram Login Widget    initData validation                │
 │           └──────────┬───────────┘                           │
 └──────────────────────┼───────────────────────────────────────┘
                        │
@@ -72,6 +87,22 @@
 │  └─────────────┘  └─────────────┘  └─────────────────────┘   │
 └──────────────────────────────────────────────────────────────┘
 ```
+
+### Авторизация через Telegram
+
+**Web-версия**: Telegram Login Widget
+```
+Пользователь → Кнопка "Войти через Telegram" → Telegram OAuth
+→ Callback с данными пользователя → JWT токен
+```
+
+**Telegram Mini App**: initData validation
+```
+Mini App открывается → window.Telegram.WebApp.initData
+→ Backend валидирует через @tma.js/init-data-node → JWT токен
+```
+
+Оба способа создают одного пользователя по telegram_id.
 
 ---
 
