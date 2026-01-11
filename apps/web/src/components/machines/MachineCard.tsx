@@ -137,7 +137,7 @@ export function MachineCard({
       </div>
 
       {/* Collect button or timer - fixed height container */}
-      <div className="min-h-[76px] flex flex-col justify-center">
+      <div className="min-h-[96px] flex flex-col justify-center">
         {income?.isFull || isExpired ? (
           <Button
             variant="gold"
