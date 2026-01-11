@@ -178,7 +178,8 @@ export function TierCarousel({
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    setCanScrollLeft(container.scrollLeft > 10);
+    // Left gradient appears only after scrolling past first card partially (50px threshold)
+    setCanScrollLeft(container.scrollLeft > 50);
     setCanScrollRight(
       container.scrollLeft < container.scrollWidth - container.clientWidth - 10
     );
