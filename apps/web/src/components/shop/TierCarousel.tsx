@@ -265,29 +265,51 @@ export function TierCarousel({
         </AnimatePresence>
       </div>
 
-      {/* Scrollable Container */}
-      <div
-        ref={scrollContainerRef}
-        className="flex gap-5 overflow-x-auto snap-x snap-mandatory px-4 py-4"
-        style={{
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-        }}
-      >
-        {tiers.map((tier) => (
-          <div
-            key={tier.tier}
-            className="snap-start flex-shrink-0"
-          >
-            <TierCard
-              tier={tier}
-              canAfford={affordability[tier.tier]}
-              maxTierReached={maxTierReached}
-              onBuy={() => onBuyTier(tier.tier)}
-              isPurchasing={isPurchasing}
-            />
-          </div>
-        ))}
+      {/* Scrollable Container with edge gradients */}
+      <div className="relative">
+        {/* Left edge gradient */}
+        <div
+          className={`
+            absolute left-0 top-0 bottom-0 w-12 z-20
+            bg-gradient-to-r from-[#1a0a2e] to-transparent
+            pointer-events-none transition-opacity duration-300
+            ${canScrollLeft ? 'opacity-100' : 'opacity-0'}
+          `}
+        />
+
+        {/* Right edge gradient */}
+        <div
+          className={`
+            absolute right-0 top-0 bottom-0 w-12 z-20
+            bg-gradient-to-l from-[#1a0a2e] to-transparent
+            pointer-events-none transition-opacity duration-300
+            ${canScrollRight ? 'opacity-100' : 'opacity-0'}
+          `}
+        />
+
+        <div
+          ref={scrollContainerRef}
+          className="flex gap-5 overflow-x-auto snap-x snap-mandatory px-4 py-4"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+          }}
+        >
+          {tiers.map((tier) => (
+            <div
+              key={tier.tier}
+              className="snap-start flex-shrink-0"
+            >
+              <TierCard
+                tier={tier}
+                canAfford={affordability[tier.tier]}
+                maxTierReached={maxTierReached}
+                onBuy={() => onBuyTier(tier.tier)}
+                isPurchasing={isPurchasing}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Pagination dots */}
