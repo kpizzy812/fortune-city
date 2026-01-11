@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMachinesStore } from '@/stores/machines.store';
 import { useTelegramWebApp } from '@/providers/TelegramProvider';
@@ -16,7 +16,7 @@ const SERVER_REFRESH_INTERVAL = 30000;
 const INCOME_INTERPOLATION_INTERVAL = 1000;
 
 export default function Home() {
-  const { user, token, isLoading: authLoading, error: authError, clearAuth, refreshUser } = useAuthStore();
+  const { user, token, isLoading: authLoading, error: authError, clearAuth, refreshUser, devLogin } = useAuthStore();
   const { isTelegramApp } = useTelegramWebApp();
 
   const {
@@ -32,16 +32,22 @@ export default function Home() {
     clearError,
   } = useMachinesStore();
 
-  // Load machines when authenticated
+  // Track if initial fetch was done
+  const hasFetchedMachines = useRef(false);
+  const hasFetchedIncomes = useRef(false);
+
+  // Load machines when authenticated (only once)
   useEffect(() => {
-    if (token && user) {
+    if (token && user && !hasFetchedMachines.current) {
+      hasFetchedMachines.current = true;
       fetchMachines(token, 'active');
     }
   }, [token, user, fetchMachines]);
 
-  // Fetch income for all machines after machines are loaded
+  // Fetch income for all machines after machines are loaded (only once)
   useEffect(() => {
-    if (token && machines.length > 0) {
+    if (token && machines.length > 0 && !hasFetchedIncomes.current) {
+      hasFetchedIncomes.current = true;
       fetchAllIncomes(token);
     }
   }, [token, machines.length, fetchAllIncomes]);
@@ -138,6 +144,16 @@ export default function Home() {
                 onSuccess={() => console.log('Login success')}
                 onError={(err) => console.error('Login error:', err)}
               />
+
+              {/* Dev Login - only in development */}
+              {process.env.NODE_ENV === 'development' && (
+                <button
+                  onClick={devLogin}
+                  className="mt-4 px-6 py-2 bg-[#2a1a4e] border border-[#ff2d95]/50 text-[#ff2d95] rounded-lg hover:bg-[#ff2d95]/10 transition text-sm"
+                >
+                  Dev Login (Test User)
+                </button>
+              )}
             </div>
           )}
         </div>

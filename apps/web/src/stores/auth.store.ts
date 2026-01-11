@@ -15,6 +15,7 @@ interface AuthState {
   clearAuth: () => void;
   authWithInitData: (initData: string) => Promise<void>;
   authWithLoginWidget: (data: TelegramLoginWidgetData) => Promise<void>;
+  devLogin: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -61,6 +62,22 @@ export const useAuthStore = create<AuthState>()(
           });
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Auth failed';
+          set({ error: message, isLoading: false });
+          throw error;
+        }
+      },
+
+      devLogin: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await api.devLogin();
+          set({
+            token: response.accessToken,
+            user: response.user,
+            isLoading: false,
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Dev login failed';
           set({ error: message, isLoading: false });
           throw error;
         }

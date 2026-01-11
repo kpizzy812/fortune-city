@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMachinesStore } from '@/stores/machines.store';
-import { TierGrid } from '@/components/shop/TierGrid';
+import { TierCarousel } from '@/components/shop/TierCarousel';
 import { PurchaseModal } from '@/components/shop/PurchaseModal';
 import type { TierInfo } from '@/types';
 
@@ -27,6 +27,10 @@ export default function ShopPage() {
   const [selectedTier, setSelectedTier] = useState<TierInfo | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Track if initial fetch was done
+  const hasFetchedTiers = useRef(false);
+  const hasCheckedAffordability = useRef(false);
+
   // Redirect if not authenticated
   useEffect(() => {
     if (!user || !token) {
@@ -34,14 +38,18 @@ export default function ShopPage() {
     }
   }, [user, token, router]);
 
-  // Load tiers
+  // Load tiers (only once)
   useEffect(() => {
-    fetchTiers();
+    if (!hasFetchedTiers.current) {
+      hasFetchedTiers.current = true;
+      fetchTiers();
+    }
   }, [fetchTiers]);
 
-  // Check affordability when tiers or user changes
+  // Check affordability when tiers load (only once per session)
   useEffect(() => {
-    if (token && user && tiers.length > 0) {
+    if (token && user && tiers.length > 0 && !hasCheckedAffordability.current) {
+      hasCheckedAffordability.current = true;
       checkAllAffordability(token, user.maxTierReached);
     }
   }, [token, user, tiers.length, checkAllAffordability]);
@@ -144,8 +152,8 @@ export default function ShopPage() {
         </div>
       )}
 
-      {/* Tier Grid */}
-      <TierGrid
+      {/* Tier Carousel */}
+      <TierCarousel
         tiers={tiers}
         affordability={affordability}
         maxTierReached={user.maxTierReached}

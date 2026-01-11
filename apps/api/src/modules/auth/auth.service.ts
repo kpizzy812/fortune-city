@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { validate, parse } from '@tma.js/init-data-node';
@@ -191,6 +191,30 @@ export class AuthService {
       fortuneBalance: user.fortuneBalance.toString(),
       maxTierReached: user.maxTierReached,
       currentTaxRate: user.currentTaxRate.toString(),
+    };
+  }
+
+  /**
+   * Dev-only: авторизация по telegram ID без проверки
+   */
+  async devLogin(telegramId: string): Promise<AuthResponseDto> {
+    const user = await this.usersService.findByTelegramId(telegramId);
+
+    if (!user) {
+      throw new NotFoundException('Test user not found');
+    }
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      telegramId: user.telegramId,
+      username: user.username ?? undefined,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: this.formatUserResponse(user),
     };
   }
 }

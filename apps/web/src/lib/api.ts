@@ -70,6 +70,12 @@ class ApiClient {
     return this.request<UserData>('/auth/me', { token });
   }
 
+  async devLogin() {
+    return this.request<AuthResponse>('/auth/dev-login', {
+      method: 'POST',
+    });
+  }
+
   // ============================================
   // Tiers endpoints
   // ============================================

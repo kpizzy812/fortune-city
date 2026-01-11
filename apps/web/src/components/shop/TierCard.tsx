@@ -74,7 +74,7 @@ export function TierCard({
         </div>
         <div className="bg-[#1a0a2e] rounded-lg p-2 text-center">
           <p className="text-xs text-[#b0b0b0]">Yield</p>
-          <p className="text-sm font-semibold text-[#00ff88]">+{tier.yieldPercent - 100}%</p>
+          <p className="text-sm font-semibold text-[#00ff88]">{tier.yieldPercent}%</p>
         </div>
         <div className="bg-[#1a0a2e] rounded-lg p-2 text-center">
           <p className="text-xs text-[#b0b0b0]">Profit</p>

@@ -7,7 +7,9 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  ForbiddenException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import { AuthService, JwtPayload } from './auth.service';
 import {
@@ -19,7 +21,10 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   /**
    * POST /auth/telegram/init-data
@@ -65,5 +70,20 @@ export class AuthController {
       maxTierReached: user.maxTierReached,
       currentTaxRate: user.currentTaxRate.toString(),
     };
+  }
+
+  /**
+   * POST /auth/dev-login
+   * Dev-only: авторизация тестового пользователя
+   */
+  @Post('dev-login')
+  @HttpCode(HttpStatus.OK)
+  async devLogin(): Promise<AuthResponseDto> {
+    const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
+    if (nodeEnv === 'production') {
+      throw new ForbiddenException('Dev login is not available in production');
+    }
+
+    return this.authService.devLogin('123456789');
   }
 }
