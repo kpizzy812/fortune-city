@@ -134,11 +134,11 @@ export const REINVEST_REDUCTION: Record<number, number> = {
   11: 0.85,  // -85% (cap)
 };
 
-// Coin box levels
+// Coin box levels (cost is percentage of machine price)
 export const COIN_BOX_LEVELS = [
-  { level: 1, capacityHours: 8, cost: 0 },
-  { level: 2, capacityHours: 16, cost: 50 },
-  { level: 3, capacityHours: 24, cost: 150 },
-  { level: 4, capacityHours: 48, cost: 400 },
-  { level: 5, capacityHours: 72, cost: 1000 },
+  { level: 1, capacityHours: 2, costPercent: 0 },    // Free
+  { level: 2, capacityHours: 6, costPercent: 5 },    // 5% of machine price
+  { level: 3, capacityHours: 12, costPercent: 10 },  // 10%
+  { level: 4, capacityHours: 24, costPercent: 20 },  // 20%
+  { level: 5, capacityHours: 48, costPercent: 35 },  // 35%
 ] as const;
