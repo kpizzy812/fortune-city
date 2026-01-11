@@ -136,31 +136,33 @@ export function MachineCard({
         <span>{timeRemaining} remaining</span>
       </div>
 
-      {/* Collect button or timer */}
-      {income?.isFull || isExpired ? (
-        <Button
-          variant="gold"
-          size="md"
-          fullWidth
-          loading={isCollecting}
-          onClick={onCollect}
-        >
-          {isCollecting ? 'Collecting...' : `Collect $${income?.accumulated.toFixed(2) || '0.00'}`}
-        </Button>
-      ) : (
-        <div className="bg-[#1a0a2e] rounded-lg p-3 text-center border border-[#00d4ff]/20">
-          <p className="text-[10px] text-[#b0b0b0] uppercase tracking-wider mb-1">Full in</p>
-          <p className="text-lg font-bold text-[#00d4ff] font-mono">
-            {income ? formatSecondsToTime(income.secondsUntilFull) : '--:--'}
-          </p>
-          <div className="mt-2 h-1.5 bg-[#2a1a4e] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-[#00d4ff] to-[#00ff88] transition-all duration-1000"
-              style={{ width: `${income ? (income.accumulated / income.coinBoxCapacity) * 100 : 0}%` }}
-            />
+      {/* Collect button or timer - fixed height container */}
+      <div className="min-h-[76px] flex flex-col justify-center">
+        {income?.isFull || isExpired ? (
+          <Button
+            variant="gold"
+            size="md"
+            fullWidth
+            loading={isCollecting}
+            onClick={onCollect}
+          >
+            {isCollecting ? 'Collecting...' : `Collect $${income?.accumulated.toFixed(2) || '0.00'}`}
+          </Button>
+        ) : (
+          <div className="bg-[#1a0a2e] rounded-lg p-3 text-center border border-[#00d4ff]/20">
+            <p className="text-[10px] text-[#b0b0b0] uppercase tracking-wider mb-1">Full in</p>
+            <p className="text-lg font-bold text-[#00d4ff] font-mono">
+              {income ? formatSecondsToTime(income.secondsUntilFull) : '--:--'}
+            </p>
+            <div className="mt-2 h-1.5 bg-[#2a1a4e] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[#00d4ff] to-[#00ff88] transition-all duration-1000"
+                style={{ width: `${income ? (income.accumulated / income.coinBoxCapacity) * 100 : 0}%` }}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </motion.div>
   );
 }
