@@ -128,7 +128,13 @@
   - RiskyCollectService с тестами
 
 ### Апгрейды + Рефералы
-- [ ] Апгрейды Coin Box (5 уровней)
+- [x] Апгрейды Coin Box (5 уровней) ✅
+  - Backend: upgradeCoinBox() и getCoinBoxInfo() методы в MachinesService
+  - Endpoints: POST /machines/:id/upgrade-coinbox, GET /machines/:id/coinbox-info
+  - Frontend: CoinBoxUpgradeModal компонент, actions в store
+  - Уровни capacity: 2h → 6h → 12h → 24h → 48h
+  - Стоимость: 5% → 10% → 20% → 35% от цены машины
+  - Атомарные транзакции для списания баланса и обновления capacity
 - [ ] Auto Collect модуль
 - [ ] 3-уровневая реферальная система
 - [ ] Push-уведомления
