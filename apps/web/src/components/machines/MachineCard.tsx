@@ -11,6 +11,7 @@ interface MachineCardProps {
   machine: Machine;
   income: MachineIncome | null;
   onCollect: () => void;
+  onRiskyCollect?: () => void;
   isCollecting: boolean;
 }
 
@@ -65,6 +66,7 @@ export function MachineCard({
   machine,
   income,
   onCollect,
+  onRiskyCollect,
   isCollecting,
 }: MachineCardProps) {
   const progress = calculateProgress(machine.startedAt, machine.expiresAt);
@@ -166,15 +168,28 @@ export function MachineCard({
       {/* Collect button or timer - fixed height container */}
       <div className="min-h-[96px] flex flex-col justify-center">
         {income?.isFull || isExpired ? (
-          <Button
-            variant="gold"
-            size="md"
-            fullWidth
-            loading={isCollecting}
-            onClick={onCollect}
-          >
-            {isCollecting ? 'Collecting...' : `Collect $${income?.accumulated.toFixed(2) || '0.00'}`}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="gold"
+              size="md"
+              fullWidth
+              loading={isCollecting}
+              onClick={onCollect}
+            >
+              {isCollecting ? 'Collecting...' : `Collect $${income?.accumulated.toFixed(2) || '0.00'}`}
+            </Button>
+            {income?.isFull && !isExpired && onRiskyCollect && (
+              <Button
+                variant="primary"
+                size="md"
+                loading={isCollecting}
+                onClick={onRiskyCollect}
+                className="whitespace-nowrap px-4"
+              >
+                🎲 Risk It!
+              </Button>
+            )}
+          </div>
         ) : (
           <div className="bg-[#1a0a2e] rounded-lg p-3 text-center border border-[#00d4ff]/20">
             <p className="text-[10px] text-[#b0b0b0] uppercase tracking-wider mb-1">Full in</p>

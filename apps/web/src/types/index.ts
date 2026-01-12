@@ -47,6 +47,7 @@ export interface Machine {
   coinBoxCurrent: string;
   reinvestRound: number;
   profitReductionRate: string;
+  fortuneGambleLevel: number;
   status: MachineStatus;
   createdAt: string;
   updatedAt: string;
@@ -67,6 +68,41 @@ export interface CollectResult {
   collected: number;
   newBalance: number;
   machine: Machine;
+}
+
+// ============================================
+// Fortune's Gamble (Risky Collect) Types
+// ============================================
+
+export interface RiskyCollectResult {
+  won: boolean;
+  originalAmount: number;
+  finalAmount: number;
+  winChance: number;
+  multiplier: number;
+  machine: Machine;
+  newBalance: number;
+}
+
+export interface GambleInfo {
+  currentLevel: number;
+  currentWinChance: number;
+  currentEV: number;
+  canUpgrade: boolean;
+  nextLevel: number | null;
+  nextWinChance: number | null;
+  nextEV: number | null;
+  upgradeCost: number | null;
+}
+
+export interface UpgradeGambleResult {
+  machine: Machine;
+  cost: number;
+  newLevel: number;
+  newWinChance: number;
+  user: {
+    fortuneBalance: string;
+  };
 }
 
 // ============================================
@@ -107,6 +143,7 @@ export type TransactionType =
   | 'withdrawal'
   | 'machine_purchase'
   | 'machine_income'
+  | 'machine_income_risky'
   | 'machine_early_sell'
   | 'referral_bonus'
   | 'wheel_prize'

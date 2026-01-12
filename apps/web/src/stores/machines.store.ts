@@ -8,6 +8,9 @@ import type {
   MachineIncome,
   CanAffordResponse,
   PurchaseResult,
+  RiskyCollectResult,
+  GambleInfo,
+  UpgradeGambleResult,
 } from '@/types';
 
 interface MachinesState {
@@ -16,6 +19,8 @@ interface MachinesState {
   tiers: TierInfo[];
   incomes: Record<string, MachineIncome>;
   affordability: Record<number, CanAffordResponse>;
+  lastGambleResult: RiskyCollectResult | null;
+  gambleInfos: Record<string, GambleInfo>;
 
   // Loading states
   isLoadingMachines: boolean;
@@ -35,6 +40,9 @@ interface MachinesState {
   checkAllAffordability: (token: string, maxTier: number) => Promise<void>;
   purchaseMachine: (token: string, tier: number) => Promise<PurchaseResult>;
   collectCoins: (token: string, machineId: string) => Promise<number>;
+  riskyCollect: (token: string, machineId: string) => Promise<RiskyCollectResult>;
+  upgradeGamble: (token: string, machineId: string) => Promise<UpgradeGambleResult>;
+  fetchGambleInfo: (token: string, machineId: string) => Promise<void>;
 
   // Real-time income interpolation
   interpolateIncome: (machineId: string) => void;
@@ -42,6 +50,7 @@ interface MachinesState {
 
   // Clear
   clearError: () => void;
+  clearLastGambleResult: () => void;
   reset: () => void;
 }
 
@@ -51,6 +60,8 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
   tiers: [],
   incomes: {},
   affordability: {},
+  lastGambleResult: null,
+  gambleInfos: {},
   isLoadingMachines: false,
   isLoadingTiers: false,
   isPurchasing: false,
@@ -168,6 +179,79 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
     }
   },
 
+  riskyCollect: async (token, machineId) => {
+    set((state) => ({
+      isCollecting: { ...state.isCollecting, [machineId]: true },
+    }));
+    try {
+      const result = await api.collectCoinsRisky(token, machineId);
+      // Update machine in list and store gamble result
+      set((state) => ({
+        machines: state.machines.map((m) =>
+          m.id === machineId ? result.machine : m
+        ),
+        // Reset income for this machine
+        incomes: {
+          ...state.incomes,
+          [machineId]: {
+            ...state.incomes[machineId],
+            accumulated: 0,
+            coinBoxCurrent: 0,
+            isFull: false,
+          },
+        },
+        lastGambleResult: result,
+        isCollecting: { ...state.isCollecting, [machineId]: false },
+      }));
+      return result;
+    } catch (e) {
+      set((state) => ({
+        isCollecting: { ...state.isCollecting, [machineId]: false },
+      }));
+      throw e;
+    }
+  },
+
+  upgradeGamble: async (token, machineId) => {
+    try {
+      const result = await api.upgradeFortuneGamble(token, machineId);
+      // Update machine in list
+      set((state) => ({
+        machines: state.machines.map((m) =>
+          m.id === machineId ? result.machine : m
+        ),
+        // Invalidate gamble info cache for this machine
+        gambleInfos: {
+          ...state.gambleInfos,
+          [machineId]: {
+            currentLevel: result.newLevel,
+            currentWinChance: result.newWinChance,
+            currentEV: 0, // Will be refreshed
+            canUpgrade: true,
+            nextLevel: null,
+            nextWinChance: null,
+            nextEV: null,
+            upgradeCost: null,
+          },
+        },
+      }));
+      return result;
+    } catch (e) {
+      throw e;
+    }
+  },
+
+  fetchGambleInfo: async (token, machineId) => {
+    try {
+      const info = await api.getGambleInfo(token, machineId);
+      set((state) => ({
+        gambleInfos: { ...state.gambleInfos, [machineId]: info },
+      }));
+    } catch {
+      // Silent fail
+    }
+  },
+
   // Client-side income interpolation (every second)
   interpolateIncome: (machineId) => {
     const { incomes, machines } = get();
@@ -209,12 +293,16 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 
+  clearLastGambleResult: () => set({ lastGambleResult: null }),
+
   reset: () =>
     set({
       machines: [],
       tiers: [],
       incomes: {},
       affordability: {},
+      lastGambleResult: null,
+      gambleInfos: {},
       isLoadingMachines: false,
       isLoadingTiers: false,
       isPurchasing: false,

@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMachinesStore } from '@/stores/machines.store';
 import { useTelegramWebApp } from '@/providers/TelegramProvider';
 import { TelegramLoginButton } from '@/components/auth/TelegramLoginButton';
 import { MachineGrid } from '@/components/machines/MachineGrid';
+import { RiskyCollectModal } from '@/components/machines/RiskyCollectModal';
+import { GambleResultAnimation } from '@/components/machines/GambleResultAnimation';
 import { useInterval } from '@/hooks/useInterval';
+import type { GambleInfo } from '@/types';
 
 const TELEGRAM_BOT_NAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || 'FortuneCityBot';
 
@@ -24,13 +27,24 @@ export default function Home() {
     incomes,
     isLoadingMachines,
     isCollecting,
+    lastGambleResult,
+    gambleInfos,
     error: machinesError,
     fetchMachines,
     fetchAllIncomes,
     collectCoins,
+    riskyCollect,
+    fetchGambleInfo,
     interpolateAllIncomes,
     clearError,
+    clearLastGambleResult,
   } = useMachinesStore();
+
+  // Modal states
+  const [isRiskyModalOpen, setIsRiskyModalOpen] = useState(false);
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null);
+  const [currentGambleInfo, setCurrentGambleInfo] = useState<GambleInfo | null>(null);
 
   // Track if initial fetch was done
   const hasFetchedMachines = useRef(false);
@@ -81,6 +95,48 @@ export default function Home() {
     },
     [token, collectCoins, refreshUser]
   );
+
+  // Handle risky collect (open modal)
+  const handleRiskyCollect = useCallback(
+    async (machineId: string) => {
+      if (!token) return;
+      setSelectedMachineId(machineId);
+
+      // Fetch gamble info
+      await fetchGambleInfo(token, machineId);
+      setCurrentGambleInfo(gambleInfos[machineId] || null);
+
+      setIsRiskyModalOpen(true);
+    },
+    [token, fetchGambleInfo, gambleInfos]
+  );
+
+  // Confirm risky collect
+  const handleConfirmRiskyCollect = useCallback(
+    async () => {
+      if (!token || !selectedMachineId) return;
+
+      try {
+        await riskyCollect(token, selectedMachineId);
+        // Close modal and show result
+        setIsRiskyModalOpen(false);
+        setIsResultModalOpen(true);
+        // Refresh user balance
+        refreshUser();
+      } catch {
+        // Error is handled in store
+        setIsRiskyModalOpen(false);
+      }
+    },
+    [token, selectedMachineId, riskyCollect, refreshUser]
+  );
+
+  // Close result modal
+  const handleCloseResultModal = useCallback(() => {
+    setIsResultModalOpen(false);
+    clearLastGambleResult();
+    setSelectedMachineId(null);
+  }, [clearLastGambleResult]);
 
   // Show loading state
   if (authLoading) {
@@ -289,10 +345,30 @@ export default function Home() {
             machines={machines}
             incomes={incomes}
             onCollect={handleCollect}
+            onRiskyCollect={handleRiskyCollect}
             isCollecting={isCollecting}
             isLoading={isLoadingMachines}
           />
         </div>
+
+        {/* Modals */}
+        {selectedMachineId && (
+          <>
+            <RiskyCollectModal
+              isOpen={isRiskyModalOpen}
+              onClose={() => setIsRiskyModalOpen(false)}
+              onConfirm={handleConfirmRiskyCollect}
+              amount={incomes[selectedMachineId]?.accumulated || 0}
+              gambleInfo={currentGambleInfo}
+              isLoading={isCollecting[selectedMachineId] || false}
+            />
+            <GambleResultAnimation
+              isOpen={isResultModalOpen}
+              onClose={handleCloseResultModal}
+              result={lastGambleResult}
+            />
+          </>
+        )}
       </div>
     </main>
   );

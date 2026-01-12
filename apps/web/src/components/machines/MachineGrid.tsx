@@ -12,6 +12,7 @@ interface MachineGridProps {
   machines: Machine[];
   incomes: Record<string, MachineIncome>;
   onCollect: (machineId: string) => void;
+  onRiskyCollect?: (machineId: string) => void;
   isCollecting: Record<string, boolean>;
   isLoading?: boolean;
 }
@@ -20,6 +21,7 @@ export function MachineGrid({
   machines,
   incomes,
   onCollect,
+  onRiskyCollect,
   isCollecting,
   isLoading = false,
 }: MachineGridProps) {
@@ -109,6 +111,7 @@ export function MachineGrid({
             machine={machine}
             income={incomes[machine.id] || null}
             onCollect={() => onCollect(machine.id)}
+            onRiskyCollect={onRiskyCollect ? () => onRiskyCollect(machine.id) : undefined}
             isCollecting={isCollecting[machine.id] || false}
           />
         </motion.div>
