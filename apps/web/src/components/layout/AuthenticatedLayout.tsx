@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
+import { useUIStore } from '@/stores/ui.store';
 import { BottomNavigation } from './BottomNavigation';
 import { SidebarNavigation } from './SidebarNavigation';
 
@@ -11,6 +12,7 @@ interface AuthenticatedLayoutProps {
 
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { user } = useAuthStore();
+  const { sidebarCollapsed } = useUIStore();
 
   // Show navigation only for authenticated users
   if (!user) {
@@ -22,8 +24,14 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       {/* Sidebar for desktop (lg+) */}
       <SidebarNavigation />
 
-      {/* Main content area */}
-      <div className="pb-20 lg:pb-0 lg:ml-64">
+      {/* Main content area with dynamic margin */}
+      <div
+        className={`
+          pb-20 lg:pb-0
+          transition-all duration-300 ease-in-out
+          ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}
+        `}
+      >
         {children}
       </div>
 
