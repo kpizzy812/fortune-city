@@ -83,6 +83,9 @@ model Machine {
   coinBoxCapacity Decimal @map("coin_box_capacity") @db.Decimal(20, 8)
   coinBoxCurrent  Decimal @default(0) @map("coin_box_current") @db.Decimal(20, 8)
 
+  // Fortune's Gamble (Risky Collect)
+  fortuneGambleLevel Int @default(0) @map("fortune_gamble_level")
+
   status MachineStatus @default(active)
 
   // Fund source tracking
@@ -150,6 +153,10 @@ model Transaction {
   chain  String?
   txHash String? @map("tx_hash")
 
+  // Fortune's Gamble metadata (for risky collect analytics)
+  gambleWon    Boolean? @map("gamble_won")
+  gambleChance Decimal? @map("gamble_chance") @db.Decimal(5, 4)
+
   status TransactionStatus @default(pending)
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -166,6 +173,7 @@ enum TransactionType {
   withdrawal
   machine_purchase
   machine_income
+  machine_income_risky
   machine_early_sell
   referral_bonus
   wheel_prize

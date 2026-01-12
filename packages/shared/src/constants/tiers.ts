@@ -142,3 +142,27 @@ export const COIN_BOX_LEVELS = [
   { level: 4, capacityHours: 24, costPercent: 20 },  // 20%
   { level: 5, capacityHours: 48, costPercent: 35 },  // 35%
 ] as const;
+
+// Fortune's Gamble Levels (Risky Collect feature)
+// Win 2x or Lose (get 0.5x) when collecting from full coin box
+export const FORTUNE_GAMBLE_LEVELS = [
+  { level: 0, winChance: 0.1333, costPercent: 0 },  // EV 70%, Sink 30%
+  { level: 1, winChance: 0.1533, costPercent: 3 },  // EV 73%, Sink 27%
+  { level: 2, winChance: 0.1733, costPercent: 6 },  // EV 76%, Sink 24%
+  { level: 3, winChance: 0.1867, costPercent: 10 }, // EV 78%, Sink 22%
+] as const;
+
+export const GAMBLE_WIN_MULTIPLIER = 2.0;
+export const GAMBLE_LOSE_MULTIPLIER = 0.5;
+
+export type FortuneGambleLevel = (typeof FORTUNE_GAMBLE_LEVELS)[number];
+
+export function getGambleLevelConfig(level: number): FortuneGambleLevel {
+  return FORTUNE_GAMBLE_LEVELS[Math.min(level, FORTUNE_GAMBLE_LEVELS.length - 1)];
+}
+
+export function calculateGambleEV(level: number): number {
+  const config = getGambleLevelConfig(level);
+  return (config.winChance * GAMBLE_WIN_MULTIPLIER) +
+         ((1 - config.winChance) * GAMBLE_LOSE_MULTIPLIER);
+}

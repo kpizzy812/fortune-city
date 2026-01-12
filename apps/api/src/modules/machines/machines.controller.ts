@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { MachinesService, MachineWithTierInfo } from './machines.service';
+import { RiskyCollectService } from './services/risky-collect.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../auth/auth.service';
 import {
@@ -19,6 +20,11 @@ import {
   CollectCoinsResponseDto,
   TierInfoDto,
 } from './dto/machine.dto';
+import {
+  RiskyCollectResponseDto,
+  UpgradeFortuneGambleResponseDto,
+  GambleInfoResponseDto,
+} from './dto/risky-collect.dto';
 
 interface AuthenticatedRequest extends Request {
   user: JwtPayload;
@@ -26,7 +32,10 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('machines')
 export class MachinesController {
-  constructor(private readonly machinesService: MachinesService) {}
+  constructor(
+    private readonly machinesService: MachinesService,
+    private readonly riskyCollectService: RiskyCollectService,
+  ) {}
 
   private toResponseDto(machine: MachineWithTierInfo): MachineResponseDto {
     return {
@@ -154,5 +163,64 @@ export class MachinesController {
         this.machinesService.enrichWithTierInfo(result.machine),
       ),
     };
+  }
+
+  // ===== Fortune's Gamble (Risky Collect) Endpoints =====
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/collect-risky')
+  async collectRisky(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<RiskyCollectResponseDto> {
+    const result = await this.riskyCollectService.riskyCollect(
+      id,
+      req.user.sub,
+    );
+
+    return {
+      won: result.won,
+      originalAmount: result.originalAmount,
+      finalAmount: result.finalAmount,
+      winChance: result.winChance,
+      multiplier: result.multiplier,
+      machine: this.toResponseDto(
+        this.machinesService.enrichWithTierInfo(result.machine),
+      ),
+      newBalance: result.newBalance,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/upgrade-gamble')
+  async upgradeFortuneGamble(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<UpgradeFortuneGambleResponseDto> {
+    const result = await this.riskyCollectService.upgradeFortuneGamble(
+      id,
+      req.user.sub,
+    );
+
+    return {
+      machine: this.toResponseDto(
+        this.machinesService.enrichWithTierInfo(result.machine),
+      ),
+      cost: result.cost,
+      newLevel: result.newLevel,
+      newWinChance: result.newWinChance,
+      user: {
+        fortuneBalance: result.user.fortuneBalance.toString(),
+      },
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/gamble-info')
+  async getGambleInfo(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<GambleInfoResponseDto> {
+    return this.riskyCollectService.getGambleInfo(id, req.user.sub);
   }
 }
