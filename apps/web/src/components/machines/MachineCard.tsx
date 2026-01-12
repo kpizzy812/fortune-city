@@ -73,32 +73,58 @@ export function MachineCard({
 
   return (
     <motion.div
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.02, y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={`
         bg-[#2a1a4e] rounded-xl p-4
         border transition-all duration-300
+        relative overflow-hidden group
         ${
           income?.isFull
             ? 'border-[#00ff88]/50 shadow-[0_0_20px_rgba(0,255,136,0.2)]'
             : isExpired
               ? 'border-[#6b6b6b]/50 opacity-75'
-              : 'border-[#ff2d95]/30 hover:border-[#ff2d95]/50'
+              : 'border-[#ff2d95]/30 hover:border-[#ff2d95]/60 hover:shadow-[0_0_30px_rgba(255,45,149,0.15)]'
         }
       `}
     >
+      {/* Subtle gradient overlay on hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/[0.02] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 relative">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">{machine.tierInfo.emoji}</span>
+          <motion.span
+            className="text-2xl"
+            whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
+            transition={{ duration: 0.4 }}
+          >
+            {machine.tierInfo.emoji}
+          </motion.span>
           <div>
             <h3 className="font-semibold text-white">{machine.tierInfo.name}</h3>
             <p className="text-xs text-[#b0b0b0]">Tier {machine.tier}</p>
           </div>
         </div>
         {isExpired && (
-          <span className="text-xs px-2 py-1 bg-[#ff4444]/20 text-[#ff4444] rounded-full">
+          <motion.span
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-xs px-2 py-1 bg-[#ff4444]/20 text-[#ff4444] rounded-full"
+          >
             Expired
-          </span>
+          </motion.span>
+        )}
+        {income?.isFull && !isExpired && (
+          <motion.span
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: [1, 1.05, 1], opacity: 1 }}
+            transition={{ scale: { duration: 1.5, repeat: Infinity } }}
+            className="text-xs px-2 py-1 bg-[#00ff88]/20 text-[#00ff88] rounded-full"
+          >
+            Ready!
+          </motion.span>
         )}
       </div>
 
