@@ -49,5 +49,17 @@ export interface MachineIncomeResponse {
   accumulated: number;
   ratePerSecond: number;
   coinBoxCapacity: number;
+  coinBoxCurrent: number;
   isFull: boolean;
+  secondsUntilFull: number;
+  isExpired: boolean;
+  canCollect: boolean;
+  // Payout tracking
+  profitPaidOut: number;
+  principalPaidOut: number;
+  profitRemaining: number;
+  principalRemaining: number;
+  currentProfit: number;
+  currentPrincipal: number;
+  isBreakevenReached: boolean;
 }

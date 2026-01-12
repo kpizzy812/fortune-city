@@ -90,6 +90,10 @@ export class RiskyCollectService {
       throw new BadRequestException('Nothing to collect');
     }
 
+    // Track profit/principal from income (before multiplier)
+    const currentProfit = incomeState.currentProfit;
+    const currentPrincipal = incomeState.currentPrincipal;
+
     // Получаем конфиг гамбла для уровня машины
     const gambleConfig = getGambleLevelConfig(machine.fortuneGambleLevel);
     const winChance: number = gambleConfig.winChance;
@@ -101,12 +105,18 @@ export class RiskyCollectService {
 
     // Атомарная транзакция
     const result = await this.prisma.$transaction(async (tx) => {
-      // 1. Обновляем машину: сбрасываем coin box
+      // 1. Обновляем машину: сбрасываем coin box, track payouts
       const updatedMachine = await tx.machine.update({
         where: { id: machineId },
         data: {
           coinBoxCurrent: 0,
           lastCalculatedAt: new Date(),
+          profitPaidOut: {
+            increment: currentProfit,
+          },
+          principalPaidOut: {
+            increment: currentPrincipal,
+          },
         },
       });
 

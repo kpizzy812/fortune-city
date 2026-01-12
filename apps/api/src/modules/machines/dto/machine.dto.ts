@@ -52,6 +52,16 @@ export class MachineIncomeDto {
   coinBoxCurrent: number;
   isFull: boolean;
   secondsUntilFull: number;
+  isExpired: boolean;
+  canCollect: boolean;
+  // Payout tracking
+  profitPaidOut: number;
+  principalPaidOut: number;
+  profitRemaining: number;
+  principalRemaining: number;
+  currentProfit: number;
+  currentPrincipal: number;
+  isBreakevenReached: boolean;
 }
 
 export class CollectCoinsResponseDto {
@@ -69,4 +79,14 @@ export class TierInfoDto {
   yieldPercent: number;
   profit: number;
   dailyRate: number;
+}
+
+export class SellMachineEarlyResponseDto {
+  machine: MachineResponseDto;
+  profitReturned: number;
+  principalReturned: number;
+  totalReturned: number;
+  commission: number;
+  commissionRate: number;
+  newBalance: number;
 }

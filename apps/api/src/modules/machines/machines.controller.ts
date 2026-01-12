@@ -19,6 +19,7 @@ import {
   MachineIncomeDto,
   CollectCoinsResponseDto,
   TierInfoDto,
+  SellMachineEarlyResponseDto,
 } from './dto/machine.dto';
 import {
   RiskyCollectResponseDto,
@@ -222,5 +223,31 @@ export class MachinesController {
     @Req() req: AuthenticatedRequest,
   ): Promise<GambleInfoResponseDto> {
     return this.riskyCollectService.getGambleInfo(id, req.user.sub);
+  }
+
+  // ===== Early Sell Endpoint =====
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/sell-early')
+  async sellMachineEarly(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<SellMachineEarlyResponseDto> {
+    const result = await this.machinesService.sellMachineEarly(
+      id,
+      req.user.sub,
+    );
+
+    return {
+      machine: this.toResponseDto(
+        this.machinesService.enrichWithTierInfo(result.machine),
+      ),
+      profitReturned: result.profitReturned,
+      principalReturned: result.principalReturned,
+      totalReturned: result.totalReturned,
+      commission: result.commission,
+      commissionRate: result.commissionRate,
+      newBalance: result.newBalance,
+    };
   }
 }

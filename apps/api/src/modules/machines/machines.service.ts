@@ -10,6 +10,7 @@ import {
   getTierConfigOrThrow,
   COIN_BOX_LEVELS,
   REINVEST_REDUCTION,
+  calculateEarlySellCommission,
 } from '@fortune-city/shared';
 
 export interface CreateMachineInput {
@@ -125,6 +126,14 @@ export class MachinesService {
     secondsUntilFull: number;
     isExpired: boolean;
     canCollect: boolean;
+    // Payout tracking
+    profitPaidOut: number;
+    principalPaidOut: number;
+    profitRemaining: number;
+    principalRemaining: number;
+    currentProfit: number;
+    currentPrincipal: number;
+    isBreakevenReached: boolean;
   }> {
     const machine = await this.findByIdOrThrow(machineId);
 
@@ -132,6 +141,16 @@ export class MachinesService {
     const lastCalc = new Date(machine.lastCalculatedAt);
     const expiresAt = new Date(machine.expiresAt);
     const isExpired = now >= expiresAt || machine.status === 'expired';
+
+    // Calculate payout tracking
+    const profitPaidOut = Number(machine.profitPaidOut);
+    const principalPaidOut = Number(machine.principalPaidOut);
+    const profitAmount = Number(machine.profitAmount);
+    const purchasePrice = Number(machine.purchasePrice);
+
+    const profitRemaining = Math.max(0, profitAmount - profitPaidOut);
+    const principalRemaining = Math.max(0, purchasePrice - principalPaidOut);
+    const isBreakevenReached = profitPaidOut >= profitAmount;
 
     // For sold_early machines, return current values without recalculation
     if (machine.status === 'sold_early') {
@@ -144,6 +163,13 @@ export class MachinesService {
         secondsUntilFull: 0,
         isExpired: true,
         canCollect: Number(machine.coinBoxCurrent) > 0,
+        profitPaidOut,
+        principalPaidOut,
+        profitRemaining,
+        principalRemaining,
+        currentProfit: 0,
+        currentPrincipal: 0,
+        isBreakevenReached,
       };
     }
 
@@ -177,6 +203,12 @@ export class MachinesService {
     // Can collect: expired machines always, active only when full
     const canCollect = isExpired || isFull;
 
+    // Calculate current profit and principal in coinBox
+    // Rule: profit is paid first, then principal
+    const coinBoxValue = Number(actualCoinBox);
+    const currentProfit = Math.min(coinBoxValue, profitRemaining);
+    const currentPrincipal = Math.max(0, coinBoxValue - currentProfit);
+
     return {
       accumulated: Number(machine.accumulatedIncome.add(actualCoinBox)),
       ratePerSecond: Number(machine.ratePerSecond),
@@ -186,6 +218,13 @@ export class MachinesService {
       secondsUntilFull,
       isExpired,
       canCollect,
+      profitPaidOut,
+      principalPaidOut,
+      profitRemaining,
+      principalRemaining,
+      currentProfit,
+      currentPrincipal,
+      isBreakevenReached,
     };
   }
 
@@ -241,12 +280,18 @@ export class MachinesService {
 
     // Atomic transaction: coinBox → fortuneBalance + create transaction record
     const result = await this.prisma.$transaction(async (tx) => {
-      // 1. Update machine: reset coinBox, update lastCalculatedAt
+      // 1. Update machine: reset coinBox, update lastCalculatedAt, track payouts
       const updatedMachine = await tx.machine.update({
         where: { id: machineId },
         data: {
           coinBoxCurrent: 0,
           lastCalculatedAt: new Date(),
+          profitPaidOut: {
+            increment: incomeState.currentProfit,
+          },
+          principalPaidOut: {
+            increment: incomeState.currentPrincipal,
+          },
         },
       });
 
@@ -369,5 +414,119 @@ export class MachinesService {
   getTierById(tier: number) {
     const tiers = this.getTiers();
     return tiers.find((t) => t.tier === tier);
+  }
+
+  async sellMachineEarly(
+    machineId: string,
+    userId: string,
+  ): Promise<{
+    machine: Machine;
+    profitReturned: number;
+    principalReturned: number;
+    totalReturned: number;
+    commission: number;
+    commissionRate: number;
+    newBalance: number;
+  }> {
+    const machine = await this.findByIdOrThrow(machineId);
+
+    if (machine.userId !== userId) {
+      throw new BadRequestException('Machine does not belong to user');
+    }
+
+    if (machine.status !== 'active') {
+      throw new BadRequestException('Can only sell active machines');
+    }
+
+    // Calculate current income state
+    const incomeState = await this.calculateIncome(machineId);
+
+    // Calculate what's in coinBox and what's already paid out
+    const coinBoxAmount = incomeState.coinBoxCurrent;
+    const profitPaidOut = incomeState.profitPaidOut;
+    const principalPaidOut = incomeState.principalPaidOut;
+    const profitAmount = Number(machine.profitAmount);
+    const purchasePrice = Number(machine.purchasePrice);
+
+    // Calculate remaining principal
+    const principalRemaining = Math.max(0, purchasePrice - principalPaidOut);
+
+    // Early sell commission based on progress to BE
+    const commissionRate = calculateEarlySellCommission(
+      profitPaidOut,
+      profitAmount,
+    );
+
+    // Calculate what user gets back
+    // 1. Profit in coinBox (not paid out yet) - no commission on collection
+    const profitInCoinBox = incomeState.currentProfit;
+    const principalInCoinBox = incomeState.currentPrincipal;
+
+    // 2. Remaining principal (not yet paid out) - with commission
+    const principalNotInCoinBox = principalRemaining - principalInCoinBox;
+    const principalReturned = principalNotInCoinBox * (1 - commissionRate);
+
+    // Total returned
+    const totalReturned = coinBoxAmount + principalReturned;
+    const commission = principalNotInCoinBox * commissionRate;
+
+    // Atomic transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // 1. Mark machine as sold_early
+      const updatedMachine = await tx.machine.update({
+        where: { id: machineId },
+        data: {
+          status: 'sold_early',
+          coinBoxCurrent: 0,
+          lastCalculatedAt: new Date(),
+          profitPaidOut: {
+            increment: profitInCoinBox,
+          },
+          principalPaidOut: {
+            increment: principalInCoinBox + principalReturned,
+          },
+        },
+      });
+
+      // 2. Add to user balance
+      const updatedUser = await tx.user.update({
+        where: { id: userId },
+        data: {
+          fortuneBalance: {
+            increment: totalReturned,
+          },
+        },
+      });
+
+      // 3. Create transaction record
+      await tx.transaction.create({
+        data: {
+          userId,
+          machineId,
+          type: 'machine_early_sell',
+          amount: totalReturned,
+          currency: 'FORTUNE',
+          taxAmount: commission,
+          taxRate: commissionRate,
+          netAmount: totalReturned,
+          status: 'completed',
+        },
+      });
+
+      return {
+        machine: updatedMachine,
+        newBalance: Number(updatedUser.fortuneBalance),
+      };
+    });
+
+    return {
+      machine: result.machine,
+      profitReturned: profitInCoinBox,
+      principalReturned: principalInCoinBox + principalReturned,
+      totalReturned,
+      commission,
+      commissionRate,
+      newBalance: result.newBalance,
+    };
   }
 }

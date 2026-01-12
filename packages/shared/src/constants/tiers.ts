@@ -166,3 +166,25 @@ export function calculateGambleEV(level: number): number {
   return (config.winChance * GAMBLE_WIN_MULTIPLIER) +
          ((1 - config.winChance) * GAMBLE_LOSE_MULTIPLIER);
 }
+
+// Early sell commission based on progress to breakeven
+// Breakeven is at 67% of lifecycle for all tiers
+export function calculateEarlySellCommission(
+  profitPaidOut: number,
+  profitAmount: number,
+): number {
+  if (profitAmount === 0) {
+    return 1.0; // 100% commission if no profit (shouldn't happen)
+  }
+
+  // Progress to breakeven (0-100)
+  const progressPercent = (profitPaidOut / profitAmount) * 100;
+
+  // Commission tiers from math.md
+  if (progressPercent < 20) return 0.20;  // 20% commission
+  if (progressPercent < 40) return 0.35;  // 35%
+  if (progressPercent < 60) return 0.55;  // 55%
+  if (progressPercent < 80) return 0.75;  // 75%
+  if (progressPercent < 100) return 0.90; // 90%
+  return 1.0; // 100% - после BE тело невыводное
+}
