@@ -6,6 +6,8 @@ import type {
   RiskyCollectResult,
   GambleInfo,
   UpgradeGambleResult,
+  CoinBoxInfo,
+  UpgradeCoinBoxResult,
   CanAffordResponse,
   PurchaseResult,
   Transaction,
@@ -132,6 +134,17 @@ class ApiClient {
 
   async upgradeFortuneGamble(token: string, machineId: string): Promise<UpgradeGambleResult> {
     return this.request<UpgradeGambleResult>(`/machines/${machineId}/upgrade-gamble`, {
+      token,
+      method: 'POST',
+    });
+  }
+
+  async getCoinBoxInfo(token: string, machineId: string): Promise<CoinBoxInfo> {
+    return this.request<CoinBoxInfo>(`/machines/${machineId}/coinbox-info`, { token });
+  }
+
+  async upgradeCoinBox(token: string, machineId: string): Promise<UpgradeCoinBoxResult> {
+    return this.request<UpgradeCoinBoxResult>(`/machines/${machineId}/upgrade-coinbox`, {
       token,
       method: 'POST',
     });

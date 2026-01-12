@@ -90,3 +90,22 @@ export class SellMachineEarlyResponseDto {
   commissionRate: number;
   newBalance: number;
 }
+
+export class UpgradeCoinBoxResponseDto {
+  machine: MachineResponseDto;
+  cost: number;
+  newLevel: number;
+  newCapacity: number;
+  user: {
+    fortuneBalance: string;
+  };
+}
+
+export class CoinBoxInfoResponseDto {
+  currentLevel: number;
+  currentCapacityHours: number;
+  canUpgrade: boolean;
+  nextLevel: number | null;
+  nextCapacityHours: number | null;
+  upgradeCost: number | null;
+}

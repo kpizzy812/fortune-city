@@ -106,6 +106,29 @@ export interface UpgradeGambleResult {
 }
 
 // ============================================
+// Coin Box Upgrade Types
+// ============================================
+
+export interface CoinBoxInfo {
+  currentLevel: number;
+  currentCapacityHours: number;
+  canUpgrade: boolean;
+  nextLevel: number | null;
+  nextCapacityHours: number | null;
+  upgradeCost: number | null;
+}
+
+export interface UpgradeCoinBoxResult {
+  machine: Machine;
+  cost: number;
+  newLevel: number;
+  newCapacity: number;
+  user: {
+    fortuneBalance: string;
+  };
+}
+
+// ============================================
 // Economy Types
 // ============================================
 
