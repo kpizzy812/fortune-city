@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { BottomNavigation } from './BottomNavigation';
+import { SidebarNavigation } from './SidebarNavigation';
 
 interface AuthenticatedLayoutProps {
   children: ReactNode;
@@ -11,15 +12,25 @@ interface AuthenticatedLayoutProps {
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { user } = useAuthStore();
 
-  // Show bottom navigation only for authenticated users
+  // Show navigation only for authenticated users
   if (!user) {
     return <>{children}</>;
   }
 
   return (
     <>
-      <div className="pb-20">{children}</div>
-      <BottomNavigation />
+      {/* Sidebar for desktop (lg+) */}
+      <SidebarNavigation />
+
+      {/* Main content area */}
+      <div className="pb-20 lg:pb-0 lg:ml-64">
+        {children}
+      </div>
+
+      {/* Bottom navigation for mobile (hidden on lg+) */}
+      <div className="lg:hidden">
+        <BottomNavigation />
+      </div>
     </>
   );
 }
