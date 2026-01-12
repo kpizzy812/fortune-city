@@ -208,6 +208,23 @@ enum Chain {
   tron
 }
 
+// ============== SYSTEM SETTINGS ==============
+// Singleton table for global configuration
+
+model SystemSettings {
+  id              String @id @default("default")
+
+  // Max tier available for purchase globally (without progression)
+  // Users can buy tiers 1..maxGlobalTier immediately
+  // After buying maxTierReached, next tier unlocks as usual
+  maxGlobalTier   Int    @default(1) @map("max_global_tier")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
 // ============== REFERRAL BONUSES ==============
 
 model ReferralBonus {

@@ -8,6 +8,7 @@ import { Machine, Transaction, User, Prisma } from '@prisma/client';
 import { MachinesService } from '../../machines/machines.service';
 import { TransactionsService } from './transactions.service';
 import { FundSourceService } from './fund-source.service';
+import { SettingsService } from '../../settings/settings.service';
 import { getTierConfigOrThrow, TAX_RATES_BY_TIER } from '@fortune-city/shared';
 
 export interface PurchaseMachineInput {
@@ -28,6 +29,7 @@ export class PurchaseService {
     private readonly machinesService: MachinesService,
     private readonly transactionsService: TransactionsService,
     private readonly fundSourceService: FundSourceService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   async purchaseMachine(
@@ -54,9 +56,11 @@ export class PurchaseService {
     }
 
     // Validate tier accessibility
-    // User can buy tier up to maxTierReached + 1 (unlock next tier)
-    // Or any tier they've already reached
-    const maxAllowedTier = Math.max(user.maxTierReached + 1, 1);
+    // maxGlobalTier - tiers available to everyone without progression
+    // maxTierReached + 1 - next tier unlocked by purchasing previous
+    // User can buy: max(maxGlobalTier, maxTierReached + 1)
+    const maxGlobalTier = await this.settingsService.getMaxGlobalTier();
+    const maxAllowedTier = Math.max(maxGlobalTier, user.maxTierReached + 1);
     if (input.tier > maxAllowedTier) {
       throw new BadRequestException(
         `Tier ${input.tier} is locked. Max available tier: ${maxAllowedTier}`,
@@ -177,7 +181,8 @@ export class PurchaseService {
 
     const balance = Number(user.fortuneBalance);
     const price = tierConfig.price;
-    const maxAllowedTier = Math.max(user.maxTierReached + 1, 1);
+    const maxGlobalTier = await this.settingsService.getMaxGlobalTier();
+    const maxAllowedTier = Math.max(maxGlobalTier, user.maxTierReached + 1);
 
     return {
       canAfford: balance >= price,

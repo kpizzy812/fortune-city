@@ -9,6 +9,7 @@ import { UsersModule } from './modules/users/users.module';
 import { MachinesModule } from './modules/machines/machines.module';
 import { EconomyModule } from './modules/economy/economy.module';
 import { MachineLifecycleModule } from './modules/machine-lifecycle/machine-lifecycle.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { MachineLifecycleModule } from './modules/machine-lifecycle/machine-life
     }),
     ScheduleModule.forRoot(),
     PrismaModule,
+    SettingsModule,
     UsersModule,
     AuthModule,
     MachinesModule,
