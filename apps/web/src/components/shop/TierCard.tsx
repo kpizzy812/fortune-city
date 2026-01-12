@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Lock } from 'lucide-react';
 import type { TierInfo, CanAffordResponse } from '@/types';
 import { Button } from '@/components/ui/Button';
 
@@ -51,7 +52,7 @@ export function TierCard({
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-white text-lg">{tier.name}</h3>
               {isLocked && (
-                <span className="text-lg">🔒</span>
+                <Lock className="w-4 h-4 text-[#6b6b6b]" />
               )}
             </div>
             <p className="text-[#b0b0b0] text-sm">Tier {tier.tier}</p>
@@ -90,7 +91,7 @@ export function TierCard({
       {/* Button */}
       {isLocked ? (
         <Button variant="ghost" size="md" fullWidth disabled>
-          🔒 Reach Tier {tier.tier - 1} first
+          <Lock className="w-4 h-4 mr-1" /> Reach Tier {tier.tier - 1} first
         </Button>
       ) : !isAffordable && canAfford ? (
         <Button variant="ghost" size="md" fullWidth disabled>

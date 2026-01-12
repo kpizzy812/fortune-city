@@ -3,20 +3,21 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { Home, ShoppingCart, FerrisWheel, Users, Wallet, type LucideIcon } from 'lucide-react';
 
 interface NavItem {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   href: string;
   isComingSoon?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { icon: '🏠', label: 'Hall', href: '/' },
-  { icon: '🛒', label: 'Shop', href: '/shop' },
-  { icon: '🎡', label: 'Wheel', href: '/wheel', isComingSoon: true },
-  { icon: '👥', label: 'Refs', href: '/refs', isComingSoon: true },
-  { icon: '💰', label: 'Cash', href: '/cash', isComingSoon: true },
+  { icon: Home, label: 'Hall', href: '/' },
+  { icon: ShoppingCart, label: 'Shop', href: '/shop' },
+  { icon: FerrisWheel, label: 'Wheel', href: '/wheel', isComingSoon: true },
+  { icon: Users, label: 'Refs', href: '/refs', isComingSoon: true },
+  { icon: Wallet, label: 'Cash', href: '/cash', isComingSoon: true },
 ];
 
 export function BottomNavigation() {
@@ -54,7 +55,7 @@ export function BottomNavigation() {
                   transition-colors
                 "
               >
-                <span className="text-xl opacity-50">{item.icon}</span>
+                <item.icon className="w-5 h-5 opacity-50" />
                 <span className="text-xs mt-0.5 opacity-50">{item.label}</span>
                 <span
                   className="
@@ -81,13 +82,12 @@ export function BottomNavigation() {
                 ${isActive ? 'text-[#ff2d95]' : 'text-[#b0b0b0] hover:text-white'}
               `}
             >
-              <motion.span
-                className="text-xl"
+              <motion.div
                 animate={isActive ? { scale: [1, 1.2, 1] } : {}}
                 transition={{ duration: 0.3 }}
               >
-                {item.icon}
-              </motion.span>
+                <item.icon className="w-5 h-5" />
+              </motion.div>
               <span className="text-xs mt-0.5">{item.label}</span>
               {isActive && (
                 <motion.div

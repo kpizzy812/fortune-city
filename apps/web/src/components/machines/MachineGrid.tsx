@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Gamepad2 } from 'lucide-react';
 import type { Machine, MachineIncome } from '@/types';
 import { MachineCard } from './MachineCard';
 import { Button } from '@/components/ui/Button';
@@ -42,7 +43,7 @@ export function MachineGrid({
           bg-[#2a1a4e] rounded-xl border border-[#00d4ff]/30
         "
       >
-        <span className="text-6xl mb-4">🎰</span>
+        <Gamepad2 className="w-16 h-16 mb-4 text-[#00d4ff]" />
         <h3 className="text-xl font-semibold text-white mb-2">No machines yet</h3>
         <p className="text-[#b0b0b0] text-center mb-6 max-w-xs">
           Buy your first slot machine to start earning $FORTUNE!

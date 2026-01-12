@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Clock } from 'lucide-react';
 import type { Machine, MachineIncome } from '@/types';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Button } from '@/components/ui/Button';
@@ -132,7 +133,7 @@ export function MachineCard({
 
       {/* Time remaining */}
       <div className="flex items-center gap-1 text-sm text-[#b0b0b0] mb-4">
-        <span>⏱️</span>
+        <Clock className="w-4 h-4" />
         <span>{timeRemaining} remaining</span>
       </div>
 

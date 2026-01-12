@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Coins } from 'lucide-react';
 
 interface IncomeCounterProps {
   accumulated: number;
@@ -24,7 +25,7 @@ export function IncomeCounter({
   return (
     <div className="flex items-center gap-2">
       {/* Coin icon */}
-      <motion.span
+      <motion.div
         animate={
           isFull
             ? {
@@ -40,8 +41,8 @@ export function IncomeCounter({
         }}
         className="text-[#ffd700]"
       >
-        💰
-      </motion.span>
+        <Coins className="w-6 h-6" />
+      </motion.div>
 
       {/* Amount */}
       <motion.span

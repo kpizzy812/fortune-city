@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { TierInfo, CanAffordResponse } from '@/types';
 import { Button } from '@/components/ui/Button';
 
@@ -105,7 +106,11 @@ function TierCard({
           <p className="text-2xl font-bold text-[#ffd700] drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]">
             ${tier.price.toLocaleString()}
           </p>
-          {isLocked && <span className="text-[#ff4444] text-xs font-medium">🔒 Locked</span>}
+          {isLocked && (
+            <span className="flex items-center gap-1 text-[#ff4444] text-xs font-medium">
+              <Lock className="w-3 h-3" /> Locked
+            </span>
+          )}
         </div>
       </div>
 
@@ -242,9 +247,7 @@ export function TierCarousel({
               onClick={() => scrollTo('left')}
               className="absolute left-2 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-[#2a1a4e]/90 border border-[#00d4ff]/50 rounded-full flex items-center justify-center text-[#00d4ff] hover:bg-[#00d4ff]/20 transition shadow-lg backdrop-blur-sm"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
+              <ChevronLeft className="w-5 h-5" />
             </motion.button>
           )}
         </AnimatePresence>
@@ -258,9 +261,7 @@ export function TierCarousel({
               onClick={() => scrollTo('right')}
               className="absolute right-2 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-[#2a1a4e]/90 border border-[#00d4ff]/50 rounded-full flex items-center justify-center text-[#00d4ff] hover:bg-[#00d4ff]/20 transition shadow-lg backdrop-blur-sm"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
+              <ChevronRight className="w-5 h-5" />
             </motion.button>
           )}
         </AnimatePresence>

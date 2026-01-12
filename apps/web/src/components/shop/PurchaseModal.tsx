@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertTriangle, XCircle } from 'lucide-react';
 import type { TierInfo, CanAffordResponse } from '@/types';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -85,8 +86,9 @@ export function PurchaseModal({
         {/* Low balance warning */}
         {isLowBalance && balanceAfter >= 0 && (
           <div className="p-3 bg-[#ffaa00]/10 border border-[#ffaa00]/30 rounded-lg">
-            <p className="text-[#ffaa00] text-sm">
-              ⚠️ Your balance will be low after this purchase
+            <p className="text-[#ffaa00] text-sm flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              Your balance will be low after this purchase
             </p>
           </div>
         )}
@@ -94,8 +96,9 @@ export function PurchaseModal({
         {/* Cannot afford warning */}
         {canAfford && !canAfford.canAfford && (
           <div className="p-3 bg-[#ff4444]/10 border border-[#ff4444]/30 rounded-lg">
-            <p className="text-[#ff4444] text-sm">
-              ❌ Insufficient balance. You need ${canAfford.shortfall.toFixed(2)} more.
+            <p className="text-[#ff4444] text-sm flex items-center gap-2">
+              <XCircle className="w-4 h-4 flex-shrink-0" />
+              Insufficient balance. You need ${canAfford.shortfall.toFixed(2)} more.
             </p>
           </div>
         )}
