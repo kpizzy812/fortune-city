@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { Home, ShoppingCart, FerrisWheel, Users, Wallet, type LucideIcon } from 'lucide-react';
 
 interface NavItem {
@@ -25,8 +26,9 @@ export function BottomNavigation() {
 
   const handleComingSoon = (e: React.MouseEvent, label: string) => {
     e.preventDefault();
-    // Simple alert for now, could be replaced with a toast
-    alert(`${label} is coming soon!`);
+    toast.info(`${label} is coming soon!`, {
+      description: 'Stay tuned for updates',
+    });
   };
 
   return (

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { Home, ShoppingCart, FerrisWheel, Users, Wallet, ChevronLeft, ChevronRight, LogOut, type LucideIcon } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useUIStore } from '@/stores/ui.store';
@@ -29,7 +30,9 @@ export function SidebarNavigation() {
 
   const handleComingSoon = (e: React.MouseEvent, label: string) => {
     e.preventDefault();
-    alert(`${label} is coming soon!`);
+    toast.info(`${label} is coming soon!`, {
+      description: 'Stay tuned for updates',
+    });
   };
 
   return (

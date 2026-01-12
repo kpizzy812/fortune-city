@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Toaster } from 'sonner';
 import './globals.css';
 import { TelegramProvider } from '@/providers/TelegramProvider';
 import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout';
@@ -32,6 +33,19 @@ export default function RootLayout({
         <TelegramProvider>
           <AuthenticatedLayout>{children}</AuthenticatedLayout>
         </TelegramProvider>
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            style: {
+              background: '#2a1a4e',
+              border: '1px solid rgba(255, 45, 149, 0.3)',
+              color: '#ffffff',
+            },
+            className: 'font-sans',
+          }}
+          theme="dark"
+          richColors
+        />
       </body>
     </html>
   );
