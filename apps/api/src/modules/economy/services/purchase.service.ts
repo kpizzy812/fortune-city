@@ -57,13 +57,29 @@ export class PurchaseService {
 
     // Validate tier accessibility
     // maxGlobalTier - tiers available to everyone without progression
-    // maxTierReached + 1 - next tier unlocked by purchasing previous
-    // User can buy: max(maxGlobalTier, maxTierReached + 1)
+    // maxTierUnlocked - tier unlocked after machine expired (progression)
+    // User can buy: max(maxGlobalTier, maxTierUnlocked)
     const maxGlobalTier = await this.settingsService.getMaxGlobalTier();
-    const maxAllowedTier = Math.max(maxGlobalTier, user.maxTierReached + 1);
+    const maxAllowedTier = Math.max(maxGlobalTier, user.maxTierUnlocked);
     if (input.tier > maxAllowedTier) {
       throw new BadRequestException(
         `Tier ${input.tier} is locked. Max available tier: ${maxAllowedTier}`,
+      );
+    }
+
+    // Check if user already has an active machine of this tier
+    // Only one active machine per tier allowed
+    const activeMachineOfSameTier = await this.prisma.machine.findFirst({
+      where: {
+        userId,
+        tier: input.tier,
+        status: 'active',
+      },
+    });
+
+    if (activeMachineOfSameTier) {
+      throw new BadRequestException(
+        `You already have an active machine of tier ${input.tier}. Wait for it to expire before buying another.`,
       );
     }
 
@@ -169,6 +185,7 @@ export class PurchaseService {
     currentBalance: number;
     shortfall: number;
     tierLocked: boolean;
+    hasActiveMachine: boolean;
   }> {
     const tierConfig = getTierConfigOrThrow(tier);
     const user = await this.prisma.user.findUnique({
@@ -182,7 +199,16 @@ export class PurchaseService {
     const balance = Number(user.fortuneBalance);
     const price = tierConfig.price;
     const maxGlobalTier = await this.settingsService.getMaxGlobalTier();
-    const maxAllowedTier = Math.max(maxGlobalTier, user.maxTierReached + 1);
+    const maxAllowedTier = Math.max(maxGlobalTier, user.maxTierUnlocked);
+
+    // Check if user already has an active machine of this tier
+    const activeMachineOfSameTier = await this.prisma.machine.findFirst({
+      where: {
+        userId,
+        tier,
+        status: 'active',
+      },
+    });
 
     return {
       canAfford: balance >= price,
@@ -190,6 +216,7 @@ export class PurchaseService {
       currentBalance: balance,
       shortfall: Math.max(0, price - balance),
       tierLocked: tier > maxAllowedTier,
+      hasActiveMachine: !!activeMachineOfSameTier,
     };
   }
 }

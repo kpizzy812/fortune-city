@@ -71,6 +71,7 @@ export class EconomyController {
         id: result.user.id,
         fortuneBalance: result.user.fortuneBalance.toString(),
         maxTierReached: result.user.maxTierReached,
+        maxTierUnlocked: result.user.maxTierUnlocked,
         currentTaxRate: result.user.currentTaxRate.toString(),
       },
     };

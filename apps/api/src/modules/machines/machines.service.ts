@@ -298,17 +298,45 @@ export class MachinesService {
   async checkAndExpireMachines(): Promise<number> {
     const now = new Date();
 
-    const result = await this.prisma.machine.updateMany({
+    // Find all machines that need to expire (with user info)
+    const machinesToExpire = await this.prisma.machine.findMany({
       where: {
         status: 'active',
         expiresAt: { lte: now },
       },
-      data: {
-        status: 'expired',
+      include: {
+        user: true,
       },
     });
 
-    return result.count;
+    if (machinesToExpire.length === 0) {
+      return 0;
+    }
+
+    // Process each machine in a transaction
+    await this.prisma.$transaction(async (tx) => {
+      for (const machine of machinesToExpire) {
+        // 1. Mark machine as expired
+        await tx.machine.update({
+          where: { id: machine.id },
+          data: { status: 'expired' },
+        });
+
+        // 2. Unlock next tier for user if this tier >= current maxTierUnlocked
+        // Only unlock if this was a progression machine (not buying lower tiers again)
+        const nextTier = machine.tier + 1;
+        if (nextTier <= 10 && machine.tier >= machine.user.maxTierUnlocked) {
+          await tx.user.update({
+            where: { id: machine.userId },
+            data: {
+              maxTierUnlocked: Math.max(machine.user.maxTierUnlocked, nextTier),
+            },
+          });
+        }
+      }
+    });
+
+    return machinesToExpire.length;
   }
 
   enrichWithTierInfo(machine: Machine): MachineWithTierInfo {

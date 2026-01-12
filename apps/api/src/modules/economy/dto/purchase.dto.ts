@@ -41,6 +41,7 @@ export class PurchaseMachineResponseDto {
     id: string;
     fortuneBalance: string;
     maxTierReached: number;
+    maxTierUnlocked: number;
     currentTaxRate: string;
   };
 }
@@ -51,6 +52,7 @@ export class CanAffordResponseDto {
   currentBalance: number;
   shortfall: number;
   tierLocked: boolean;
+  hasActiveMachine: boolean;
 }
 
 export class TransactionResponseDto {
