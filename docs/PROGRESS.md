@@ -1,7 +1,7 @@
 # Fortune City - Progress
 
 **Последнее обновление:** 2026-01-13
-**Текущий этап:** Phase 2 в процессе — порядок выплат и досрочная продажа реализованы ✅
+**Текущий этап:** Phase 2 в процессе — порядок выплат и досрочная продажа полностью реализованы с comprehensive тестами (42/42 проходят) ✅
 
 ## Архитектура платформ
 
@@ -112,11 +112,20 @@
   - calculateIncome() теперь разделяет profit и principal
   - collectCoins() и riskyCollect() отслеживают profitPaidOut/principalPaidOut
   - Прибыль выплачивается первой (с налогом), потом тело (без налога)
+  - **21 новый comprehensive unit тест** (3 для calculateIncome, 2 для collectCoins, 7 для sellMachineEarly, 9 для calculateEarlySellCommission)
+  - Всего 42 теста в machines.service.spec.ts, все проходят ✅
 - [x] Досрочная продажа машин с комиссией ✅
   - Новый endpoint POST /machines/:id/sell-early
   - Комиссия зависит от прогресса к breakeven (20-100%)
   - calculateEarlySellCommission() в shared/constants/tiers.ts
   - После BE (100% прогресса) тело невыводное
+  - Покрытие тестами: все 6 тиров комиссии + edge cases
+- [x] Fortune's Gamble (Risky Collect) ✅
+  - Endpoint POST /machines/:id/collect-risky
+  - 2x multiplier при победе, 0.5x при проигрыше
+  - 4 уровня апгрейда (win chance: 13.33% → 18.67%)
+  - Отслеживание profit/principal при risky collect
+  - RiskyCollectService с тестами
 
 ### Апгрейды + Рефералы
 - [ ] Апгрейды Coin Box (5 уровней)
