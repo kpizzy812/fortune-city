@@ -43,6 +43,8 @@ model User {
   machines          Machine[]
   transactions      Transaction[]
   depositAddresses  DepositAddress[]
+  deposits          Deposit[]
+  walletConnections WalletConnection[]
   referralBonuses   ReferralBonus[]    @relation("ReferralReceiver")
   referralBonusesSent ReferralBonus[]  @relation("ReferralSource")
 
@@ -208,7 +210,86 @@ enum Currency {
   USDT
 }
 
+// ============== DEPOSITS ==============
+
+model Deposit {
+  id        String @id @default(cuid())
+  userId    String @map("user_id")
+  user      User   @relation(fields: [userId], references: [id])
+
+  // Deposit method
+  method      DepositMethod
+
+  chain       Chain           @default(solana)
+  currency    DepositCurrency
+  txSignature String          @unique @map("tx_signature")
+
+  // Original amount in native currency
+  amount      Decimal @db.Decimal(20, 8)
+  // Converted to USD (this is what gets credited)
+  amountUsd   Decimal @default(0) @map("amount_usd") @db.Decimal(20, 8)
+
+  // Exchange rate at deposit time
+  rateToUsd   Decimal? @map("rate_to_usd") @db.Decimal(20, 8)
+
+  // For wallet connect: memo used in transaction
+  memo        String?
+
+  status       DepositStatus @default(pending)
+  slot         BigInt?
+  confirmedAt  DateTime?     @map("confirmed_at")
+  creditedAt   DateTime?     @map("credited_at")
+  errorMessage String?       @map("error_message")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@index([memo])
+  @@map("deposits")
+}
+
+enum DepositMethod {
+  wallet_connect
+  deposit_address
+}
+
+enum DepositCurrency {
+  SOL
+  USDT_SOL
+  FORTUNE
+}
+
+enum DepositStatus {
+  pending     // Detected, waiting confirmation
+  confirmed   // Finalized on chain
+  credited    // Balance updated
+  failed      // Error during processing
+}
+
+// ============== WALLET CONNECTIONS ==============
+// Links user's external wallet for Wallet Connect deposits
+
+model WalletConnection {
+  id        String @id @default(cuid())
+  userId    String @map("user_id")
+  user      User   @relation(fields: [userId], references: [id])
+
+  chain         Chain
+  walletAddress String @map("wallet_address")
+
+  // Last connection time
+  connectedAt   DateTime @default(now()) @map("connected_at")
+
+  @@unique([userId, chain])
+  @@unique([walletAddress, chain])
+  @@index([walletAddress])
+  @@map("wallet_connections")
+}
+
 // ============== DEPOSIT ADDRESSES ==============
+// HD Wallet derived addresses for deposits from exchanges
 
 model DepositAddress {
   id       String @id @default(cuid())
@@ -218,6 +299,15 @@ model DepositAddress {
   chain    Chain
   address  String
   isActive Boolean @default(true) @map("is_active")
+
+  // HD Wallet derivation
+  derivationIndex Int @map("derivation_index")
+
+  // Helius webhook tracking
+  webhookId String? @map("webhook_id")
+
+  // Sweep tracking
+  lastSweptAt DateTime? @map("last_swept_at")
 
   createdAt DateTime @default(now()) @map("created_at")
 

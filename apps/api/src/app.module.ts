@@ -12,6 +12,7 @@ import { MachineLifecycleModule } from './modules/machine-lifecycle/machine-life
 import { SettingsModule } from './modules/settings/settings.module';
 import { ReferralsModule } from './modules/referrals/referrals.module';
 import { FortuneRateModule } from './modules/fortune-rate/fortune-rate.module';
+import { DepositsModule } from './modules/deposits/deposits.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { FortuneRateModule } from './modules/fortune-rate/fortune-rate.module';
     MachineLifecycleModule,
     ReferralsModule,
     FortuneRateModule,
+    DepositsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

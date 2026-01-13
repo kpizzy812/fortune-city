@@ -182,7 +182,9 @@ export class FundSourceService {
     }
 
     // Calculate proportions of payout
-    const freshRatio = new Prisma.Decimal(fundSource.freshDepositAmount).div(totalOriginal);
+    const freshRatio = new Prisma.Decimal(fundSource.freshDepositAmount).div(
+      totalOriginal,
+    );
     const freshPortion = amount.mul(freshRatio);
     const profitPortion = amount.sub(freshPortion);
 
@@ -225,7 +227,7 @@ export class FundSourceService {
     const profitAvailable = new Prisma.Decimal(user.totalProfitCollected);
 
     // Deduct from profit first (taxed), then from fresh (0% tax)
-    let fromProfit = Prisma.Decimal.min(withdrawAmount, profitAvailable);
+    const fromProfit = Prisma.Decimal.min(withdrawAmount, profitAvailable);
     let fromFresh = withdrawAmount.sub(fromProfit);
 
     // If not enough fresh either, cap at available

@@ -23,7 +23,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: ShoppingCart, labelKey: 'shop', href: '/shop' },
   { icon: FerrisWheel, labelKey: 'wheel', href: '/wheel', isComingSoon: true },
   { icon: Users, labelKey: 'refs', href: '/refs' },
-  { icon: Wallet, labelKey: 'cash', href: '/cash', isComingSoon: true },
+  { icon: Wallet, labelKey: 'cash', href: '/cash' },
 ];
 
 export function SidebarNavigation() {

@@ -285,6 +285,64 @@ class ApiClient {
   async getFortuneRate(): Promise<FortuneRateResponse> {
     return this.request<FortuneRateResponse>('/fortune-rate');
   }
+
+  // ============================================
+  // Deposits endpoints
+  // ============================================
+
+  async connectWallet(
+    token: string,
+    walletAddress: string,
+  ): Promise<{ connected: boolean }> {
+    return this.request<{ connected: boolean }>('/deposits/wallet-connect', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ walletAddress }),
+    });
+  }
+
+  async getConnectedWallet(token: string): Promise<WalletConnectionData | null> {
+    const result = await this.request<{ wallet: WalletConnectionData | null }>(
+      '/deposits/wallet',
+      { token },
+    );
+    return result.wallet;
+  }
+
+  async initiateDeposit(
+    token: string,
+    data: InitiateDepositRequest,
+  ): Promise<InitiateDepositResponse> {
+    return this.request<InitiateDepositResponse>('/deposits/initiate', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  async confirmDeposit(
+    token: string,
+    depositId: string,
+    txSignature: string,
+  ): Promise<{ status: string }> {
+    return this.request<{ status: string }>('/deposits/confirm', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ depositId, txSignature }),
+    });
+  }
+
+  async getDepositAddress(token: string): Promise<DepositAddressResponse> {
+    return this.request<DepositAddressResponse>('/deposits/address', { token });
+  }
+
+  async getDeposits(token: string): Promise<DepositData[]> {
+    return this.request<DepositData[]>('/deposits', { token });
+  }
+
+  async getDepositRates(): Promise<DepositRatesResponse> {
+    return this.request<DepositRatesResponse>('/deposits/rates');
+  }
 }
 
 export const api = new ApiClient(API_URL);
@@ -364,4 +422,70 @@ export interface FortuneRateData {
 export interface FortuneRateResponse {
   success: boolean;
   data: FortuneRateData | null;
+}
+
+// ============================================
+// Deposits Types
+// ============================================
+
+export type DepositCurrency = 'SOL' | 'USDT_SOL' | 'FORTUNE';
+export type DepositStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'credited'
+  | 'failed'
+  | 'expired';
+
+export interface WalletConnectionData {
+  id: string;
+  userId: string;
+  chain: string;
+  walletAddress: string;
+  connectedAt: string;
+}
+
+export interface InitiateDepositRequest {
+  currency: DepositCurrency;
+  amount: number;
+  walletAddress: string;
+}
+
+export interface InitiateDepositResponse {
+  depositId: string;
+  memo: string;
+  recipientAddress: string;
+  amount: number;
+  currency: DepositCurrency;
+}
+
+export interface DepositAddressResponse {
+  address: string;
+  qrCode: string;
+  minDeposit: number;
+}
+
+export interface DepositData {
+  id: string;
+  userId: string;
+  method: 'wallet_connect' | 'deposit_address';
+  chain: string;
+  currency: DepositCurrency;
+  txSignature: string;
+  amount: string;
+  amountUsd: string;
+  rateToUsd: string | null;
+  memo: string | null;
+  status: DepositStatus;
+  slot: string | null;
+  confirmedAt: string | null;
+  creditedAt: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DepositRatesResponse {
+  sol: number;
+  fortune: number;
+  usdt: number;
 }

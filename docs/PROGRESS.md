@@ -1,7 +1,7 @@
 # Fortune City - Progress
 
 **Последнее обновление:** 2026-01-14
-**Текущий этап:** Phase 3 — Solana Deposits (архитектура готова, начинаем реализацию)
+**Текущий этап:** Phase 3 — Solana Deposits ✅ ГОТОВО (гибридный подход: Wallet Connect + Deposit Address)
 
 ## Архитектура платформ
 
@@ -214,29 +214,54 @@
 
 ---
 
-## Phase 3: Депозиты (Solana) — В ПРОЦЕССЕ
+## Phase 3: Депозиты (Solana) — ✅ ГОТОВО
 
 **Архитектура:** см. [DEPOSITS_ARCHITECTURE.md](./DEPOSITS_ARCHITECTURE.md)
 
-### Backend
-- [ ] DepositsModule (controller, service, DTOs)
-- [ ] AddressGeneratorService (HD Wallet derivation)
-- [ ] HeliusWebhookService (регистрация адресов, валидация)
-- [ ] DepositProcessorService (конвертация в USD, зачисление)
-- [ ] SweepService (автосбор на hot wallet + gas management)
-- [ ] PriceOracleService (SOL/USD курс)
-- [ ] Prisma schema (Deposit, обновить DepositAddress)
+### Backend ✅
+- [x] DepositsModule (controller, service, DTOs)
+- [x] AddressGeneratorService (HD Wallet derivation via ed25519-hd-key)
+- [x] HeliusWebhookService (регистрация адресов, валидация, webhook callback)
+- [x] DepositProcessorService (конвертация в USD, зачисление, referral bonuses)
+- [x] SweepService (cron каждые 15 мин, автосбор на hot wallet + gas distribution)
+- [x] PriceOracleService (CoinGecko SOL/USD + Fortune Rate)
+- [x] SolanaRpcService (SOL/SPL transfers, balance checks)
+- [x] Prisma schema:
+  - Deposit model (method, currency, status, amounts, tx info)
+  - WalletConnection model (wallet connect support)
+  - DepositAddress updates (derivationIndex, webhookId, lastSweptAt)
 
-### Поддерживаемые валюты
-- [ ] SOL (native) → USD
-- [ ] USDT SPL (Es9vMF...) → USD (1:1)
-- [ ] FORTUNE SPL (4NBMaa...) → USD
+### Гибридный подход ✅
+- [x] **Wallet Connect**: прямые депозиты с подключённого кошелька (Phantom, Solflare и др.)
+- [x] **Deposit Address**: уникальный адрес для депозитов с бирж/других кошельков
 
-### Frontend
-- [ ] Страница /cash с выбором валюты
-- [ ] QR-код для адреса
-- [ ] История депозитов
-- [ ] Курсы валют в реальном времени
+### Поддерживаемые валюты ✅
+- [x] SOL (native) → USD (via CoinGecko)
+- [x] USDT SPL (Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB) → USD (1:1)
+- [x] FORTUNE SPL (FORTUNE_MINT_ADDRESS из env) → USD (via PriceOracle)
+
+### Frontend ✅
+- [x] SolanaWalletProvider (Wallet Standard + auto-detect)
+- [x] deposits.store.ts (Zustand state management)
+- [x] Страница /cash с двумя вкладками:
+  - Wallet Connect: подключение кошелька, выбор валюты, ввод суммы, депозит
+  - Deposit Address: QR-код, копирование адреса, инструкции
+- [x] История последних депозитов
+- [x] Курсы валют в реальном времени
+- [x] API endpoints в api.ts:
+  - connectWallet, getConnectedWallet
+  - initiateDeposit, confirmDeposit
+  - getDepositAddress, getDeposits, getDepositRates
+
+### Endpoints
+- POST /deposits/wallet-connect — подключение кошелька
+- GET /deposits/wallet — получение подключённого кошелька
+- POST /deposits/initiate — инициировать депозит (wallet connect)
+- POST /deposits/confirm — подтвердить депозит (после tx)
+- GET /deposits/address — получить deposit address + QR
+- GET /deposits — история депозитов
+- GET /deposits/rates — текущие курсы
+- POST /webhooks/helius — Helius webhook callback
 
 ### Withdrawal (Phase 3.5)
 - [ ] Withdrawal flow (после депозитов)
@@ -292,17 +317,24 @@ apps/web/src/
 │   ├── page.tsx          # Dashboard с машинами
 │   ├── shop/page.tsx     # Магазин тиров
 │   ├── refs/page.tsx     # Реферальная страница
+│   ├── cash/
+│   │   ├── layout.tsx    # SolanaWalletProvider wrapper
+│   │   └── page.tsx      # Депозиты (Wallet Connect + QR)
 │   └── layout.tsx        # Layout с BottomNavigation
 ├── components/
 │   ├── ui/               # Button, Modal, ProgressBar
 │   ├── machines/         # IncomeCounter, MachineCard, MachineGrid
 │   ├── shop/             # TierCard, TierGrid, PurchaseModal
 │   └── layout/           # BottomNavigation, AuthenticatedLayout
+├── providers/
+│   ├── TelegramProvider.tsx      # Telegram WebApp integration
+│   └── SolanaWalletProvider.tsx  # Solana wallet adapter
 ├── stores/
 │   ├── auth.store.ts         # Auth state (Zustand)
 │   ├── machines.store.ts     # Machines state (Zustand)
 │   ├── referrals.store.ts    # Referrals state (Zustand)
-│   └── fortune-rate.store.ts # Fortune rate state (Zustand)
+│   ├── fortune-rate.store.ts # Fortune rate state (Zustand)
+│   └── deposits.store.ts     # Deposits state (Zustand)
 ├── hooks/
 │   └── useInterval.ts    # Real-time income interpolation
 └── types/
