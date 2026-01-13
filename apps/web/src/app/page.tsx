@@ -11,6 +11,7 @@ import { MachineGrid } from '@/components/machines/MachineGrid';
 import { RiskyCollectModal } from '@/components/machines/RiskyCollectModal';
 import { GambleResultAnimation } from '@/components/machines/GambleResultAnimation';
 import { AutoCollectModal } from '@/components/machines/AutoCollectModal';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { useInterval } from '@/hooks/useInterval';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import type { GambleInfo, AutoCollectInfo } from '@/types';
@@ -355,7 +356,9 @@ export default function Home() {
               </p>
             </div>
             <div className="bg-[#1a0a2e] rounded-lg p-3 text-center">
-              <p className="text-xs text-[#b0b0b0]">{tDashboard('tax')}</p>
+              <Tooltip content={tDashboard('taxTooltip')} position="top">
+                <p className="text-xs text-[#b0b0b0]">{tDashboard('tax')}</p>
+              </Tooltip>
               <p className="text-lg font-mono text-white">
                 {(parseFloat(user.currentTaxRate) * 100).toFixed(0)}%
               </p>
@@ -374,7 +377,9 @@ export default function Home() {
             <p className="text-2xl font-mono font-bold text-[#ff2d95]">{user.maxTierReached || '-'}</p>
           </div>
           <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#ff2d95]/30">
-            <p className="text-sm text-[#b0b0b0] mb-1">{tDashboard('currentTaxRate')}</p>
+            <Tooltip content={tDashboard('taxTooltip')} position="bottom">
+              <p className="text-sm text-[#b0b0b0] mb-1">{tDashboard('currentTaxRate')}</p>
+            </Tooltip>
             <p className="text-2xl font-mono font-bold text-white">
               {(parseFloat(user.currentTaxRate) * 100).toFixed(0)}%
             </p>

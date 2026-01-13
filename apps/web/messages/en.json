@@ -56,7 +56,8 @@
     "tax": "Tax",
     "totalMachines": "Total Machines",
     "maxTierReached": "Max Tier Reached",
-    "currentTaxRate": "Current Tax Rate",
+    "currentTaxRate": "Profit Tax",
+    "taxTooltip": "The higher your tier, the lower the tax when withdrawing profit to USDT",
     "activeMachines": "Active Machines",
     "yourMachines": "Your Machines"
   },

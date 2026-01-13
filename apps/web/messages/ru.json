@@ -56,7 +56,8 @@
     "tax": "Налог",
     "totalMachines": "Всего автоматов",
     "maxTierReached": "Макс. достигнутый уровень",
-    "currentTaxRate": "Текущая ставка налога",
+    "currentTaxRate": "Налог на прибыль",
+    "taxTooltip": "Чем выше достигнутый уровень, тем ниже налог при выводе прибыли в USDT",
     "activeMachines": "Активные автоматы",
     "yourMachines": "Ваши автоматы"
   },
