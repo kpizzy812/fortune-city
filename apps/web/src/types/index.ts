@@ -161,6 +161,7 @@ export interface CanAffordResponse {
   currentBalance: number;
   shortfall: number;
   tierLocked: boolean;
+  hasActiveMachine: boolean;
 }
 
 export interface PurchaseResult {

@@ -39,9 +39,11 @@ function TierCard({
   onBuy: () => void;
   isPurchasing: boolean;
 }) {
-  const isLocked = tier.tier > maxTierReached + 1;
+  // Use tierLocked from backend if available, fallback to local logic
+  const isLocked = canAfford?.tierLocked ?? tier.tier > maxTierReached + 1;
+  const hasActiveMachine = canAfford?.hasActiveMachine ?? false;
   const isAffordable = canAfford?.canAfford ?? false;
-  const canBuy = !isLocked && isAffordable && !isPurchasing;
+  const canBuy = !isLocked && !hasActiveMachine && isAffordable && !isPurchasing;
   const profit = tier.price * (tier.yieldPercent / 100 - 1);
   const dailyRate = (tier.yieldPercent - 100) / tier.lifespanDays;
 
@@ -140,6 +142,10 @@ function TierCard({
         {isLocked ? (
           <Button variant="ghost" size="sm" fullWidth disabled>
             Reach Tier {tier.tier - 1} first
+          </Button>
+        ) : hasActiveMachine ? (
+          <Button variant="secondary" size="sm" fullWidth disabled>
+            Already owned
           </Button>
         ) : !isAffordable && canAfford ? (
           <Button variant="secondary" size="sm" fullWidth disabled>
