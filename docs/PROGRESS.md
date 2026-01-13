@@ -1,7 +1,7 @@
 # Fortune City - Progress
 
 **Последнее обновление:** 2026-01-13
-**Текущий этап:** Phase 2 в процессе — 3-уровневая реферальная система полностью завершена ✅
+**Текущий этап:** Phase 2 в процессе — Fortune Rate интеграция завершена ✅
 
 ## Архитектура платформ
 
@@ -174,6 +174,21 @@
     - Копирование реферальной ссылки
     - captureReferralCode() - захват ?ref= из URL в localStorage
     - Автоматическая передача referralCode при авторизации
+- [x] Fortune Rate (курс $FORTUNE токена) ✅
+  - Backend:
+    - FortuneRateModule: service, controller
+    - PumpPortal WebSocket клиент (wss://pumpportal.fun/api/data)
+    - Подписка на trades по mint address токена
+    - Расчёт цены: priceInSol = vSolInBondingCurve / vTokensInBondingCurve
+    - CoinGecko API для SOL/USD курса
+    - Кэширование с TTL 60 секунд
+    - Fallback rate: 1 USD = 10 FORTUNE
+    - Endpoint: GET /fortune-rate
+  - Frontend:
+    - fortune-rate.store.ts (Zustand)
+    - Интеграция в page.tsx, shop/page.tsx, SidebarNavigation
+    - Автоматическое обновление курса каждые 30 секунд
+    - Заменён хардкод (* 10) на реальный курс от API
 - [ ] Push-уведомления
 
 ### Wheel of Fortune
@@ -250,9 +265,10 @@ apps/web/src/
 │   ├── shop/             # TierCard, TierGrid, PurchaseModal
 │   └── layout/           # BottomNavigation, AuthenticatedLayout
 ├── stores/
-│   ├── auth.store.ts     # Auth state (Zustand)
-│   ├── machines.store.ts # Machines state (Zustand)
-│   └── referrals.store.ts # Referrals state (Zustand)
+│   ├── auth.store.ts         # Auth state (Zustand)
+│   ├── machines.store.ts     # Machines state (Zustand)
+│   ├── referrals.store.ts    # Referrals state (Zustand)
+│   └── fortune-rate.store.ts # Fortune rate state (Zustand)
 ├── hooks/
 │   └── useInterval.ts    # Real-time income interpolation
 └── types/
