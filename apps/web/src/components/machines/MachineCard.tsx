@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Clock } from 'lucide-react';
+import { Clock, Zap } from 'lucide-react';
 import type { Machine, MachineIncome } from '@/types';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Button } from '@/components/ui/Button';
@@ -12,6 +12,7 @@ interface MachineCardProps {
   income: MachineIncome | null;
   onCollect: () => void;
   onRiskyCollect?: () => void;
+  onAutoCollectClick?: () => void;
   isCollecting: boolean;
 }
 
@@ -67,6 +68,7 @@ export function MachineCard({
   income,
   onCollect,
   onRiskyCollect,
+  onAutoCollectClick,
   isCollecting,
 }: MachineCardProps) {
   const progress = calculateProgress(machine.startedAt, machine.expiresAt);
@@ -105,7 +107,19 @@ export function MachineCard({
             {machine.tierInfo.emoji}
           </motion.span>
           <div>
-            <h3 className="font-semibold text-white">{machine.tierInfo.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-white">{machine.tierInfo.name}</h3>
+              {machine.autoCollectEnabled && !isExpired && (
+                <motion.span
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="text-[10px] px-1.5 py-0.5 bg-[#00ff88]/20 text-[#00ff88] rounded flex items-center gap-0.5"
+                >
+                  <Zap className="w-2.5 h-2.5" />
+                  Auto
+                </motion.span>
+              )}
+            </div>
             <p className="text-xs text-[#b0b0b0]">Tier {machine.tier}</p>
           </div>
         </div>
@@ -205,6 +219,19 @@ export function MachineCard({
           </div>
         )}
       </div>
+
+      {/* Auto Collect button */}
+      {!isExpired && onAutoCollectClick && (
+        <div className="mt-3 pt-3 border-t border-[#ff2d95]/20">
+          <button
+            onClick={onAutoCollectClick}
+            className="w-full flex items-center justify-center gap-2 text-xs text-[#00ff88] hover:text-[#00d4ff] transition-colors group"
+          >
+            <Zap className="w-3.5 h-3.5 group-hover:animate-pulse" />
+            <span>{machine.autoCollectEnabled ? 'Auto Collect Active' : 'Enable Auto Collect'}</span>
+          </button>
+        </div>
+      )}
     </motion.div>
   );
 }

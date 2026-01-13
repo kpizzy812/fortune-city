@@ -13,6 +13,7 @@ interface MachineGridProps {
   incomes: Record<string, MachineIncome>;
   onCollect: (machineId: string) => void;
   onRiskyCollect?: (machineId: string) => void;
+  onAutoCollectClick?: (machineId: string) => void;
   isCollecting: Record<string, boolean>;
   isLoading?: boolean;
 }
@@ -22,6 +23,7 @@ export function MachineGrid({
   incomes,
   onCollect,
   onRiskyCollect,
+  onAutoCollectClick,
   isCollecting,
   isLoading = false,
 }: MachineGridProps) {
@@ -112,6 +114,7 @@ export function MachineGrid({
             income={incomes[machine.id] || null}
             onCollect={() => onCollect(machine.id)}
             onRiskyCollect={onRiskyCollect ? () => onRiskyCollect(machine.id) : undefined}
+            onAutoCollectClick={onAutoCollectClick ? () => onAutoCollectClick(machine.id) : undefined}
             isCollecting={isCollecting[machine.id] || false}
           />
         </motion.div>

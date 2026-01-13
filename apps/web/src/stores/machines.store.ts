@@ -13,6 +13,8 @@ import type {
   UpgradeGambleResult,
   CoinBoxInfo,
   UpgradeCoinBoxResult,
+  AutoCollectInfo,
+  PurchaseAutoCollectResult,
 } from '@/types';
 
 interface MachinesState {
@@ -24,6 +26,7 @@ interface MachinesState {
   lastGambleResult: RiskyCollectResult | null;
   gambleInfos: Record<string, GambleInfo>;
   coinBoxInfos: Record<string, CoinBoxInfo>;
+  autoCollectInfos: Record<string, AutoCollectInfo>;
 
   // Loading states
   isLoadingMachines: boolean;
@@ -48,6 +51,8 @@ interface MachinesState {
   fetchGambleInfo: (token: string, machineId: string) => Promise<void>;
   upgradeCoinBox: (token: string, machineId: string) => Promise<UpgradeCoinBoxResult>;
   fetchCoinBoxInfo: (token: string, machineId: string) => Promise<void>;
+  purchaseAutoCollect: (token: string, machineId: string) => Promise<PurchaseAutoCollectResult>;
+  fetchAutoCollectInfo: (token: string, machineId: string) => Promise<void>;
 
   // Real-time income interpolation
   interpolateIncome: (machineId: string) => void;
@@ -68,6 +73,7 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
   lastGambleResult: null,
   gambleInfos: {},
   coinBoxInfos: {},
+  autoCollectInfos: {},
   isLoadingMachines: false,
   isLoadingTiers: false,
   isPurchasing: false,
@@ -296,6 +302,43 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
     }
   },
 
+  purchaseAutoCollect: async (token, machineId) => {
+    try {
+      const result = await api.purchaseAutoCollect(token, machineId);
+      // Update machine in list
+      set((state) => ({
+        machines: state.machines.map((m) =>
+          m.id === machineId ? result.machine : m
+        ),
+        // Update auto collect info cache
+        autoCollectInfos: {
+          ...state.autoCollectInfos,
+          [machineId]: {
+            enabled: true,
+            cost: result.cost,
+            purchasedAt: new Date().toISOString(),
+            canPurchase: false,
+            alreadyPurchased: true,
+          },
+        },
+      }));
+      return result;
+    } catch (e) {
+      throw e;
+    }
+  },
+
+  fetchAutoCollectInfo: async (token, machineId) => {
+    try {
+      const info = await api.getAutoCollectInfo(token, machineId);
+      set((state) => ({
+        autoCollectInfos: { ...state.autoCollectInfos, [machineId]: info },
+      }));
+    } catch {
+      // Silent fail
+    }
+  },
+
   // Client-side income interpolation (every second)
   interpolateIncome: (machineId) => {
     const { incomes, machines } = get();
@@ -348,6 +391,7 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
       lastGambleResult: null,
       gambleInfos: {},
       coinBoxInfos: {},
+      autoCollectInfos: {},
       isLoadingMachines: false,
       isLoadingTiers: false,
       isPurchasing: false,

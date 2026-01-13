@@ -8,8 +8,9 @@ import { TelegramLoginButton } from '@/components/auth/TelegramLoginButton';
 import { MachineGrid } from '@/components/machines/MachineGrid';
 import { RiskyCollectModal } from '@/components/machines/RiskyCollectModal';
 import { GambleResultAnimation } from '@/components/machines/GambleResultAnimation';
+import { AutoCollectModal } from '@/components/machines/AutoCollectModal';
 import { useInterval } from '@/hooks/useInterval';
-import type { GambleInfo } from '@/types';
+import type { GambleInfo, AutoCollectInfo } from '@/types';
 
 const TELEGRAM_BOT_NAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || 'FortuneCityBot';
 
@@ -29,12 +30,15 @@ export default function Home() {
     isCollecting,
     lastGambleResult,
     gambleInfos,
+    autoCollectInfos,
     error: machinesError,
     fetchMachines,
     fetchAllIncomes,
     collectCoins,
     riskyCollect,
     fetchGambleInfo,
+    purchaseAutoCollect,
+    fetchAutoCollectInfo,
     interpolateAllIncomes,
     clearError,
     clearLastGambleResult,
@@ -43,8 +47,11 @@ export default function Home() {
   // Modal states
   const [isRiskyModalOpen, setIsRiskyModalOpen] = useState(false);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [isAutoCollectModalOpen, setIsAutoCollectModalOpen] = useState(false);
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null);
   const [currentGambleInfo, setCurrentGambleInfo] = useState<GambleInfo | null>(null);
+  const [currentAutoCollectInfo, setCurrentAutoCollectInfo] = useState<AutoCollectInfo | null>(null);
+  const [isPurchasingAutoCollect, setIsPurchasingAutoCollect] = useState(false);
 
   // Track if initial fetch was done
   const hasFetchedMachines = useRef(false);
@@ -137,6 +144,43 @@ export default function Home() {
     clearLastGambleResult();
     setSelectedMachineId(null);
   }, [clearLastGambleResult]);
+
+  // Handle Auto Collect (open modal)
+  const handleAutoCollectClick = useCallback(
+    async (machineId: string) => {
+      if (!token) return;
+      setSelectedMachineId(machineId);
+
+      // Fetch auto collect info
+      await fetchAutoCollectInfo(token, machineId);
+      setCurrentAutoCollectInfo(autoCollectInfos[machineId] || null);
+
+      setIsAutoCollectModalOpen(true);
+    },
+    [token, fetchAutoCollectInfo, autoCollectInfos]
+  );
+
+  // Confirm Auto Collect purchase
+  const handleConfirmAutoCollect = useCallback(
+    async () => {
+      if (!token || !selectedMachineId) return;
+
+      setIsPurchasingAutoCollect(true);
+      try {
+        await purchaseAutoCollect(token, selectedMachineId);
+        // Refresh user balance
+        refreshUser();
+        // Update auto collect info
+        await fetchAutoCollectInfo(token, selectedMachineId);
+        setCurrentAutoCollectInfo(autoCollectInfos[selectedMachineId] || null);
+      } catch {
+        // Error is handled in store
+      } finally {
+        setIsPurchasingAutoCollect(false);
+      }
+    },
+    [token, selectedMachineId, purchaseAutoCollect, refreshUser, fetchAutoCollectInfo, autoCollectInfos]
+  );
 
   // Show loading state
   if (authLoading) {
@@ -346,6 +390,7 @@ export default function Home() {
             incomes={incomes}
             onCollect={handleCollect}
             onRiskyCollect={handleRiskyCollect}
+            onAutoCollectClick={handleAutoCollectClick}
             isCollecting={isCollecting}
             isLoading={isLoadingMachines}
           />
@@ -366,6 +411,14 @@ export default function Home() {
               isOpen={isResultModalOpen}
               onClose={handleCloseResultModal}
               result={lastGambleResult}
+            />
+            <AutoCollectModal
+              isOpen={isAutoCollectModalOpen}
+              onClose={() => setIsAutoCollectModalOpen(false)}
+              onConfirm={handleConfirmAutoCollect}
+              autoCollectInfo={currentAutoCollectInfo}
+              userBalance={parseFloat(user?.fortuneBalance || '0')}
+              isLoading={isPurchasingAutoCollect}
             />
           </>
         )}

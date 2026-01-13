@@ -48,6 +48,8 @@ export interface Machine {
   reinvestRound: number;
   profitReductionRate: string;
   fortuneGambleLevel: number;
+  autoCollectEnabled: boolean;
+  autoCollectPurchasedAt: string | null;
   status: MachineStatus;
   createdAt: string;
   updatedAt: string;
@@ -126,6 +128,27 @@ export interface UpgradeCoinBoxResult {
   user: {
     fortuneBalance: string;
   };
+}
+
+// ============================================
+// Auto Collect Types
+// ============================================
+
+export interface AutoCollectInfo {
+  enabled: boolean;
+  cost: number;
+  purchasedAt: string | null;
+  canPurchase: boolean;
+  alreadyPurchased: boolean;
+}
+
+export interface PurchaseAutoCollectResult {
+  machine: Machine;
+  cost: number;
+  user: {
+    fortuneBalance: string;
+  };
+  newBalance: number;
 }
 
 // ============================================

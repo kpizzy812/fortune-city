@@ -8,6 +8,8 @@ import type {
   UpgradeGambleResult,
   CoinBoxInfo,
   UpgradeCoinBoxResult,
+  AutoCollectInfo,
+  PurchaseAutoCollectResult,
   CanAffordResponse,
   PurchaseResult,
   Transaction,
@@ -145,6 +147,17 @@ class ApiClient {
 
   async upgradeCoinBox(token: string, machineId: string): Promise<UpgradeCoinBoxResult> {
     return this.request<UpgradeCoinBoxResult>(`/machines/${machineId}/upgrade-coinbox`, {
+      token,
+      method: 'POST',
+    });
+  }
+
+  async getAutoCollectInfo(token: string, machineId: string): Promise<AutoCollectInfo> {
+    return this.request<AutoCollectInfo>(`/machines/${machineId}/auto-collect-info`, { token });
+  }
+
+  async purchaseAutoCollect(token: string, machineId: string): Promise<PurchaseAutoCollectResult> {
+    return this.request<PurchaseAutoCollectResult>(`/machines/${machineId}/purchase-auto-collect`, {
       token,
       method: 'POST',
     });
