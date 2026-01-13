@@ -11,6 +11,7 @@ import { EconomyModule } from './modules/economy/economy.module';
 import { MachineLifecycleModule } from './modules/machine-lifecycle/machine-lifecycle.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ReferralsModule } from './modules/referrals/referrals.module';
+import { FortuneRateModule } from './modules/fortune-rate/fortune-rate.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ReferralsModule } from './modules/referrals/referrals.module';
     EconomyModule,
     MachineLifecycleModule,
     ReferralsModule,
+    FortuneRateModule,
   ],
   controllers: [AppController],
   providers: [AppService],

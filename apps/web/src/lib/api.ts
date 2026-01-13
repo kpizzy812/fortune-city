@@ -244,6 +244,14 @@ class ApiClient {
       body: JSON.stringify({ referralCode }),
     });
   }
+
+  // ============================================
+  // Fortune Rate endpoints
+  // ============================================
+
+  async getFortuneRate(): Promise<FortuneRateResponse> {
+    return this.request<FortuneRateResponse>('/fortune-rate');
+  }
 }
 
 export const api = new ApiClient(API_URL);
@@ -307,4 +315,17 @@ export interface TelegramLoginWidgetData {
   photo_url?: string;
   auth_date: number;
   hash: string;
+}
+
+export interface FortuneRateData {
+  priceInSol: number;
+  priceInUsd: number;
+  fortunePerUsd: number;
+  updatedAt: string;
+  source: 'pumpportal' | 'fallback';
+}
+
+export interface FortuneRateResponse {
+  success: boolean;
+  data: FortuneRateData;
 }

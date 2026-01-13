@@ -2,15 +2,22 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMachinesStore } from '@/stores/machines.store';
+import { useFortuneRateStore } from '@/stores/fortune-rate.store';
 import { TierCarousel } from '@/components/shop/TierCarousel';
 import { PurchaseModal } from '@/components/shop/PurchaseModal';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import type { TierInfo } from '@/types';
 
 export default function ShopPage() {
   const router = useRouter();
   const { user, token, refreshUser } = useAuthStore();
+  const { usdToFortune } = useFortuneRateStore();
+  const t = useTranslations('shop');
+  const tCommon = useTranslations('common');
+
   const {
     tiers,
     affordability,
@@ -111,27 +118,36 @@ export default function ShopPage() {
         {/* Mobile Header */}
         <header className="flex items-center justify-between mb-6 lg:hidden">
           <div>
-            <h1 className="text-2xl font-bold text-[#00d4ff]">Machine Shop</h1>
-            <p className="text-sm text-[#b0b0b0]">Buy new slot machines</p>
+            <h1 className="text-2xl font-bold text-[#00d4ff]">{t('title')}</h1>
+            <p className="text-sm text-[#b0b0b0]">{t('subtitle')}</p>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-[#b0b0b0]">Balance</p>
-            <p className="text-lg text-[#ffd700] font-mono font-bold">
-              ${userBalance.toFixed(2)}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-xs text-[#b0b0b0]">{tCommon('balance')}</p>
+              <p className="text-lg text-[#ffd700] font-mono font-bold">
+                ${userBalance.toFixed(2)}
+              </p>
+              <p className="text-[10px] text-[#b0b0b0]">
+                ({usdToFortune(userBalance).toLocaleString()} $FORTUNE)
+              </p>
+            </div>
+            <LanguageSwitcher />
           </div>
         </header>
 
         {/* Desktop Header */}
         <header className="hidden lg:flex lg:items-center lg:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Machine Shop</h1>
-            <p className="text-[#b0b0b0]">Purchase new slot machines to grow your empire</p>
+            <h1 className="text-3xl font-bold text-white mb-2">{t('pageTitle')}</h1>
+            <p className="text-[#b0b0b0]">{t('pageSubtitle')}</p>
           </div>
           <div className="bg-[#2a1a4e] rounded-xl px-6 py-3 border border-[#ffd700]/30">
-            <p className="text-sm text-[#b0b0b0]">Your Balance</p>
+            <p className="text-sm text-[#b0b0b0]">{tCommon('yourBalance')}</p>
             <p className="text-2xl text-[#ffd700] font-mono font-bold">
               ${userBalance.toFixed(2)}
+            </p>
+            <p className="text-xs text-[#b0b0b0] mt-0.5">
+              ({usdToFortune(userBalance).toLocaleString()} $FORTUNE)
             </p>
           </div>
         </header>
@@ -142,13 +158,12 @@ export default function ShopPage() {
             <span className="text-2xl lg:text-3xl">💡</span>
             <div className="text-sm lg:text-base text-[#b0b0b0]">
               <p className="mb-1">
-                <span className="text-white font-medium">Unlock new tiers</span> by purchasing
-                machines one level at a time.
+                <span className="text-white font-medium">{t('unlockHint')}</span>
               </p>
               <p>
-                Current max tier: <span className="text-[#ff2d95] font-mono font-bold">{user.maxTierReached || 0}</span>
+                {t('currentMaxTier')} <span className="text-[#ff2d95] font-mono font-bold">{user.maxTierReached || 0}</span>
                 {' '}&rarr;{' '}
-                Next unlock: <span className="text-[#00ff88] font-mono font-bold">Tier {(user.maxTierReached || 0) + 1}</span>
+                {t('nextUnlock')} <span className="text-[#00ff88] font-mono font-bold">{t('tier')} {(user.maxTierReached || 0) + 1}</span>
               </p>
             </div>
           </div>
@@ -162,7 +177,7 @@ export default function ShopPage() {
               onClick={clearError}
               className="text-[#ff4444] text-xs underline mt-1"
             >
-              Dismiss
+              {tCommon('dismiss')}
             </button>
           </div>
         )}

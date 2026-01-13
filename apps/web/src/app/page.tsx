@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useCallback, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMachinesStore } from '@/stores/machines.store';
+import { useFortuneRateStore } from '@/stores/fortune-rate.store';
 import { useTelegramWebApp } from '@/providers/TelegramProvider';
 import { TelegramLoginButton } from '@/components/auth/TelegramLoginButton';
 import { MachineGrid } from '@/components/machines/MachineGrid';
@@ -10,6 +12,7 @@ import { RiskyCollectModal } from '@/components/machines/RiskyCollectModal';
 import { GambleResultAnimation } from '@/components/machines/GambleResultAnimation';
 import { AutoCollectModal } from '@/components/machines/AutoCollectModal';
 import { useInterval } from '@/hooks/useInterval';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import type { GambleInfo, AutoCollectInfo } from '@/types';
 
 const TELEGRAM_BOT_NAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || 'FortuneCityBot';
@@ -22,6 +25,13 @@ const INCOME_INTERPOLATION_INTERVAL = 1000;
 export default function Home() {
   const { user, token, isLoading: authLoading, error: authError, clearAuth, refreshUser, devLogin } = useAuthStore();
   const { isTelegramApp } = useTelegramWebApp();
+  const { usdToFortune, fetchRate } = useFortuneRateStore();
+
+  const t = useTranslations();
+  const tCommon = useTranslations('common');
+  const tAuth = useTranslations('auth');
+  const tBrand = useTranslations('brand');
+  const tDashboard = useTranslations('dashboard');
 
   const {
     machines,
@@ -73,6 +83,11 @@ export default function Home() {
     }
   }, [token, machines.length, fetchAllIncomes]);
 
+  // Fetch fortune rate on mount and periodically
+  useEffect(() => {
+    fetchRate();
+  }, [fetchRate]);
+
   // Client-side income interpolation every second
   useInterval(() => {
     if (machines.length > 0) {
@@ -85,6 +100,7 @@ export default function Home() {
     if (token && machines.length > 0) {
       fetchAllIncomes(token);
       refreshUser();
+      fetchRate();
     }
   }, user ? SERVER_REFRESH_INTERVAL : null);
 
@@ -187,7 +203,7 @@ export default function Home() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-8">
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#00d4ff] border-t-transparent" />
-        <p className="mt-4 text-[#b0b0b0]">Loading...</p>
+        <p className="mt-4 text-[#b0b0b0]">{tCommon('loading')}</p>
       </main>
     );
   }
@@ -197,13 +213,13 @@ export default function Home() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#ff2d95] mb-4">Auth Error</h1>
+          <h1 className="text-2xl font-bold text-[#ff2d95] mb-4">{tAuth('authError')}</h1>
           <p className="text-[#b0b0b0] mb-6">{authError}</p>
           <button
             onClick={clearAuth}
             className="px-6 py-3 bg-[#ff2d95] text-white rounded-lg hover:bg-[#ff2d95]/80 transition"
           >
-            Try Again
+            {tCommon('tryAgain')}
           </button>
         </div>
       </main>
@@ -218,26 +234,25 @@ export default function Home() {
           {/* Logo */}
           <div className="mb-8">
             <h1 className="text-5xl font-bold bg-gradient-to-r from-[#ff2d95] to-[#00d4ff] bg-clip-text text-transparent">
-              FORTUNE CITY
+              {tBrand('name')}
             </h1>
             <p className="text-[#ffd700] mt-2 text-lg italic">
-              Spin your fortune. Own the floor.
+              {tBrand('tagline')}
             </p>
           </div>
 
           {/* Description */}
           <p className="text-[#b0b0b0] mb-8">
-            Build your slot machine empire in the neon-lit streets of Fortune City.
-            Buy machines, collect coins, and become the king of the floor.
+            {tBrand('description')}
           </p>
 
           {/* Login */}
           {isTelegramApp ? (
-            <p className="text-[#00d4ff]">Authenticating with Telegram...</p>
+            <p className="text-[#00d4ff]">{tAuth('authenticating')}</p>
           ) : (
             <div className="flex flex-col items-center gap-4">
               <p className="text-[#b0b0b0] text-sm mb-2">
-                Sign in with Telegram to start playing
+                {tAuth('signInWithTelegram')}
               </p>
               <TelegramLoginButton
                 botName={TELEGRAM_BOT_NAME}
@@ -251,7 +266,7 @@ export default function Home() {
                   onClick={devLogin}
                   className="mt-4 px-6 py-2 bg-[#2a1a4e] border border-[#ff2d95]/50 text-[#ff2d95] rounded-lg hover:bg-[#ff2d95]/10 transition text-sm"
                 >
-                  Dev Login (Test User)
+                  {tAuth('devLogin')}
                 </button>
               )}
             </div>
@@ -269,19 +284,23 @@ export default function Home() {
         {/* Header - visible only on mobile (on desktop it's in sidebar) */}
         <header className="flex items-center justify-between mb-6 lg:hidden">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-[#ff2d95] to-[#00d4ff] bg-clip-text text-transparent">
-            FORTUNE CITY
+            {tBrand('name')}
           </h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-xs text-[#b0b0b0]">$FORTUNE</p>
+              <p className="text-xs text-[#b0b0b0]">{tBrand('currency')}</p>
               <p className="text-lg text-[#ffd700] font-mono font-bold">
                 ${parseFloat(user.fortuneBalance).toFixed(2)}
               </p>
+              <p className="text-[10px] text-[#b0b0b0]">
+                ({usdToFortune(parseFloat(user.fortuneBalance)).toLocaleString()} $FORTUNE)
+              </p>
             </div>
+            <LanguageSwitcher />
             <button
               onClick={clearAuth}
               className="p-2 text-[#b0b0b0] hover:text-white transition"
-              title="Logout"
+              title={t('nav.logout')}
             >
               <svg
                 width="20"
@@ -301,8 +320,8 @@ export default function Home() {
 
         {/* Desktop page title */}
         <div className="hidden lg:block mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">Dashboard</h2>
-          <p className="text-[#b0b0b0]">Manage your slot machine empire</p>
+          <h2 className="text-3xl font-bold text-white mb-2">{tDashboard('title')}</h2>
+          <p className="text-[#b0b0b0]">{tDashboard('subtitle')}</p>
         </div>
 
         {/* User Stats Card - visible only on mobile (on desktop it's in sidebar) */}
@@ -324,17 +343,17 @@ export default function Home() {
           {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-[#1a0a2e] rounded-lg p-3 text-center">
-              <p className="text-xs text-[#b0b0b0]">Machines</p>
+              <p className="text-xs text-[#b0b0b0]">{tDashboard('machines')}</p>
               <p className="text-lg font-mono text-white">{machines.length}</p>
             </div>
             <div className="bg-[#1a0a2e] rounded-lg p-3 text-center">
-              <p className="text-xs text-[#b0b0b0]">Max Tier</p>
+              <p className="text-xs text-[#b0b0b0]">{tDashboard('maxTier')}</p>
               <p className="text-lg font-mono text-[#ff2d95]">
                 {user.maxTierReached || '-'}
               </p>
             </div>
             <div className="bg-[#1a0a2e] rounded-lg p-3 text-center">
-              <p className="text-xs text-[#b0b0b0]">Tax</p>
+              <p className="text-xs text-[#b0b0b0]">{tDashboard('tax')}</p>
               <p className="text-lg font-mono text-white">
                 {(parseFloat(user.currentTaxRate) * 100).toFixed(0)}%
               </p>
@@ -345,21 +364,21 @@ export default function Home() {
         {/* Desktop Stats Bar */}
         <div className="hidden lg:grid lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#ff2d95]/30">
-            <p className="text-sm text-[#b0b0b0] mb-1">Total Machines</p>
+            <p className="text-sm text-[#b0b0b0] mb-1">{tDashboard('totalMachines')}</p>
             <p className="text-2xl font-mono font-bold text-white">{machines.length}</p>
           </div>
           <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#ff2d95]/30">
-            <p className="text-sm text-[#b0b0b0] mb-1">Max Tier Reached</p>
+            <p className="text-sm text-[#b0b0b0] mb-1">{tDashboard('maxTierReached')}</p>
             <p className="text-2xl font-mono font-bold text-[#ff2d95]">{user.maxTierReached || '-'}</p>
           </div>
           <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#ff2d95]/30">
-            <p className="text-sm text-[#b0b0b0] mb-1">Current Tax Rate</p>
+            <p className="text-sm text-[#b0b0b0] mb-1">{tDashboard('currentTaxRate')}</p>
             <p className="text-2xl font-mono font-bold text-white">
               {(parseFloat(user.currentTaxRate) * 100).toFixed(0)}%
             </p>
           </div>
           <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#00d4ff]/30">
-            <p className="text-sm text-[#b0b0b0] mb-1">Active Machines</p>
+            <p className="text-sm text-[#b0b0b0] mb-1">{tDashboard('activeMachines')}</p>
             <p className="text-2xl font-mono font-bold text-[#00d4ff]">
               {machines.filter(m => m.status === 'active').length}
             </p>
@@ -374,7 +393,7 @@ export default function Home() {
               onClick={clearError}
               className="text-[#ff4444] text-xs underline mt-1"
             >
-              Dismiss
+              {tCommon('dismiss')}
             </button>
           </div>
         )}
@@ -383,7 +402,7 @@ export default function Home() {
         <div className="mb-6">
           <h3 className="text-lg lg:text-xl font-semibold mb-4 text-[#00d4ff] flex items-center gap-2">
             <span>🎰</span>
-            Your Machines
+            {tDashboard('yourMachines')}
           </h3>
           <MachineGrid
             machines={machines}
