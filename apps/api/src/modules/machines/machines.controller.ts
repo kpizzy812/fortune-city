@@ -11,6 +11,7 @@ import {
 import type { Request } from 'express';
 import { MachinesService, MachineWithTierInfo } from './machines.service';
 import { RiskyCollectService } from './services/risky-collect.service';
+import { AutoCollectService } from './services/auto-collect.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../auth/auth.service';
 import {
@@ -28,6 +29,10 @@ import {
   UpgradeFortuneGambleResponseDto,
   GambleInfoResponseDto,
 } from './dto/risky-collect.dto';
+import {
+  AutoCollectInfoResponseDto,
+  PurchaseAutoCollectResponseDto,
+} from './dto/auto-collect.dto';
 
 interface AuthenticatedRequest extends Request {
   user: JwtPayload;
@@ -38,6 +43,7 @@ export class MachinesController {
   constructor(
     private readonly machinesService: MachinesService,
     private readonly riskyCollectService: RiskyCollectService,
+    private readonly autoCollectService: AutoCollectService,
   ) {}
 
   private toResponseDto(machine: MachineWithTierInfo): MachineResponseDto {
@@ -270,10 +276,7 @@ export class MachinesController {
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<UpgradeCoinBoxResponseDto> {
-    const result = await this.machinesService.upgradeCoinBox(
-      id,
-      req.user.sub,
-    );
+    const result = await this.machinesService.upgradeCoinBox(id, req.user.sub);
 
     return {
       machine: this.toResponseDto(
@@ -285,6 +288,40 @@ export class MachinesController {
       user: {
         fortuneBalance: result.user.fortuneBalance.toString(),
       },
+    };
+  }
+
+  // ===== Auto Collect Endpoints =====
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/auto-collect-info')
+  async getAutoCollectInfo(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AutoCollectInfoResponseDto> {
+    return this.autoCollectService.getAutoCollectInfo(id, req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/purchase-auto-collect')
+  async purchaseAutoCollect(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<PurchaseAutoCollectResponseDto> {
+    const result = await this.autoCollectService.purchaseAutoCollect(
+      id,
+      req.user.sub,
+    );
+
+    return {
+      machine: this.toResponseDto(
+        this.machinesService.enrichWithTierInfo(result.machine),
+      ),
+      cost: result.cost,
+      user: {
+        fortuneBalance: result.user.fortuneBalance.toString(),
+      },
+      newBalance: result.newBalance,
     };
   }
 }

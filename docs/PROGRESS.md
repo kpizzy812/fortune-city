@@ -1,7 +1,7 @@
 # Fortune City - Progress
 
 **Последнее обновление:** 2026-01-13
-**Текущий этап:** Phase 2 в процессе — порядок выплат и досрочная продажа полностью реализованы с comprehensive тестами (42/42 проходят) ✅
+**Текущий этап:** Phase 2 в процессе — Auto Collect модуль реализован на backend (17 тестов), осталось frontend ✅
 
 ## Архитектура платформ
 
@@ -135,7 +135,14 @@
   - Уровни capacity: 2h → 6h → 12h → 24h → 48h
   - Стоимость: 5% → 10% → 20% → 35% от цены машины
   - Атомарные транзакции для списания баланса и обновления capacity
-- [ ] Auto Collect модуль
+- [x] Auto Collect модуль (Backend) ✅
+  - AutoCollectService: purchase, getInfo, shouldAutoCollect, executeAutoCollect
+  - Endpoints: POST /machines/:id/purchase-auto-collect, GET /machines/:id/auto-collect-info
+  - Cron job: проверка и автосбор каждые 30 секунд (handleAutoCollect в MachineLifecycleService)
+  - Стоимость: 15% от цены машины, сгорает вместе с машиной
+  - Prisma схема: autoCollectEnabled, autoCollectPurchasedAt
+  - 17 unit тестов (все проходят)
+- [ ] Auto Collect модуль (Frontend)
 - [ ] 3-уровневая реферальная система
 - [ ] Push-уведомления
 

@@ -527,33 +527,40 @@ describe('MachinesService', () => {
         lastCalculatedAt: now,
         expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
       });
-      const mockUser = { id: mockUserId, fortuneBalance: new Prisma.Decimal(100) };
+      const mockUser = {
+        id: mockUserId,
+        fortuneBalance: new Prisma.Decimal(100),
+      };
 
-      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(mockMachine);
+      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
+        mockMachine,
+      );
 
       let updateCallData: any;
-      (prismaService.$transaction as jest.Mock) = jest.fn().mockImplementation(async (callback) => {
-        const mockTx = {
-          machine: {
-            update: jest.fn().mockImplementation((args) => {
-              updateCallData = args.data;
-              return Promise.resolve({
-                ...mockMachine,
-                coinBoxCurrent: new Prisma.Decimal(0),
-                profitPaidOut: new Prisma.Decimal(2),
-              });
-            }),
-          },
-          user: {
-            update: jest.fn().mockResolvedValue({
-              ...mockUser,
-              fortuneBalance: new Prisma.Decimal(102),
-            }),
-          },
-          transaction: { create: jest.fn().mockResolvedValue({}) },
-        };
-        return callback(mockTx);
-      });
+      (prismaService.$transaction as jest.Mock) = jest
+        .fn()
+        .mockImplementation(async (callback) => {
+          const mockTx = {
+            machine: {
+              update: jest.fn().mockImplementation((args) => {
+                updateCallData = args.data;
+                return Promise.resolve({
+                  ...mockMachine,
+                  coinBoxCurrent: new Prisma.Decimal(0),
+                  profitPaidOut: new Prisma.Decimal(2),
+                });
+              }),
+            },
+            user: {
+              update: jest.fn().mockResolvedValue({
+                ...mockUser,
+                fortuneBalance: new Prisma.Decimal(102),
+              }),
+            },
+            transaction: { create: jest.fn().mockResolvedValue({}) },
+          };
+          return callback(mockTx);
+        });
 
       await service.collectCoins('machine-123', mockUserId);
 
@@ -574,26 +581,33 @@ describe('MachinesService', () => {
         lastCalculatedAt: now,
         expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
       });
-      const mockUser = { id: mockUserId, fortuneBalance: new Prisma.Decimal(100) };
+      const mockUser = {
+        id: mockUserId,
+        fortuneBalance: new Prisma.Decimal(100),
+      };
 
-      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(mockMachine);
+      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
+        mockMachine,
+      );
 
       let updateCallData: any;
-      (prismaService.$transaction as jest.Mock) = jest.fn().mockImplementation(async (callback) => {
-        const mockTx = {
-          machine: {
-            update: jest.fn().mockImplementation((args) => {
-              updateCallData = args.data;
-              return Promise.resolve(mockMachine);
-            }),
-          },
-          user: {
-            update: jest.fn().mockResolvedValue(mockUser),
-          },
-          transaction: { create: jest.fn().mockResolvedValue({}) },
-        };
-        return callback(mockTx);
-      });
+      (prismaService.$transaction as jest.Mock) = jest
+        .fn()
+        .mockImplementation(async (callback) => {
+          const mockTx = {
+            machine: {
+              update: jest.fn().mockImplementation((args) => {
+                updateCallData = args.data;
+                return Promise.resolve(mockMachine);
+              }),
+            },
+            user: {
+              update: jest.fn().mockResolvedValue(mockUser),
+            },
+            transaction: { create: jest.fn().mockResolvedValue({}) },
+          };
+          return callback(mockTx);
+        });
 
       await service.collectCoins('machine-123', mockUserId);
 
@@ -617,24 +631,33 @@ describe('MachinesService', () => {
         lastCalculatedAt: now,
         expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
       });
-      const mockUser = { id: mockUserId, fortuneBalance: new Prisma.Decimal(100) };
+      const mockUser = {
+        id: mockUserId,
+        fortuneBalance: new Prisma.Decimal(100),
+      };
 
-      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(mockMachine);
-      (prismaService.$transaction as jest.Mock) = jest.fn().mockImplementation(async (callback) => {
-        const mockTx = {
-          machine: {
-            update: jest.fn().mockResolvedValue({ ...mockMachine, status: 'sold_early' }),
-          },
-          user: {
-            update: jest.fn().mockResolvedValue({
-              ...mockUser,
-              fortuneBalance: new Prisma.Decimal(108.5),
-            }),
-          },
-          transaction: { create: jest.fn().mockResolvedValue({}) },
-        };
-        return callback(mockTx);
-      });
+      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
+        mockMachine,
+      );
+      (prismaService.$transaction as jest.Mock) = jest
+        .fn()
+        .mockImplementation(async (callback) => {
+          const mockTx = {
+            machine: {
+              update: jest
+                .fn()
+                .mockResolvedValue({ ...mockMachine, status: 'sold_early' }),
+            },
+            user: {
+              update: jest.fn().mockResolvedValue({
+                ...mockUser,
+                fortuneBalance: new Prisma.Decimal(108.5),
+              }),
+            },
+            transaction: { create: jest.fn().mockResolvedValue({}) },
+          };
+          return callback(mockTx);
+        });
 
       const result = await service.sellMachineEarly('machine-123', mockUserId);
 
@@ -663,21 +686,30 @@ describe('MachinesService', () => {
         lastCalculatedAt: now,
         expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
       });
-      const mockUser = { id: mockUserId, fortuneBalance: new Prisma.Decimal(100) };
+      const mockUser = {
+        id: mockUserId,
+        fortuneBalance: new Prisma.Decimal(100),
+      };
 
-      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(mockMachine);
-      (prismaService.$transaction as jest.Mock) = jest.fn().mockImplementation(async (callback) => {
-        const mockTx = {
-          machine: {
-            update: jest.fn().mockResolvedValue({ ...mockMachine, status: 'sold_early' }),
-          },
-          user: {
-            update: jest.fn().mockResolvedValue(mockUser),
-          },
-          transaction: { create: jest.fn().mockResolvedValue({}) },
-        };
-        return callback(mockTx);
-      });
+      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
+        mockMachine,
+      );
+      (prismaService.$transaction as jest.Mock) = jest
+        .fn()
+        .mockImplementation(async (callback) => {
+          const mockTx = {
+            machine: {
+              update: jest
+                .fn()
+                .mockResolvedValue({ ...mockMachine, status: 'sold_early' }),
+            },
+            user: {
+              update: jest.fn().mockResolvedValue(mockUser),
+            },
+            transaction: { create: jest.fn().mockResolvedValue({}) },
+          };
+          return callback(mockTx);
+        });
 
       const result = await service.sellMachineEarly('machine-123', mockUserId);
 
@@ -703,21 +735,30 @@ describe('MachinesService', () => {
         lastCalculatedAt: now,
         expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
       });
-      const mockUser = { id: mockUserId, fortuneBalance: new Prisma.Decimal(100) };
+      const mockUser = {
+        id: mockUserId,
+        fortuneBalance: new Prisma.Decimal(100),
+      };
 
-      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(mockMachine);
-      (prismaService.$transaction as jest.Mock) = jest.fn().mockImplementation(async (callback) => {
-        const mockTx = {
-          machine: {
-            update: jest.fn().mockResolvedValue({ ...mockMachine, status: 'sold_early' }),
-          },
-          user: {
-            update: jest.fn().mockResolvedValue(mockUser),
-          },
-          transaction: { create: jest.fn().mockResolvedValue({}) },
-        };
-        return callback(mockTx);
-      });
+      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
+        mockMachine,
+      );
+      (prismaService.$transaction as jest.Mock) = jest
+        .fn()
+        .mockImplementation(async (callback) => {
+          const mockTx = {
+            machine: {
+              update: jest
+                .fn()
+                .mockResolvedValue({ ...mockMachine, status: 'sold_early' }),
+            },
+            user: {
+              update: jest.fn().mockResolvedValue(mockUser),
+            },
+            transaction: { create: jest.fn().mockResolvedValue({}) },
+          };
+          return callback(mockTx);
+        });
 
       const result = await service.sellMachineEarly('machine-123', mockUserId);
 
@@ -743,21 +784,30 @@ describe('MachinesService', () => {
         lastCalculatedAt: now,
         expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
       });
-      const mockUser = { id: mockUserId, fortuneBalance: new Prisma.Decimal(100) };
+      const mockUser = {
+        id: mockUserId,
+        fortuneBalance: new Prisma.Decimal(100),
+      };
 
-      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(mockMachine);
-      (prismaService.$transaction as jest.Mock) = jest.fn().mockImplementation(async (callback) => {
-        const mockTx = {
-          machine: {
-            update: jest.fn().mockResolvedValue({ ...mockMachine, status: 'sold_early' }),
-          },
-          user: {
-            update: jest.fn().mockResolvedValue(mockUser),
-          },
-          transaction: { create: jest.fn().mockResolvedValue({}) },
-        };
-        return callback(mockTx);
-      });
+      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
+        mockMachine,
+      );
+      (prismaService.$transaction as jest.Mock) = jest
+        .fn()
+        .mockImplementation(async (callback) => {
+          const mockTx = {
+            machine: {
+              update: jest
+                .fn()
+                .mockResolvedValue({ ...mockMachine, status: 'sold_early' }),
+            },
+            user: {
+              update: jest.fn().mockResolvedValue(mockUser),
+            },
+            transaction: { create: jest.fn().mockResolvedValue({}) },
+          };
+          return callback(mockTx);
+        });
 
       const result = await service.sellMachineEarly('machine-123', mockUserId);
 
@@ -772,7 +822,9 @@ describe('MachinesService', () => {
 
     it('should throw error if trying to sell expired machine', async () => {
       const mockMachine = createMockMachine({ status: 'expired' });
-      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(mockMachine);
+      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
+        mockMachine,
+      );
 
       await expect(
         service.sellMachineEarly('machine-123', mockUserId),
@@ -781,7 +833,9 @@ describe('MachinesService', () => {
 
     it('should throw error if machine belongs to different user', async () => {
       const mockMachine = createMockMachine({ userId: 'other-user' });
-      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(mockMachine);
+      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
+        mockMachine,
+      );
 
       await expect(
         service.sellMachineEarly('machine-123', mockUserId),
@@ -797,26 +851,36 @@ describe('MachinesService', () => {
         lastCalculatedAt: now,
         expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
       });
-      const mockUser = { id: mockUserId, fortuneBalance: new Prisma.Decimal(100) };
+      const mockUser = {
+        id: mockUserId,
+        fortuneBalance: new Prisma.Decimal(100),
+      };
 
-      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(mockMachine);
+      (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
+        mockMachine,
+      );
 
       let machineUpdateData: any;
-      (prismaService.$transaction as jest.Mock) = jest.fn().mockImplementation(async (callback) => {
-        const mockTx = {
-          machine: {
-            update: jest.fn().mockImplementation((args) => {
-              machineUpdateData = args.data;
-              return Promise.resolve({ ...mockMachine, status: 'sold_early' });
-            }),
-          },
-          user: {
-            update: jest.fn().mockResolvedValue(mockUser),
-          },
-          transaction: { create: jest.fn().mockResolvedValue({}) },
-        };
-        return callback(mockTx);
-      });
+      (prismaService.$transaction as jest.Mock) = jest
+        .fn()
+        .mockImplementation(async (callback) => {
+          const mockTx = {
+            machine: {
+              update: jest.fn().mockImplementation((args) => {
+                machineUpdateData = args.data;
+                return Promise.resolve({
+                  ...mockMachine,
+                  status: 'sold_early',
+                });
+              }),
+            },
+            user: {
+              update: jest.fn().mockResolvedValue(mockUser),
+            },
+            transaction: { create: jest.fn().mockResolvedValue({}) },
+          };
+          return callback(mockTx);
+        });
 
       await service.sellMachineEarly('machine-123', mockUserId);
 
@@ -838,20 +902,27 @@ describe('MachinesService', () => {
       const mockUser = { id: mockUserId, maxTierUnlocked: 5 };
 
       // Add user to each machine
-      const machinesWithUser = mockMachines.map((m) => ({ ...m, user: mockUser }));
+      const machinesWithUser = mockMachines.map((m) => ({
+        ...m,
+        user: mockUser,
+      }));
 
-      (prismaService.machine.findMany as jest.Mock).mockResolvedValue(machinesWithUser);
-      (prismaService.$transaction as jest.Mock) = jest.fn().mockImplementation(async (callback) => {
-        const mockTx = {
-          machine: {
-            update: jest.fn().mockResolvedValue({}),
-          },
-          user: {
-            update: jest.fn().mockResolvedValue(mockUser),
-          },
-        };
-        return callback(mockTx);
-      });
+      (prismaService.machine.findMany as jest.Mock).mockResolvedValue(
+        machinesWithUser,
+      );
+      (prismaService.$transaction as jest.Mock) = jest
+        .fn()
+        .mockImplementation(async (callback) => {
+          const mockTx = {
+            machine: {
+              update: jest.fn().mockResolvedValue({}),
+            },
+            user: {
+              update: jest.fn().mockResolvedValue(mockUser),
+            },
+          };
+          return callback(mockTx);
+        });
 
       const result = await service.checkAndExpireMachines();
 
@@ -908,70 +979,104 @@ describe('MachinesService', () => {
     it('should return 0.20 (20%) commission for 0-20% progress', () => {
       const profitAmount = 100;
       const profitPaidOut = 0; // 0%
-      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(0.20);
+      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(
+        0.2,
+      );
 
       const profitPaidOut2 = 10; // 10%
-      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(0.20);
+      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(
+        0.2,
+      );
 
       const profitPaidOut3 = 19.9; // 19.9%
-      expect(calculateEarlySellCommission(profitPaidOut3, profitAmount)).toBe(0.20);
+      expect(calculateEarlySellCommission(profitPaidOut3, profitAmount)).toBe(
+        0.2,
+      );
     });
 
     it('should return 0.35 (35%) commission for 20-40% progress', () => {
       const profitAmount = 100;
       const profitPaidOut = 20; // 20%
-      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(0.35);
+      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(
+        0.35,
+      );
 
       const profitPaidOut2 = 30; // 30%
-      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(0.35);
+      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(
+        0.35,
+      );
 
       const profitPaidOut3 = 39.9; // 39.9%
-      expect(calculateEarlySellCommission(profitPaidOut3, profitAmount)).toBe(0.35);
+      expect(calculateEarlySellCommission(profitPaidOut3, profitAmount)).toBe(
+        0.35,
+      );
     });
 
     it('should return 0.55 (55%) commission for 40-60% progress', () => {
       const profitAmount = 100;
       const profitPaidOut = 40; // 40%
-      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(0.55);
+      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(
+        0.55,
+      );
 
       const profitPaidOut2 = 50; // 50%
-      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(0.55);
+      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(
+        0.55,
+      );
 
       const profitPaidOut3 = 59.9; // 59.9%
-      expect(calculateEarlySellCommission(profitPaidOut3, profitAmount)).toBe(0.55);
+      expect(calculateEarlySellCommission(profitPaidOut3, profitAmount)).toBe(
+        0.55,
+      );
     });
 
     it('should return 0.75 (75%) commission for 60-80% progress', () => {
       const profitAmount = 100;
       const profitPaidOut = 60; // 60%
-      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(0.75);
+      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(
+        0.75,
+      );
 
       const profitPaidOut2 = 70; // 70%
-      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(0.75);
+      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(
+        0.75,
+      );
 
       const profitPaidOut3 = 79.9; // 79.9%
-      expect(calculateEarlySellCommission(profitPaidOut3, profitAmount)).toBe(0.75);
+      expect(calculateEarlySellCommission(profitPaidOut3, profitAmount)).toBe(
+        0.75,
+      );
     });
 
     it('should return 0.90 (90%) commission for 80-100% progress', () => {
       const profitAmount = 100;
       const profitPaidOut = 80; // 80%
-      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(0.90);
+      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(
+        0.9,
+      );
 
       const profitPaidOut2 = 90; // 90%
-      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(0.90);
+      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(
+        0.9,
+      );
 
       const profitPaidOut3 = 99.9; // 99.9%
-      expect(calculateEarlySellCommission(profitPaidOut3, profitAmount)).toBe(0.90);
+      expect(calculateEarlySellCommission(profitPaidOut3, profitAmount)).toBe(
+        0.9,
+      );
     });
 
     it('should return 1.0 (100%) commission for 100%+ progress (after breakeven)', () => {
       const profitAmount = 100;
       const profitPaidOut = 100; // 100%
-      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(1.0);
+      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(
+        1.0,
+      );
 
       const profitPaidOut2 = 150; // 150%
-      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(1.0);
+      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(
+        1.0,
+      );
     });
 
     it('should handle edge case: exactly at tier boundaries', () => {
@@ -980,26 +1085,34 @@ describe('MachinesService', () => {
       expect(calculateEarlySellCommission(20, profitAmount)).toBe(0.35);
       expect(calculateEarlySellCommission(40, profitAmount)).toBe(0.55);
       expect(calculateEarlySellCommission(60, profitAmount)).toBe(0.75);
-      expect(calculateEarlySellCommission(80, profitAmount)).toBe(0.90);
+      expect(calculateEarlySellCommission(80, profitAmount)).toBe(0.9);
       expect(calculateEarlySellCommission(100, profitAmount)).toBe(1.0);
     });
 
     it('should return 1.0 (100%) when profitAmount is 0 (edge case)', () => {
       const profitAmount = 0;
       const profitPaidOut = 0;
-      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(1.0);
+      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(
+        1.0,
+      );
     });
 
     it('should work with decimal profitAmount and profitPaidOut', () => {
       const profitAmount = 3.5; // Real profit from tier 1 machine
       const profitPaidOut = 0.69; // 19.7% paid
-      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(0.20);
+      expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(
+        0.2,
+      );
 
       const profitPaidOut2 = 1.75; // 50% paid
-      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(0.55);
+      expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(
+        0.55,
+      );
 
       const profitPaidOut3 = 3.5; // 100% paid (breakeven)
-      expect(calculateEarlySellCommission(profitPaidOut3, profitAmount)).toBe(1.0);
+      expect(calculateEarlySellCommission(profitPaidOut3, profitAmount)).toBe(
+        1.0,
+      );
     });
   });
 });

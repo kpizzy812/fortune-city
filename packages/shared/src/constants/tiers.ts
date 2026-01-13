@@ -155,6 +155,10 @@ export const FORTUNE_GAMBLE_LEVELS = [
 export const GAMBLE_WIN_MULTIPLIER = 2.0;
 export const GAMBLE_LOSE_MULTIPLIER = 0.5;
 
+// Auto Collect module (автосбор при заполнении Coin Box)
+// Цена: 15% от цены машины, сгорает вместе с машиной
+export const AUTO_COLLECT_COST_PERCENT = 15;
+
 export type FortuneGambleLevel = (typeof FORTUNE_GAMBLE_LEVELS)[number];
 
 export function getGambleLevelConfig(level: number): FortuneGambleLevel {

@@ -86,6 +86,10 @@ model Machine {
   // Fortune's Gamble (Risky Collect)
   fortuneGambleLevel Int @default(0) @map("fortune_gamble_level")
 
+  // Auto Collect module
+  autoCollectEnabled     Boolean   @default(false) @map("auto_collect_enabled")
+  autoCollectPurchasedAt DateTime? @map("auto_collect_purchased_at")
+
   status MachineStatus @default(active)
 
   // Fund source tracking

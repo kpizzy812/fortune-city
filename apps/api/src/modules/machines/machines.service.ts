@@ -533,7 +533,10 @@ export class MachinesService {
   /**
    * Получить информацию о текущем уровне Coin Box и следующем апгрейде
    */
-  async getCoinBoxInfo(machineId: string, userId: string): Promise<{
+  async getCoinBoxInfo(
+    machineId: string,
+    userId: string,
+  ): Promise<{
     currentLevel: number;
     currentCapacityHours: number;
     canUpgrade: boolean;
@@ -628,8 +631,7 @@ export class MachinesService {
 
     // Рассчитываем новую capacity
     const newCapacity =
-      Number(machine.ratePerSecond) *
-      (nextLevelConfig.capacityHours * 60 * 60);
+      Number(machine.ratePerSecond) * (nextLevelConfig.capacityHours * 60 * 60);
 
     // Атомарная транзакция
     const result = await this.prisma.$transaction(async (tx) => {
