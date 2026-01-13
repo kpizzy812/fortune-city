@@ -12,6 +12,11 @@ jest.mock('@tma.js/init-data-node', () => ({
   parse: jest.fn(),
 }));
 
+// Mock nanoid (ESM module)
+jest.mock('nanoid', () => ({
+  nanoid: jest.fn().mockReturnValue('ABC12345'),
+}));
+
 import { validate, parse } from '@tma.js/init-data-node';
 
 describe('AuthService', () => {
@@ -29,8 +34,10 @@ describe('AuthService', () => {
     firstName: 'Test',
     lastName: 'User',
     fortuneBalance: { toString: () => '100.00' },
+    referralBalance: { toString: () => '0.00' },
     usdtBalance: { toString: () => '50.00' },
     maxTierReached: 1,
+    maxTierUnlocked: 1,
     currentTaxRate: { toString: () => '0.50' },
     referralCode: 'abc123',
     referredById: null,
@@ -72,7 +79,9 @@ describe('AuthService', () => {
         {
           provide: UsersService,
           useValue: {
-            findOrCreateFromTelegram: jest.fn().mockResolvedValue(mockUser),
+            findOrCreateFromTelegram: jest
+              .fn()
+              .mockResolvedValue({ user: mockUser, isNewUser: false }),
             findById: jest.fn().mockResolvedValue(mockUser),
             findByTelegramId: jest.fn().mockResolvedValue(mockUser),
           },
@@ -109,12 +118,15 @@ describe('AuthService', () => {
         expiresIn: 3600,
       });
       expect(parse).toHaveBeenCalledWith(mockInitData);
-      expect(usersService.findOrCreateFromTelegram).toHaveBeenCalledWith({
-        id: 12345678,
-        username: 'testuser',
-        first_name: 'Test',
-        last_name: 'User',
-      });
+      expect(usersService.findOrCreateFromTelegram).toHaveBeenCalledWith(
+        {
+          id: 12345678,
+          username: 'testuser',
+          first_name: 'Test',
+          last_name: 'User',
+        },
+        undefined, // referralCode
+      );
       expect(result).toHaveProperty('accessToken', 'mock-jwt-token');
       expect(result).toHaveProperty('user');
       expect(result.user.telegramId).toBe('12345678');
@@ -168,12 +180,15 @@ describe('AuthService', () => {
       const loginData = createValidLoginData();
       const result = await service.authWithLoginWidget(loginData);
 
-      expect(usersService.findOrCreateFromTelegram).toHaveBeenCalledWith({
-        id: 12345678,
-        username: 'testuser',
-        first_name: 'Test',
-        last_name: 'User',
-      });
+      expect(usersService.findOrCreateFromTelegram).toHaveBeenCalledWith(
+        {
+          id: 12345678,
+          username: 'testuser',
+          first_name: 'Test',
+          last_name: 'User',
+        },
+        undefined, // referralCode
+      );
       expect(result).toHaveProperty('accessToken', 'mock-jwt-token');
       expect(result.user.telegramId).toBe('12345678');
     });

@@ -39,7 +39,10 @@ export class AuthService {
   /**
    * Авторизация через Telegram Mini App (initData)
    */
-  async authWithInitData(initData: string): Promise<AuthResponseDto> {
+  async authWithInitData(
+    initData: string,
+    referralCode?: string,
+  ): Promise<AuthResponseDto> {
     try {
       // Валидация initData
       validate(initData, this.botToken, {
@@ -61,7 +64,7 @@ export class AuthService {
         last_name: user.lastName as string | undefined,
       };
 
-      return this.authenticateUser(telegramUser);
+      return this.authenticateUser(telegramUser, referralCode);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`InitData validation failed: ${message}`);
@@ -75,6 +78,7 @@ export class AuthService {
    */
   async authWithLoginWidget(
     data: TelegramLoginWidgetDto,
+    referralCode?: string,
   ): Promise<AuthResponseDto> {
     // Проверка времени авторизации (не старше 1 дня)
     const authDate = data.auth_date;
@@ -98,7 +102,7 @@ export class AuthService {
       last_name: data.last_name,
     };
 
-    return this.authenticateUser(telegramUser);
+    return this.authenticateUser(telegramUser, referralCode);
   }
 
   /**
@@ -140,9 +144,13 @@ export class AuthService {
    */
   private async authenticateUser(
     telegramUser: TelegramUserData,
+    referralCode?: string,
   ): Promise<AuthResponseDto> {
-    // Найти или создать пользователя
-    const user = await this.usersService.findOrCreateFromTelegram(telegramUser);
+    // Найти или создать пользователя (referralCode применяется только для новых)
+    const { user } = await this.usersService.findOrCreateFromTelegram(
+      telegramUser,
+      referralCode,
+    );
 
     // Создать JWT
     const payload: JwtPayload = {
@@ -194,8 +202,10 @@ export class AuthService {
       firstName: user.firstName,
       lastName: user.lastName,
       fortuneBalance: user.fortuneBalance.toString(),
+      referralBalance: user.referralBalance.toString(),
       maxTierReached: user.maxTierReached,
       currentTaxRate: user.currentTaxRate.toString(),
+      referralCode: user.referralCode,
     };
   }
 

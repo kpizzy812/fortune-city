@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MachineLifecycleService } from './machine-lifecycle.service';
 import { MachinesService } from '../machines/machines.service';
+import { AutoCollectService } from '../machines/services/auto-collect.service';
 
 describe('MachineLifecycleService', () => {
   let service: MachineLifecycleService;
@@ -11,12 +12,21 @@ describe('MachineLifecycleService', () => {
       checkAndExpireMachines: jest.fn(),
     };
 
+    const mockAutoCollectService = {
+      getMachinesForAutoCollect: jest.fn().mockResolvedValue([]),
+      executeAutoCollect: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MachineLifecycleService,
         {
           provide: MachinesService,
           useValue: mockMachinesService,
+        },
+        {
+          provide: AutoCollectService,
+          useValue: mockAutoCollectService,
         },
       ],
     }).compile();

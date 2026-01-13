@@ -26,8 +26,23 @@ export class UsersService {
     });
   }
 
-  async createFromTelegram(telegramUser: TelegramUserData): Promise<User> {
+  async createFromTelegram(
+    telegramUser: TelegramUserData,
+    referrerCode?: string,
+  ): Promise<User> {
     const referralCode = nanoid(8);
+
+    // Find referrer by their code (if provided)
+    let referrerId: string | undefined;
+    if (referrerCode) {
+      const referrer = await this.prisma.user.findUnique({
+        where: { referralCode: referrerCode },
+        select: { id: true },
+      });
+      if (referrer) {
+        referrerId = referrer.id;
+      }
+    }
 
     return this.prisma.user.create({
       data: {
@@ -36,19 +51,23 @@ export class UsersService {
         firstName: telegramUser.first_name,
         lastName: telegramUser.last_name,
         referralCode,
+        referredById: referrerId,
       },
     });
   }
 
   async findOrCreateFromTelegram(
     telegramUser: TelegramUserData,
-  ): Promise<User> {
+    referrerCode?: string,
+  ): Promise<{ user: User; isNewUser: boolean }> {
     const telegramId = String(telegramUser.id);
 
     let user = await this.findByTelegramId(telegramId);
+    let isNewUser = false;
 
     if (!user) {
-      user = await this.createFromTelegram(telegramUser);
+      user = await this.createFromTelegram(telegramUser, referrerCode);
+      isNewUser = true;
     } else {
       // Update user info if changed
       user = await this.prisma.user.update({
@@ -61,7 +80,7 @@ export class UsersService {
       });
     }
 
-    return user;
+    return { user, isNewUser };
   }
 
   async updateMaxTier(userId: string, tier: number): Promise<User> {

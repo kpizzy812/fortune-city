@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api, UserData, TelegramLoginWidgetData } from '@/lib/api';
+import { getReferralCode, clearReferralCode } from '@/lib/referral';
 
 interface AuthState {
   token: string | null;
@@ -38,7 +39,10 @@ export const useAuthStore = create<AuthState>()(
       authWithInitData: async (initData) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await api.authWithInitData(initData);
+          const referralCode = getReferralCode() ?? undefined;
+          const response = await api.authWithInitData(initData, referralCode);
+          // Clear referral code after successful auth (it's applied on server for new users)
+          clearReferralCode();
           set({
             token: response.accessToken,
             user: response.user,
@@ -54,7 +58,10 @@ export const useAuthStore = create<AuthState>()(
       authWithLoginWidget: async (data) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await api.authWithLoginWidget(data);
+          const referralCode = getReferralCode() ?? undefined;
+          const response = await api.authWithLoginWidget(data, referralCode);
+          // Clear referral code after successful auth (it's applied on server for new users)
+          clearReferralCode();
           set({
             token: response.accessToken,
             user: response.user,

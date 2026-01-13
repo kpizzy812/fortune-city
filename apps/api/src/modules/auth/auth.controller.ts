@@ -35,7 +35,7 @@ export class AuthController {
   async authWithInitData(
     @Body() dto: TelegramInitDataDto,
   ): Promise<AuthResponseDto> {
-    return this.authService.authWithInitData(dto.initData);
+    return this.authService.authWithInitData(dto.initData, dto.referralCode);
   }
 
   /**
@@ -47,7 +47,7 @@ export class AuthController {
   async authWithLoginWidget(
     @Body() dto: TelegramLoginWidgetDto,
   ): Promise<AuthResponseDto> {
-    return this.authService.authWithLoginWidget(dto);
+    return this.authService.authWithLoginWidget(dto, dto.referralCode);
   }
 
   /**
@@ -67,8 +67,10 @@ export class AuthController {
       firstName: user.firstName,
       lastName: user.lastName,
       fortuneBalance: user.fortuneBalance.toString(),
+      referralBalance: user.referralBalance.toString(),
       maxTierReached: user.maxTierReached,
       currentTaxRate: user.currentTaxRate.toString(),
+      referralCode: user.referralCode,
     };
   }
 

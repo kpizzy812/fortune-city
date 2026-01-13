@@ -2,6 +2,7 @@
 
 import { useEffect, ReactNode } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
+import { captureReferralCode } from '@/lib/referral';
 
 interface TelegramProviderProps {
   children: ReactNode;
@@ -74,6 +75,11 @@ declare global {
 
 export function TelegramProvider({ children }: TelegramProviderProps) {
   const { token, authWithInitData, refreshUser } = useAuthStore();
+
+  // Capture referral code from URL on first render
+  useEffect(() => {
+    captureReferralCode();
+  }, []);
 
   useEffect(() => {
     const webApp = window.Telegram?.WebApp;

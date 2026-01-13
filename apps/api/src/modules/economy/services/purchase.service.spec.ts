@@ -5,6 +5,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { MachinesService } from '../../machines/machines.service';
 import { TransactionsService } from './transactions.service';
 import { FundSourceService } from './fund-source.service';
+import { SettingsService } from '../../settings/settings.service';
+import { ReferralsService } from '../../referrals/referrals.service';
 import { Prisma } from '@prisma/client';
 
 describe('PurchaseService', () => {
@@ -13,6 +15,8 @@ describe('PurchaseService', () => {
   let machinesService: jest.Mocked<MachinesService>;
   let transactionsService: jest.Mocked<TransactionsService>;
   let fundSourceService: jest.Mocked<FundSourceService>;
+  let settingsService: jest.Mocked<SettingsService>;
+  let referralsService: jest.Mocked<ReferralsService>;
 
   const mockUserId = 'user-123';
 
@@ -23,7 +27,9 @@ describe('PurchaseService', () => {
     firstName: 'Test',
     lastName: 'User',
     fortuneBalance: new Prisma.Decimal(100),
+    referralBalance: new Prisma.Decimal(0),
     maxTierReached: 1,
+    maxTierUnlocked: 1,
     currentTaxRate: new Prisma.Decimal(0.5),
     referralCode: 'ABC123',
     referredById: null,
@@ -86,6 +92,9 @@ describe('PurchaseService', () => {
         findUnique: jest.fn(),
         update: jest.fn(),
       },
+      machine: {
+        findFirst: jest.fn(),
+      },
       $transaction: jest.fn(),
     };
 
@@ -103,6 +112,17 @@ describe('PurchaseService', () => {
       create: jest.fn(),
     };
 
+    const mockSettingsService = {
+      getMaxGlobalTier: jest.fn().mockResolvedValue(1), // Default tier 1 available
+    };
+
+    const mockReferralsService = {
+      processReferralBonus: jest.fn().mockResolvedValue({
+        bonuses: [],
+        totalDistributed: 0,
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PurchaseService,
@@ -110,6 +130,8 @@ describe('PurchaseService', () => {
         { provide: MachinesService, useValue: mockMachinesService },
         { provide: TransactionsService, useValue: mockTransactionsService },
         { provide: FundSourceService, useValue: mockFundSourceService },
+        { provide: SettingsService, useValue: mockSettingsService },
+        { provide: ReferralsService, useValue: mockReferralsService },
       ],
     }).compile();
 
@@ -118,6 +140,8 @@ describe('PurchaseService', () => {
     machinesService = module.get(MachinesService);
     transactionsService = module.get(TransactionsService);
     fundSourceService = module.get(FundSourceService);
+    settingsService = module.get(SettingsService);
+    referralsService = module.get(ReferralsService);
 
     jest.clearAllMocks();
   });
@@ -217,16 +241,18 @@ describe('PurchaseService', () => {
       ).rejects.toThrow(/Tier 5 is locked/);
     });
 
-    it('should allow purchasing next tier (maxTierReached + 1)', async () => {
+    it('should allow purchasing tier when maxTierUnlocked allows it', async () => {
       const mockUser = createMockUser({
         fortuneBalance: new Prisma.Decimal(100),
         maxTierReached: 1,
+        maxTierUnlocked: 2, // User has unlocked tier 2
       });
       const mockMachine = createMockMachine({ tier: 2 });
       const mockTransaction = createMockTransaction();
       const updatedUser = createMockUser({
         fortuneBalance: new Prisma.Decimal(70),
         maxTierReached: 2,
+        maxTierUnlocked: 2,
         currentTaxRate: new Prisma.Decimal(0.5),
       });
 

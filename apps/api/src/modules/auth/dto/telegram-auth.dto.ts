@@ -7,6 +7,10 @@ export class TelegramInitDataDto {
   @IsString()
   @IsNotEmpty()
   initData: string;
+
+  @IsString()
+  @IsOptional()
+  referralCode?: string;
 }
 
 /**
@@ -38,6 +42,10 @@ export class TelegramLoginWidgetDto {
 
   @IsString()
   hash: string;
+
+  @IsString()
+  @IsOptional()
+  referralCode?: string;
 }
 
 /**
@@ -52,7 +60,9 @@ export class AuthResponseDto {
     firstName: string | null;
     lastName: string | null;
     fortuneBalance: string;
+    referralBalance: string;
     maxTierReached: number;
     currentTaxRate: string;
+    referralCode: string;
   };
 }

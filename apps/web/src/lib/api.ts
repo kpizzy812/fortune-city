@@ -59,17 +59,17 @@ class ApiClient {
   // Auth endpoints
   // ============================================
 
-  async authWithInitData(initData: string) {
+  async authWithInitData(initData: string, referralCode?: string) {
     return this.request<AuthResponse>('/auth/telegram/init-data', {
       method: 'POST',
-      body: JSON.stringify({ initData }),
+      body: JSON.stringify({ initData, referralCode }),
     });
   }
 
-  async authWithLoginWidget(data: TelegramLoginWidgetData) {
+  async authWithLoginWidget(data: TelegramLoginWidgetData, referralCode?: string) {
     return this.request<AuthResponse>('/auth/telegram/login-widget', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, referralCode }),
     });
   }
 
