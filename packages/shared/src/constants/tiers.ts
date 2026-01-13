@@ -201,3 +201,46 @@ export function calculateEarlySellCommission(
   if (progressPercent < 100) return 0.90; // 90%
   return 1.0; // 100% - после BE тело невыводное
 }
+
+// ===== AUCTION (P2P Sale) =====
+// Commission based on machine wear (time elapsed / lifespan)
+export function calculateAuctionCommission(wearPercent: number): number {
+  // Commission tiers based on wear
+  if (wearPercent < 20) return 0.10;  // 10% commission
+  if (wearPercent < 40) return 0.20;  // 20%
+  if (wearPercent < 60) return 0.35;  // 35%
+  if (wearPercent < 80) return 0.55;  // 55%
+  return 0.75; // 75% for 80-100% wear
+}
+
+// Calculate machine wear percentage
+export function calculateMachineWear(
+  startedAt: Date,
+  expiresAt: Date,
+  now: Date = new Date(),
+): number {
+  const totalLifespan = expiresAt.getTime() - startedAt.getTime();
+  const elapsed = Math.min(now.getTime() - startedAt.getTime(), totalLifespan);
+  return Math.max(0, Math.min(100, (elapsed / totalLifespan) * 100));
+}
+
+// ===== PAWNSHOP (Instant Sale to System) =====
+// Pawnshop takes all collected profit + 10% commission
+export const PAWNSHOP_COMMISSION_RATE = 0.10; // 10%
+
+// Calculate pawnshop payout
+// Formula: P × 0.9 - collected_profit
+// Result: player always exits with -10% of investment
+export function calculatePawnshopPayout(
+  machinePrice: number,
+  collectedProfit: number,
+): { payout: number; isAvailable: boolean } {
+  const maxPayout = machinePrice * (1 - PAWNSHOP_COMMISSION_RATE);
+  const payout = maxPayout - collectedProfit;
+
+  // Pawnshop is unavailable if payout would be negative (after BE)
+  return {
+    payout: Math.max(0, payout),
+    isAvailable: payout > 0,
+  };
+}

@@ -18,7 +18,7 @@ export interface TierInfo {
 // Machine Types
 // ============================================
 
-export type MachineStatus = 'active' | 'expired' | 'sold_early';
+export type MachineStatus = 'active' | 'expired' | 'sold_early' | 'sold_auction' | 'sold_pawnshop' | 'listed_auction';
 
 export interface MachineTierInfo {
   name: string;
@@ -210,6 +210,77 @@ export interface Transaction {
   netAmount: string;
   status: TransactionStatus;
   createdAt: string;
+}
+
+// ============================================
+// Sale Types (Auction & Pawnshop)
+// ============================================
+
+export interface AuctionInfo {
+  canList: boolean;
+  reason?: string;
+  wearPercent: number;
+  commissionRate: number;
+  expectedPayout: number;
+  tierPrice: number;
+  queuePosition?: number;
+  queueLength: number;
+}
+
+export interface PawnshopInfo {
+  canSell: boolean;
+  reason?: string;
+  tierPrice: number;
+  collectedProfit: number;
+  coinBoxCurrent: number;
+  commissionRate: number;
+  commissionAmount: number;
+  expectedPayout: number;
+  totalOnHand: number;
+}
+
+export interface SaleOptions {
+  auction: AuctionInfo;
+  pawnshop: PawnshopInfo;
+  recommendation: 'auction' | 'pawnshop' | 'wait';
+  recommendationReasonCode: string;
+  recommendationReasonParams: Record<string, string | number>;
+}
+
+export interface ListOnAuctionResult {
+  listing: {
+    id: string;
+    machineId: string;
+    tier: number;
+    wearPercent: number;
+    commissionRate: number;
+    expectedPayout: number;
+    status: string;
+    createdAt: string;
+  };
+  machine: Machine;
+}
+
+export interface CancelAuctionResult {
+  listing: {
+    id: string;
+    machineId: string;
+    status: string;
+  };
+  machine: Machine;
+}
+
+export interface PawnshopSaleResult {
+  machine: Machine;
+  tierPrice: number;
+  collectedProfit: number;
+  commissionRate: number;
+  commissionAmount: number;
+  payout: number;
+  totalOnHand: number;
+  user: {
+    fortuneBalance: string;
+  };
 }
 
 // ============================================

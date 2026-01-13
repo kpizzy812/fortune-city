@@ -12,6 +12,8 @@ import type { Request } from 'express';
 import { MachinesService, MachineWithTierInfo } from './machines.service';
 import { RiskyCollectService } from './services/risky-collect.service';
 import { AutoCollectService } from './services/auto-collect.service';
+import { AuctionService } from './services/auction.service';
+import { PawnshopService } from './services/pawnshop.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../auth/auth.service';
 import {
@@ -33,6 +35,16 @@ import {
   AutoCollectInfoResponseDto,
   PurchaseAutoCollectResponseDto,
 } from './dto/auto-collect.dto';
+import {
+  AuctionInfoResponseDto,
+  ListOnAuctionResponseDto,
+  CancelAuctionResponseDto,
+  AuctionQueueResponseDto,
+  UserListingsResponseDto,
+  PawnshopInfoResponseDto,
+  PawnshopSaleResponseDto,
+  SaleOptionsResponseDto,
+} from './dto/sale.dto';
 
 interface AuthenticatedRequest extends Request {
   user: JwtPayload;
@@ -44,6 +56,8 @@ export class MachinesController {
     private readonly machinesService: MachinesService,
     private readonly riskyCollectService: RiskyCollectService,
     private readonly autoCollectService: AutoCollectService,
+    private readonly auctionService: AuctionService,
+    private readonly pawnshopService: PawnshopService,
   ) {}
 
   private toResponseDto(machine: MachineWithTierInfo): MachineResponseDto {
@@ -322,6 +336,165 @@ export class MachinesController {
         fortuneBalance: result.user.fortuneBalance.toString(),
       },
       newBalance: result.newBalance,
+    };
+  }
+
+  // ===== Auction Endpoints =====
+
+  @Get('auction/queue')
+  async getAuctionQueue(): Promise<AuctionQueueResponseDto[]> {
+    return this.auctionService.getAuctionQueueByTier();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('auction/my-listings')
+  async getMyListings(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<UserListingsResponseDto> {
+    const listingsWithPosition =
+      await this.auctionService.getUserListingsWithPosition(req.user.sub);
+
+    return { listings: listingsWithPosition };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/auction-info')
+  async getAuctionInfo(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AuctionInfoResponseDto> {
+    return this.auctionService.getAuctionInfo(id, req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/list-auction')
+  async listOnAuction(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<ListOnAuctionResponseDto> {
+    const result = await this.auctionService.listOnAuction(id, req.user.sub);
+
+    return {
+      listing: {
+        id: result.listing.id,
+        machineId: result.listing.machineId,
+        tier: result.listing.tier,
+        wearPercent: result.wearPercent,
+        commissionRate: result.commissionRate,
+        expectedPayout: result.expectedPayout,
+        status: result.listing.status,
+        createdAt: result.listing.createdAt,
+      },
+      machine: this.toResponseDto(
+        this.machinesService.enrichWithTierInfo(result.machine),
+      ),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/cancel-auction')
+  async cancelAuction(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<CancelAuctionResponseDto> {
+    const result = await this.auctionService.cancelAuctionListing(
+      id,
+      req.user.sub,
+    );
+
+    return {
+      listing: {
+        id: result.listing.id,
+        machineId: result.listing.machineId,
+        status: result.listing.status,
+      },
+      machine: this.toResponseDto(
+        this.machinesService.enrichWithTierInfo(result.machine),
+      ),
+    };
+  }
+
+  // ===== Pawnshop Endpoints =====
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/pawnshop-info')
+  async getPawnshopInfo(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<PawnshopInfoResponseDto> {
+    return this.pawnshopService.getPawnshopInfo(id, req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/sell-pawnshop')
+  async sellToPawnshop(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<PawnshopSaleResponseDto> {
+    const result = await this.pawnshopService.sellToPawnshop(id, req.user.sub);
+
+    return {
+      machine: this.toResponseDto(
+        this.machinesService.enrichWithTierInfo(result.machine),
+      ),
+      tierPrice: result.tierPrice,
+      collectedProfit: result.collectedProfit,
+      commissionRate: result.commissionRate,
+      commissionAmount: result.commissionAmount,
+      payout: result.payout,
+      totalOnHand: result.totalOnHand,
+      user: {
+        fortuneBalance: result.user.fortuneBalance.toString(),
+      },
+    };
+  }
+
+  // ===== Combined Sale Options =====
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/sale-options')
+  async getSaleOptions(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<SaleOptionsResponseDto> {
+    const [auctionInfo, pawnshopInfo] = await Promise.all([
+      this.auctionService.getAuctionInfo(id, req.user.sub),
+      this.pawnshopService.getPawnshopInfo(id, req.user.sub),
+    ]);
+
+    // Determine recommendation with reason code for frontend i18n
+    let recommendation: 'auction' | 'pawnshop' | 'wait';
+    let recommendationReasonCode: string;
+    let recommendationReasonParams: Record<string, string | number> = {};
+
+    if (!pawnshopInfo.canSell && !auctionInfo.canList) {
+      recommendation = 'wait';
+      recommendationReasonCode = 'notAvailable';
+    } else if (!pawnshopInfo.canSell) {
+      recommendation = 'auction';
+      recommendationReasonCode = 'pawnshopUnavailable';
+    } else if (auctionInfo.queueLength === 0) {
+      recommendation = 'auction';
+      recommendationReasonCode = 'noQueue';
+    } else if (auctionInfo.expectedPayout > pawnshopInfo.expectedPayout * 1.2) {
+      recommendation = 'auction';
+      recommendationReasonCode = 'auctionPaysMore';
+      recommendationReasonParams = {
+        percent: Math.round(
+          (auctionInfo.expectedPayout / pawnshopInfo.expectedPayout - 1) * 100,
+        ),
+      };
+    } else {
+      recommendation = 'pawnshop';
+      recommendationReasonCode = 'pawnshopInstant';
+    }
+
+    return {
+      auction: auctionInfo,
+      pawnshop: pawnshopInfo,
+      recommendation,
+      recommendationReasonCode,
+      recommendationReasonParams,
     };
   }
 }

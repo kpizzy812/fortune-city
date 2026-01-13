@@ -112,6 +112,9 @@ enum MachineStatus {
   active
   expired
   sold_early
+  sold_auction    // Sold via auction (P2P)
+  sold_pawnshop   // Sold to system via pawnshop
+  listed_auction  // Currently listed on auction (waiting for buyer)
 }
 
 // ============== FUND SOURCES ==============
@@ -180,6 +183,10 @@ enum TransactionType {
   machine_income
   machine_income_risky
   machine_early_sell
+  machine_auction_list     // Listed machine on auction
+  machine_auction_sale     // Sold machine via auction (seller receives)
+  machine_auction_cancel   // Cancelled auction listing
+  machine_pawnshop_sale    // Sold machine to pawnshop
   referral_bonus
   wheel_prize
   upgrade_purchase
@@ -261,4 +268,47 @@ model ReferralBonus {
   @@index([receiverId])
   @@index([sourceId])
   @@map("referral_bonuses")
+}
+
+// ============== AUCTION LISTINGS ==============
+// FIFO queue for P2P machine sales
+
+model AuctionListing {
+  id        String @id @default(cuid())
+  machineId String @unique @map("machine_id")
+  sellerId  String @map("seller_id")
+
+  tier Int // Denormalized for quick queue lookup
+
+  // Snapshot at listing time (for commission calculation)
+  wearPercentAtListing    Decimal @map("wear_percent_at_listing") @db.Decimal(5, 2)
+  commissionRateAtListing Decimal @map("commission_rate_at_listing") @db.Decimal(5, 4)
+  expectedPayout          Decimal @map("expected_payout") @db.Decimal(20, 8)
+
+  // Upgrades to transfer (buyer gets new machine + these upgrades)
+  coinBoxLevelAtListing     Int     @map("coin_box_level_at_listing")
+  fortuneGambleLevelAtListing Int   @map("fortune_gamble_level_at_listing")
+  autoCollectAtListing      Boolean @map("auto_collect_at_listing")
+
+  status AuctionListingStatus @default(pending)
+
+  // Sale info (filled when sold)
+  buyerId  String?   @map("buyer_id")
+  soldAt   DateTime? @map("sold_at")
+  newMachineId String? @map("new_machine_id") // Machine created for buyer
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([tier, status, createdAt]) // For FIFO queue by tier
+  @@index([sellerId])
+  @@index([status])
+  @@map("auction_listings")
+}
+
+enum AuctionListingStatus {
+  pending   // Waiting for buyer
+  sold      // Successfully sold
+  cancelled // Seller cancelled
+  expired   // Machine expired while listed
 }

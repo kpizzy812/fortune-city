@@ -69,15 +69,18 @@
     "currentMaxTier": "Current max tier:",
     "nextUnlock": "Next unlock:",
     "tier": "Tier",
+    "tierBadge": "TIER {tier}",
+    "locked": "Locked",
     "duration": "Duration",
     "yield": "Yield",
     "profit": "Profit",
-    "dailyReturn": "% daily return",
+    "dailyReturn": "~{rate}% daily return",
     "buyMachine": "Buy Machine",
     "purchasing": "Purchasing...",
     "reachTierFirst": "Reach Tier {tier} first",
     "needMore": "Need ${amount} more",
     "alreadyOwned": "Already owned",
+    "noTiersAvailable": "No tiers available",
     "price": "Price",
     "expectedYield": "Expected Yield",
     "afterPurchase": "After purchase",
@@ -198,6 +201,39 @@
     "howItWorks3": "Earn 1% from 3rd level referrals (Line 3)",
     "howItWorks4": "Bonuses are paid from fresh deposits only",
     "howItWorks5": "Active referral = has purchased machine with own funds"
+  },
+  "sell": {
+    "title": "Sell {name}",
+    "machineInfo": "Tier {tier} • Wear: {wear}%",
+    "recommended": "Recommended:",
+    "selectOption": "Select Option",
+    "reasons": {
+      "notAvailable": "Machine is not available for sale. Wait for cycle to complete.",
+      "pawnshopUnavailable": "Pawnshop is not available after breakeven. Auction is your only option.",
+      "noQueue": "No queue - your machine will sell on next purchase of this tier.",
+      "auctionPaysMore": "Auction pays {percent}% more than pawnshop.",
+      "pawnshopInstant": "Pawnshop offers instant sale. Auction queue is long."
+    },
+    "auction": {
+      "title": "P2P Auction",
+      "youllReceive": "You'll receive:",
+      "commission": "Commission:",
+      "queueLength": "Queue: {count} machines waiting",
+      "noQueue": "No queue - sells on next purchase",
+      "listOnAuction": "List on Auction",
+      "warning": "Your machine will be queued for P2P sale. You can cancel before it sells.",
+      "recommendedTag": "Recommended"
+    },
+    "pawnshop": {
+      "title": "Instant Pawnshop",
+      "youllReceive": "You'll receive:",
+      "commission": "Commission:",
+      "profitDeducted": "Repair cost: ${amount}",
+      "sellNow": "Sell Now",
+      "warning": "This action is irreversible. Your machine will be sold immediately.",
+      "recommendedTag": "Recommended"
+    },
+    "sellMachine": "Sell Machine"
   },
   "metadata": {
     "title": "Fortune City",

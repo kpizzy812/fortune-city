@@ -13,6 +13,10 @@ import type {
   CanAffordResponse,
   PurchaseResult,
   Transaction,
+  SaleOptions,
+  ListOnAuctionResult,
+  CancelAuctionResult,
+  PawnshopSaleResult,
 } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -158,6 +162,35 @@ class ApiClient {
 
   async purchaseAutoCollect(token: string, machineId: string): Promise<PurchaseAutoCollectResult> {
     return this.request<PurchaseAutoCollectResult>(`/machines/${machineId}/purchase-auto-collect`, {
+      token,
+      method: 'POST',
+    });
+  }
+
+  // ============================================
+  // Sale endpoints (Auction & Pawnshop)
+  // ============================================
+
+  async getSaleOptions(token: string, machineId: string): Promise<SaleOptions> {
+    return this.request<SaleOptions>(`/machines/${machineId}/sale-options`, { token });
+  }
+
+  async listOnAuction(token: string, machineId: string): Promise<ListOnAuctionResult> {
+    return this.request<ListOnAuctionResult>(`/machines/${machineId}/list-auction`, {
+      token,
+      method: 'POST',
+    });
+  }
+
+  async cancelAuction(token: string, machineId: string): Promise<CancelAuctionResult> {
+    return this.request<CancelAuctionResult>(`/machines/${machineId}/cancel-auction`, {
+      token,
+      method: 'POST',
+    });
+  }
+
+  async sellToPawnshop(token: string, machineId: string): Promise<PawnshopSaleResult> {
+    return this.request<PawnshopSaleResult>(`/machines/${machineId}/sell-pawnshop`, {
       token,
       method: 'POST',
     });

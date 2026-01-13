@@ -32,9 +32,7 @@ export class ReferralsController {
    * Get referral statistics for current user
    */
   @Get('stats')
-  async getStats(
-    @Request() req: { user: JwtPayload },
-  ): Promise<ReferralStats> {
+  async getStats(@Request() req: { user: JwtPayload }): Promise<ReferralStats> {
     return this.referralsService.getReferralStats(req.user.sub);
   }
 

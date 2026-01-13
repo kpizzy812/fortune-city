@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/stores/auth.store';
@@ -8,8 +8,10 @@ import { useMachinesStore } from '@/stores/machines.store';
 import { useFortuneRateStore } from '@/stores/fortune-rate.store';
 import { TierCarousel } from '@/components/shop/TierCarousel';
 import { PurchaseModal } from '@/components/shop/PurchaseModal';
+import { SellMachineModal } from '@/components/shop/SellMachineModal';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
-import type { TierInfo } from '@/types';
+import { api } from '@/lib/api';
+import type { TierInfo, Machine, SaleOptions } from '@/types';
 
 export default function ShopPage() {
   const router = useRouter();
@@ -20,23 +22,43 @@ export default function ShopPage() {
 
   const {
     tiers,
+    machines,
     affordability,
     isLoadingTiers,
     isPurchasing,
     error,
     fetchTiers,
+    fetchMachines,
     checkAllAffordability,
     purchaseMachine,
     clearError,
   } = useMachinesStore();
 
-  // Modal state
+  // Purchase modal state
   const [selectedTier, setSelectedTier] = useState<TierInfo | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Sell modal state
+  const [selectedMachineForSale, setSelectedMachineForSale] = useState<Machine | null>(null);
+  const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+  const [saleOptions, setSaleOptions] = useState<SaleOptions | null>(null);
+  const [isLoadingSaleOptions, setIsLoadingSaleOptions] = useState(false);
+
   // Track if initial fetch was done
   const hasFetchedTiers = useRef(false);
+  const hasFetchedMachines = useRef(false);
   const hasCheckedAffordability = useRef(false);
+
+  // Create machinesByTier map from active machines
+  const machinesByTier = useMemo(() => {
+    const map: Record<number, Machine> = {};
+    machines
+      .filter(m => m.status === 'active' || m.status === 'listed_auction')
+      .forEach(m => {
+        map[m.tier] = m;
+      });
+    return map;
+  }, [machines]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -52,6 +74,14 @@ export default function ShopPage() {
       fetchTiers();
     }
   }, [fetchTiers]);
+
+  // Load machines (only once)
+  useEffect(() => {
+    if (token && !hasFetchedMachines.current) {
+      hasFetchedMachines.current = true;
+      fetchMachines(token);
+    }
+  }, [token, fetchMachines]);
 
   // Check affordability when tiers load (only once per session)
   useEffect(() => {
@@ -100,6 +130,56 @@ export default function ShopPage() {
       clearError();
     }
   }, [isPurchasing, clearError]);
+
+  // Handle sell machine click
+  const handleSellMachine = useCallback(async (machine: Machine) => {
+    if (!token) return;
+
+    setSelectedMachineForSale(machine);
+    setIsSellModalOpen(true);
+    setIsLoadingSaleOptions(true);
+
+    try {
+      const options = await api.getSaleOptions(token, machine.id);
+      setSaleOptions(options);
+    } catch (e) {
+      console.error('Failed to load sale options:', e);
+    } finally {
+      setIsLoadingSaleOptions(false);
+    }
+  }, [token]);
+
+  // Handle sell modal close
+  const handleCloseSellModal = useCallback(() => {
+    setIsSellModalOpen(false);
+    setSelectedMachineForSale(null);
+    setSaleOptions(null);
+  }, []);
+
+  // Handle auction listing
+  const handleSellAuction = useCallback(async () => {
+    if (!token || !selectedMachineForSale) return;
+
+    await api.listOnAuction(token, selectedMachineForSale.id);
+    // Refresh machines and affordability
+    await fetchMachines(token);
+    if (user) {
+      checkAllAffordability(token, user.maxTierReached);
+    }
+  }, [token, selectedMachineForSale, fetchMachines, user, checkAllAffordability]);
+
+  // Handle pawnshop sale
+  const handleSellPawnshop = useCallback(async () => {
+    if (!token || !selectedMachineForSale) return;
+
+    await api.sellToPawnshop(token, selectedMachineForSale.id);
+    // Refresh user balance, machines and affordability
+    await refreshUser();
+    await fetchMachines(token);
+    if (user) {
+      checkAllAffordability(token, user.maxTierReached);
+    }
+  }, [token, selectedMachineForSale, refreshUser, fetchMachines, user, checkAllAffordability]);
 
   // Loading state
   if (!user || !token) {
@@ -190,8 +270,10 @@ export default function ShopPage() {
         <TierCarousel
           tiers={tiers}
           affordability={affordability}
+          machinesByTier={machinesByTier}
           maxTierReached={user.maxTierReached}
           onBuyTier={handleBuyTier}
+          onSellMachine={handleSellMachine}
           isPurchasing={isPurchasing}
           isLoading={isLoadingTiers}
         />
@@ -205,6 +287,17 @@ export default function ShopPage() {
           onConfirm={handleConfirmPurchase}
           isLoading={isPurchasing}
           userBalance={userBalance}
+        />
+
+        {/* Sell Modal */}
+        <SellMachineModal
+          isOpen={isSellModalOpen}
+          onClose={handleCloseSellModal}
+          machine={selectedMachineForSale}
+          saleOptions={saleOptions}
+          isLoading={isLoadingSaleOptions}
+          onSellAuction={handleSellAuction}
+          onSellPawnshop={handleSellPawnshop}
         />
       </div>
     </main>

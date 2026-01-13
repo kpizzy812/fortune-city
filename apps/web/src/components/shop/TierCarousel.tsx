@@ -1,16 +1,19 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { TierInfo, CanAffordResponse } from '@/types';
+import { Lock, ChevronLeft, ChevronRight, Tag } from 'lucide-react';
+import type { TierInfo, CanAffordResponse, Machine } from '@/types';
 import { Button } from '@/components/ui/Button';
 
 interface TierCarouselProps {
   tiers: TierInfo[];
   affordability: Record<number, CanAffordResponse>;
+  machinesByTier: Record<number, Machine>;
   maxTierReached: number;
   onBuyTier: (tier: number) => void;
+  onSellMachine: (machine: Machine) => void;
   isPurchasing: boolean;
   isLoading: boolean;
 }
@@ -26,18 +29,38 @@ function formatCompactNumber(num: number): string {
   return num.toLocaleString();
 }
 
+interface TierCardTranslations {
+  tierBadge: (params: { tier: number }) => string;
+  locked: string;
+  duration: string;
+  yield: string;
+  profit: string;
+  dailyReturn: (params: { rate: string }) => string;
+  reachTierFirst: (params: { tier: number }) => string;
+  needMore: (params: { amount: string }) => string;
+  purchasing: string;
+  buyMachine: string;
+  sellMachine: string;
+}
+
 function TierCard({
   tier,
   canAfford,
+  machine,
   maxTierReached,
   onBuy,
+  onSell,
   isPurchasing,
+  t,
 }: {
   tier: TierInfo;
   canAfford: CanAffordResponse | null;
+  machine: Machine | null;
   maxTierReached: number;
   onBuy: () => void;
+  onSell: () => void;
   isPurchasing: boolean;
+  t: TierCardTranslations;
 }) {
   // Use tierLocked from backend if available, fallback to local logic
   const isLocked = canAfford?.tierLocked ?? tier.tier > maxTierReached + 1;
@@ -93,7 +116,7 @@ function TierCard({
               tier.tier <= 6 ? 'bg-[#ffd700]/50 text-white' :
               'bg-[#00ff88]/50 text-white'}
           `}>
-            TIER {tier.tier}
+            {t.tierBadge({ tier: tier.tier })}
           </span>
         </div>
 
@@ -110,7 +133,7 @@ function TierCard({
           </p>
           {isLocked && (
             <span className="flex items-center gap-1 text-[#ff4444] text-xs font-medium">
-              <Lock className="w-3 h-3" /> Locked
+              <Lock className="w-3 h-3" /> {t.locked}
             </span>
           )}
         </div>
@@ -120,36 +143,43 @@ function TierCard({
       <div className="p-3">
         <div className="grid grid-cols-3 gap-1.5 mb-2">
           <div className="bg-[#1a0a2e]/80 backdrop-blur rounded-lg p-2 text-center border border-white/5">
-            <p className="text-[9px] text-[#b0b0b0] uppercase tracking-wider">Duration</p>
+            <p className="text-[9px] text-[#b0b0b0] uppercase tracking-wider">{t.duration}</p>
             <p className="text-sm font-bold text-white">{tier.lifespanDays}d</p>
           </div>
           <div className="bg-[#1a0a2e]/80 backdrop-blur rounded-lg p-2 text-center border border-white/5">
-            <p className="text-[9px] text-[#b0b0b0] uppercase tracking-wider">Yield</p>
+            <p className="text-[9px] text-[#b0b0b0] uppercase tracking-wider">{t.yield}</p>
             <p className="text-sm font-bold text-[#00ff88]">{tier.yieldPercent}%</p>
           </div>
           <div className="bg-[#1a0a2e]/80 backdrop-blur rounded-lg p-2 text-center border border-white/5">
-            <p className="text-[9px] text-[#b0b0b0] uppercase tracking-wider">Profit</p>
+            <p className="text-[9px] text-[#b0b0b0] uppercase tracking-wider">{t.profit}</p>
             <p className="text-sm font-bold text-[#ffd700]">${formatCompactNumber(profit)}</p>
           </div>
         </div>
 
         {/* Daily rate */}
         <p className="text-[10px] text-[#b0b0b0] text-center mb-2">
-          ~{dailyRate.toFixed(2)}% daily return
+          {t.dailyReturn({ rate: dailyRate.toFixed(2) })}
         </p>
 
         {/* Button */}
         {isLocked ? (
           <Button variant="ghost" size="sm" fullWidth disabled>
-            Reach Tier {tier.tier - 1} first
+            {t.reachTierFirst({ tier: tier.tier - 1 })}
           </Button>
-        ) : hasActiveMachine ? (
-          <Button variant="secondary" size="sm" fullWidth disabled>
-            Already owned
+        ) : hasActiveMachine && machine ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            fullWidth
+            onClick={onSell}
+            className="flex items-center justify-center gap-1.5"
+          >
+            <Tag className="w-3.5 h-3.5" />
+            {t.sellMachine}
           </Button>
         ) : !isAffordable && canAfford ? (
           <Button variant="secondary" size="sm" fullWidth disabled>
-            Need ${formatCompactNumber(canAfford.shortfall)} more
+            {t.needMore({ amount: formatCompactNumber(canAfford.shortfall) })}
           </Button>
         ) : (
           <Button
@@ -160,7 +190,7 @@ function TierCard({
             loading={isPurchasing}
             disabled={!canBuy}
           >
-            {isPurchasing ? 'Purchasing...' : 'Buy Machine'}
+            {isPurchasing ? t.purchasing : t.buyMachine}
           </Button>
         )}
       </div>
@@ -171,12 +201,17 @@ function TierCard({
 export function TierCarousel({
   tiers,
   affordability,
+  machinesByTier,
   maxTierReached,
   onBuyTier,
+  onSellMachine,
   isPurchasing,
   isLoading,
 }: TierCarouselProps) {
+  const tShop = useTranslations('shop');
+  const tSell = useTranslations('sell');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const initialScrollLeft = useRef<number>(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -189,22 +224,27 @@ export function TierCarousel({
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Left gradient appears only after scrolling past first card partially (50px threshold)
-    setCanScrollLeft(container.scrollLeft > 50);
+    // Left gradient appears after scrolling from initial position (threshold 50px)
+    setCanScrollLeft(container.scrollLeft > initialScrollLeft.current + 50);
     setCanScrollRight(
       container.scrollLeft < container.scrollWidth - container.clientWidth - 10
     );
 
-    // Calculate active index
-    const newIndex = Math.round(container.scrollLeft / cardWidthWithGap);
+    // Calculate active index based on scroll from initial position
+    const scrollFromStart = container.scrollLeft - initialScrollLeft.current;
+    const newIndex = Math.max(0, Math.round(scrollFromStart / cardWidthWithGap));
     setActiveIndex(newIndex);
   };
 
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (container) {
+      // Wait for layout to settle before storing initial scroll position
+      requestAnimationFrame(() => {
+        initialScrollLeft.current = container.scrollLeft;
+        checkScroll();
+      });
       container.addEventListener('scroll', checkScroll);
-      checkScroll();
       return () => container.removeEventListener('scroll', checkScroll);
     }
   }, [tiers.length]);
@@ -221,7 +261,10 @@ export function TierCarousel({
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    container.scrollTo({ left: cardWidthWithGap * index, behavior: 'smooth' });
+    container.scrollTo({
+      left: initialScrollLeft.current + cardWidthWithGap * index,
+      behavior: 'smooth'
+    });
   };
 
   if (isLoading) {
@@ -235,10 +278,25 @@ export function TierCarousel({
   if (tiers.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-[#b0b0b0]">No tiers available</p>
+        <p className="text-[#b0b0b0]">{tShop('noTiersAvailable')}</p>
       </div>
     );
   }
+
+  // Translations object to pass to TierCard
+  const cardTranslations: TierCardTranslations = {
+    tierBadge: (params) => tShop('tierBadge', params),
+    locked: tShop('locked'),
+    duration: tShop('duration'),
+    yield: tShop('yield'),
+    profit: tShop('profit'),
+    dailyReturn: (params) => tShop('dailyReturn', params),
+    reachTierFirst: (params) => tShop('reachTierFirst', params),
+    needMore: (params) => tShop('needMore', params),
+    purchasing: tShop('purchasing'),
+    buyMachine: tShop('buyMachine'),
+    sellMachine: tSell('sellMachine'),
+  };
 
   return (
     <div className="relative">
@@ -297,26 +355,36 @@ export function TierCarousel({
 
         <div
           ref={scrollContainerRef}
-          className="flex gap-5 overflow-x-auto snap-x snap-mandatory px-4 py-4"
+          className="flex gap-5 overflow-x-auto snap-x snap-mandatory py-4 px-4 lg:px-8 max-lg:[scroll-padding-inline:calc(50%-140px)]"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
           }}
         >
-          {tiers.map((tier) => (
-            <div
-              key={tier.tier}
-              className="snap-start flex-shrink-0"
-            >
-              <TierCard
-                tier={tier}
-                canAfford={affordability[tier.tier]}
-                maxTierReached={maxTierReached}
-                onBuy={() => onBuyTier(tier.tier)}
-                isPurchasing={isPurchasing}
-              />
-            </div>
-          ))}
+          {/* Spacer for mobile centering */}
+          <div className="flex-shrink-0 w-[calc(50vw-140px-1rem)] lg:hidden" aria-hidden="true" />
+          {tiers.map((tier) => {
+            const machine = machinesByTier[tier.tier] || null;
+            return (
+              <div
+                key={tier.tier}
+                className="snap-center lg:snap-start flex-shrink-0 relative z-30 hover:z-40"
+              >
+                <TierCard
+                  tier={tier}
+                  canAfford={affordability[tier.tier]}
+                  machine={machine}
+                  maxTierReached={maxTierReached}
+                  onBuy={() => onBuyTier(tier.tier)}
+                  onSell={() => machine && onSellMachine(machine)}
+                  isPurchasing={isPurchasing}
+                  t={cardTranslations}
+                />
+              </div>
+            );
+          })}
+          {/* Spacer for mobile centering */}
+          <div className="flex-shrink-0 w-[calc(50vw-140px-1rem)] lg:hidden" aria-hidden="true" />
         </div>
       </div>
 

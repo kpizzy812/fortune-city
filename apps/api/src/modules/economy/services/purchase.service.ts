@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { Machine, Transaction, User, Prisma } from '@prisma/client';
 import { MachinesService } from '../../machines/machines.service';
+import { AuctionService } from '../../machines/services/auction.service';
 import { TransactionsService } from './transactions.service';
 import { FundSourceService } from './fund-source.service';
 import { SettingsService } from '../../settings/settings.service';
@@ -21,6 +22,15 @@ export interface PurchaseMachineResult {
   machine: Machine;
   transaction: Transaction;
   user: User;
+  fromAuction?: {
+    sellerId: string;
+    sellerPayout: number;
+    upgrades: {
+      coinBoxLevel: number;
+      fortuneGambleLevel: number;
+      autoCollect: boolean;
+    };
+  };
 }
 
 @Injectable()
@@ -28,6 +38,7 @@ export class PurchaseService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly machinesService: MachinesService,
+    private readonly auctionService: AuctionService,
     private readonly transactionsService: TransactionsService,
     private readonly fundSourceService: FundSourceService,
     private readonly settingsService: SettingsService,
@@ -98,6 +109,11 @@ export class PurchaseService {
       effectiveBalance,
       effectiveBalance, // TODO: Track actual fresh deposits at user level
       fromFortuneBalance, // Only calculate source for fortuneBalance portion
+    );
+
+    // Check if there's a pending auction listing for this tier
+    const pendingListing = await this.auctionService.getFirstPendingListing(
+      input.tier,
     );
 
     // Execute purchase in transaction
@@ -172,7 +188,45 @@ export class PurchaseService {
       };
     });
 
-    return result;
+    // Process auction sale if there was a pending listing
+    // This is done outside the main transaction to avoid deadlocks
+    let auctionInfo: PurchaseMachineResult['fromAuction'] | undefined;
+
+    if (pendingListing) {
+      // Process auction sale (pay seller, update listing status)
+      const auctionResult = await this.auctionService.processAuctionSale(
+        pendingListing,
+        userId,
+        result.machine.id,
+      );
+
+      // Apply upgrades from seller's machine to buyer's new machine
+      await this.auctionService.applyUpgradesToMachine(
+        result.machine.id,
+        pendingListing,
+      );
+
+      auctionInfo = {
+        sellerId: pendingListing.sellerId,
+        sellerPayout: auctionResult.sellerPayout,
+        upgrades: {
+          coinBoxLevel: pendingListing.coinBoxLevelAtListing,
+          fortuneGambleLevel: pendingListing.fortuneGambleLevelAtListing,
+          autoCollect: pendingListing.autoCollectAtListing,
+        },
+      };
+
+      // Refresh machine data with applied upgrades
+      const updatedMachine = await this.machinesService.findByIdOrThrow(
+        result.machine.id,
+      );
+      result.machine = updatedMachine;
+    }
+
+    return {
+      ...result,
+      fromAuction: auctionInfo,
+    };
   }
 
   /**

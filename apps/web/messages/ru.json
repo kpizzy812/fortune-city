@@ -69,15 +69,18 @@
     "currentMaxTier": "Текущий макс. уровень:",
     "nextUnlock": "Следующее открытие:",
     "tier": "Уровень",
+    "tierBadge": "УР. {tier}",
+    "locked": "Закрыто",
     "duration": "Срок",
     "yield": "Доход",
     "profit": "Прибыль",
-    "dailyReturn": "% дневной доход",
+    "dailyReturn": "~{rate}% в день",
     "buyMachine": "Купить автомат",
     "purchasing": "Покупка...",
     "reachTierFirst": "Сначала достигни уровня {tier}",
     "needMore": "Нужно ещё ${amount}",
     "alreadyOwned": "Уже куплен",
+    "noTiersAvailable": "Уровни недоступны",
     "price": "Цена",
     "expectedYield": "Ожидаемый доход",
     "afterPurchase": "После покупки",
@@ -198,6 +201,39 @@
     "howItWorks3": "Получай 1% от рефералов 3-го уровня (Линия 3)",
     "howItWorks4": "Бонусы выплачиваются только со свежих депозитов",
     "howItWorks5": "Активный реферал = купил автомат за свои средства"
+  },
+  "sell": {
+    "title": "Продать {name}",
+    "machineInfo": "Уровень {tier} • Износ: {wear}%",
+    "recommended": "Рекомендуем:",
+    "selectOption": "Выбери опцию",
+    "reasons": {
+      "notAvailable": "Автомат недоступен для продажи. Дождись окончания цикла.",
+      "pawnshopUnavailable": "Ломбард недоступен после окупаемости. Только аукцион.",
+      "noQueue": "Нет очереди - продастся при следующей покупке этого уровня.",
+      "auctionPaysMore": "Аукцион платит на {percent}% больше, чем ломбард.",
+      "pawnshopInstant": "Ломбард предлагает мгновенную продажу. Очередь на аукционе длинная."
+    },
+    "auction": {
+      "title": "P2P Аукцион",
+      "youllReceive": "Ты получишь:",
+      "commission": "Комиссия:",
+      "queueLength": "Очередь: {count} автоматов ждут",
+      "noQueue": "Нет очереди - продастся при следующей покупке",
+      "listOnAuction": "Выставить на аукцион",
+      "warning": "Автомат встанет в очередь на P2P продажу. Можно отменить до продажи.",
+      "recommendedTag": "Рекомендуем"
+    },
+    "pawnshop": {
+      "title": "Ломбард (мгновенно)",
+      "youllReceive": "Ты получишь:",
+      "commission": "Комиссия:",
+      "profitDeducted": "Стоимость ремонта: ${amount}",
+      "sellNow": "Продать сейчас",
+      "warning": "Действие необратимо. Автомат будет продан немедленно.",
+      "recommendedTag": "Рекомендуем"
+    },
+    "sellMachine": "Продать автомат"
   },
   "metadata": {
     "title": "Fortune City",
