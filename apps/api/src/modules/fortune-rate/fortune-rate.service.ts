@@ -106,6 +106,22 @@ export class FortuneRateService implements OnModuleInit, OnModuleDestroy {
     return fortuneAmount * this.cachedRate.priceInUsd;
   }
 
+  /**
+   * Get cached SOL price in USD
+   * Used by other services to avoid duplicate CoinGecko calls
+   */
+  getSolPrice(): number {
+    return this.cachedSolPrice;
+  }
+
+  /**
+   * Ensure SOL price is fresh (public wrapper)
+   */
+  async ensureFreshSolPrice(): Promise<number> {
+    await this.ensureSolPrice();
+    return this.cachedSolPrice;
+  }
+
   // ==================== Private Methods ====================
 
   private connectWebSocket() {
@@ -277,16 +293,20 @@ export class FortuneRateService implements OnModuleInit, OnModuleDestroy {
       }
 
       const data = await response.json();
-      this.cachedSolPrice = data.solana?.usd || 150; // Fallback to $150
+      const price = data.solana?.usd;
+
+      if (!price || price <= 0) {
+        throw new Error('Invalid SOL price from CoinGecko');
+      }
+
+      this.cachedSolPrice = price;
       this.solPriceUpdatedAt = new Date();
       this.rateLimitBackoffUntil = null; // Clear backoff on success
 
       this.logger.debug(`SOL price updated: $${this.cachedSolPrice}`);
     } catch (error) {
-      this.logger.error('Failed to fetch SOL price, using cached value', error);
-      if (!this.cachedSolPrice) {
-        this.cachedSolPrice = 150; // Default fallback
-      }
+      this.logger.error('Failed to fetch SOL price', error);
+      // Keep existing cached value if available, otherwise leave as 0
     } finally {
       this.isFetchingSolPrice = false;
     }
