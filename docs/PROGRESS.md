@@ -1,7 +1,7 @@
 # Fortune City - Progress
 
-**Последнее обновление:** 2026-01-13
-**Текущий этап:** Phase 2 в процессе — Fortune Rate интеграция завершена ✅
+**Последнее обновление:** 2026-01-14
+**Текущий этап:** Phase 2 в процессе — User-level fund source tracking завершён ✅
 
 ## Архитектура платформ
 
@@ -189,6 +189,21 @@
     - Интеграция в page.tsx, shop/page.tsx, SidebarNavigation
     - Автоматическое обновление курса каждые 30 секунд
     - Заменён хардкод (* 10) на реальный курс от API
+- [x] User-level Fund Source Tracking ✅
+  - Назначение: корректное налогообложение при Cash Out (вывод в USDT)
+  - User модель: добавлены поля totalFreshDeposits и totalProfitCollected
+  - FundSourceService методы:
+    - recordProfitCollection() - при сборе монет (profit часть)
+    - recordFreshDeposit() - при депозите USDT → FORTUNE
+    - propagateMachineFundSourceToBalance() - при продаже машины
+    - recordWithdrawal() - при выводе (сначала fresh, потом profit)
+  - Интеграция:
+    - collectCoins: profit часть записывается в totalProfitCollected
+    - AuctionService: при продаже fund_source propagates обратно в баланс
+    - PawnshopService: аналогично, с учётом profit из coinBox
+  - Логика налогообложения:
+    - Fresh deposits (USDT → FORTUNE) = 0% налог при выводе
+    - Profit collected = применяется currentTaxRate (зависит от maxTierReached)
 - [ ] Push-уведомления
 
 ### Wheel of Fortune
