@@ -199,8 +199,9 @@ export class FundSourceService {
   }
 
   /**
-   * When user makes a withdrawal, deduct from trackers proportionally.
-   * Fresh deposits are deducted first (they have 0% tax), then profit.
+   * When user makes a withdrawal, deduct from trackers.
+   * Profit is deducted first (taxed at currentTaxRate), then fresh deposits (0% tax).
+   * This ensures proper tax collection - profit is always taxed first.
    */
   async recordWithdrawal(
     userId: string,
@@ -223,21 +224,21 @@ export class FundSourceService {
     const freshAvailable = new Prisma.Decimal(user.totalFreshDeposits);
     const profitAvailable = new Prisma.Decimal(user.totalProfitCollected);
 
-    // Deduct from fresh first (0% tax), then from profit
-    let fromFresh = Prisma.Decimal.min(withdrawAmount, freshAvailable);
-    let fromProfit = withdrawAmount.sub(fromFresh);
+    // Deduct from profit first (taxed), then from fresh (0% tax)
+    let fromProfit = Prisma.Decimal.min(withdrawAmount, profitAvailable);
+    let fromFresh = withdrawAmount.sub(fromProfit);
 
-    // If not enough profit either, cap at available
-    if (fromProfit.gt(profitAvailable)) {
-      fromProfit = profitAvailable;
+    // If not enough fresh either, cap at available
+    if (fromFresh.gt(freshAvailable)) {
+      fromFresh = freshAvailable;
     }
 
     // Update trackers
     await client.user.update({
       where: { id: userId },
       data: {
-        totalFreshDeposits: { decrement: fromFresh },
         totalProfitCollected: { decrement: fromProfit },
+        totalFreshDeposits: { decrement: fromFresh },
       },
     });
 
