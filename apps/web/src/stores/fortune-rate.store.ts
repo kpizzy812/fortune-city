@@ -9,28 +9,20 @@ interface FortuneRateState {
   error: string | null;
   lastFetchedAt: number | null;
 
-  // Computed values
-  fortunePerUsd: number;
-
   // Actions
   fetchRate: () => Promise<void>;
-  usdToFortune: (usdAmount: number) => number;
+  usdToFortune: (usdAmount: number) => number | null;
+  isRateAvailable: () => boolean;
 }
 
 // Cache duration: 30 seconds
 const CACHE_DURATION_MS = 30 * 1000;
-
-// Fallback rate if API fails
-const FALLBACK_FORTUNE_PER_USD = 10;
 
 export const useFortuneRateStore = create<FortuneRateState>()((set, get) => ({
   rate: null,
   isLoading: false,
   error: null,
   lastFetchedAt: null,
-
-  // Default fallback rate
-  fortunePerUsd: FALLBACK_FORTUNE_PER_USD,
 
   fetchRate: async () => {
     const { lastFetchedAt, isLoading } = get();
@@ -49,7 +41,6 @@ export const useFortuneRateStore = create<FortuneRateState>()((set, get) => ({
       const response = await api.getFortuneRate();
       set({
         rate: response.data,
-        fortunePerUsd: response.data.fortunePerUsd,
         isLoading: false,
         lastFetchedAt: Date.now(),
       });
@@ -58,14 +49,19 @@ export const useFortuneRateStore = create<FortuneRateState>()((set, get) => ({
       set({
         error: message,
         isLoading: false,
-        // Keep fallback rate
-        fortunePerUsd: FALLBACK_FORTUNE_PER_USD,
+        rate: null,
       });
     }
   },
 
   usdToFortune: (usdAmount: number) => {
-    const { fortunePerUsd } = get();
-    return usdAmount * fortunePerUsd;
+    const { rate } = get();
+    if (!rate || !rate.fortunePerUsd) return null;
+    return usdAmount * rate.fortunePerUsd;
+  },
+
+  isRateAvailable: () => {
+    const { rate } = get();
+    return rate !== null && rate.fortunePerUsd !== null;
   },
 }));

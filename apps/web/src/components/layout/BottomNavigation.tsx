@@ -4,30 +4,34 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import { Home, ShoppingCart, FerrisWheel, Users, Wallet, type LucideIcon } from 'lucide-react';
 
 interface NavItem {
   icon: LucideIcon;
-  label: string;
+  labelKey: 'hall' | 'shop' | 'wheel' | 'refs' | 'cash';
   href: string;
   isComingSoon?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { icon: Home, label: 'Hall', href: '/' },
-  { icon: ShoppingCart, label: 'Shop', href: '/shop' },
-  { icon: FerrisWheel, label: 'Wheel', href: '/wheel', isComingSoon: true },
-  { icon: Users, label: 'Refs', href: '/refs', isComingSoon: true },
-  { icon: Wallet, label: 'Cash', href: '/cash', isComingSoon: true },
+  { icon: Home, labelKey: 'hall', href: '/' },
+  { icon: ShoppingCart, labelKey: 'shop', href: '/shop' },
+  { icon: FerrisWheel, labelKey: 'wheel', href: '/wheel', isComingSoon: true },
+  { icon: Users, labelKey: 'refs', href: '/refs' },
+  { icon: Wallet, labelKey: 'cash', href: '/cash', isComingSoon: true },
 ];
 
 export function BottomNavigation() {
   const pathname = usePathname();
+  const t = useTranslations('nav');
+  const tCommon = useTranslations('common');
 
-  const handleComingSoon = (e: React.MouseEvent, label: string) => {
+  const handleComingSoon = (e: React.MouseEvent, labelKey: string) => {
     e.preventDefault();
-    toast.info(`${label} is coming soon!`, {
-      description: 'Stay tuned for updates',
+    const label = t(labelKey as keyof IntlMessages['nav']);
+    toast.info(tCommon('comingSoon', { feature: label }), {
+      description: tCommon('stayTuned'),
     });
   };
 
@@ -44,12 +48,13 @@ export function BottomNavigation() {
       <div className="flex items-center justify-around max-w-lg mx-auto">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
+          const label = t(item.labelKey);
 
           if (item.isComingSoon) {
             return (
               <button
                 key={item.href}
-                onClick={(e) => handleComingSoon(e, item.label)}
+                onClick={(e) => handleComingSoon(e, item.labelKey)}
                 className="
                   flex flex-col items-center justify-center
                   w-16 py-1 relative
@@ -58,7 +63,7 @@ export function BottomNavigation() {
                 "
               >
                 <item.icon className="w-5 h-5 opacity-50" />
-                <span className="text-xs mt-0.5 opacity-50">{item.label}</span>
+                <span className="text-xs mt-0.5 opacity-50">{label}</span>
                 <span
                   className="
                     absolute -top-1 -right-1
@@ -67,7 +72,7 @@ export function BottomNavigation() {
                     rounded-full
                   "
                 >
-                  Soon
+                  {tCommon('soon')}
                 </span>
               </button>
             );
@@ -90,7 +95,7 @@ export function BottomNavigation() {
               >
                 <item.icon className="w-5 h-5" />
               </motion.div>
-              <span className="text-xs mt-0.5">{item.label}</span>
+              <span className="text-xs mt-0.5">{label}</span>
               {isActive && (
                 <motion.div
                   layoutId="activeTab"

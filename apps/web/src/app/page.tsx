@@ -25,7 +25,7 @@ const INCOME_INTERPOLATION_INTERVAL = 1000;
 export default function Home() {
   const { user, token, isLoading: authLoading, error: authError, clearAuth, refreshUser, devLogin } = useAuthStore();
   const { isTelegramApp } = useTelegramWebApp();
-  const { usdToFortune, fetchRate } = useFortuneRateStore();
+  const { usdToFortune, fetchRate, isRateAvailable } = useFortuneRateStore();
 
   const t = useTranslations();
   const tCommon = useTranslations('common');
@@ -292,9 +292,11 @@ export default function Home() {
               <p className="text-lg text-[#ffd700] font-mono font-bold">
                 ${parseFloat(user.fortuneBalance).toFixed(2)}
               </p>
-              <p className="text-[10px] text-[#b0b0b0]">
-                ({usdToFortune(parseFloat(user.fortuneBalance)).toLocaleString()} $FORTUNE)
-              </p>
+              {isRateAvailable() && (
+                <p className="text-[10px] text-[#b0b0b0]">
+                  ({Math.floor(usdToFortune(parseFloat(user.fortuneBalance)) ?? 0).toLocaleString()} $FORTUNE)
+                </p>
+              )}
             </div>
             <LanguageSwitcher />
             <button

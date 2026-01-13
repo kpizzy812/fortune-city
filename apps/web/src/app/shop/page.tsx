@@ -14,7 +14,7 @@ import type { TierInfo } from '@/types';
 export default function ShopPage() {
   const router = useRouter();
   const { user, token, refreshUser } = useAuthStore();
-  const { usdToFortune } = useFortuneRateStore();
+  const { usdToFortune, isRateAvailable } = useFortuneRateStore();
   const t = useTranslations('shop');
   const tCommon = useTranslations('common');
 
@@ -127,9 +127,11 @@ export default function ShopPage() {
               <p className="text-lg text-[#ffd700] font-mono font-bold">
                 ${userBalance.toFixed(2)}
               </p>
-              <p className="text-[10px] text-[#b0b0b0]">
-                ({usdToFortune(userBalance).toLocaleString()} $FORTUNE)
-              </p>
+              {isRateAvailable() && (
+                <p className="text-[10px] text-[#b0b0b0]">
+                  ({Math.floor(usdToFortune(userBalance) ?? 0).toLocaleString()} $FORTUNE)
+                </p>
+              )}
             </div>
             <LanguageSwitcher />
           </div>
@@ -146,9 +148,11 @@ export default function ShopPage() {
             <p className="text-2xl text-[#ffd700] font-mono font-bold">
               ${userBalance.toFixed(2)}
             </p>
-            <p className="text-xs text-[#b0b0b0] mt-0.5">
-              ({usdToFortune(userBalance).toLocaleString()} $FORTUNE)
-            </p>
+            {isRateAvailable() && (
+              <p className="text-xs text-[#b0b0b0] mt-0.5">
+                ({Math.floor(usdToFortune(userBalance) ?? 0).toLocaleString()} $FORTUNE)
+              </p>
+            )}
           </div>
         </header>
 

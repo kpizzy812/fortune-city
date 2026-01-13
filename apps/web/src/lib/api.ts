@@ -320,12 +320,15 @@ export interface TelegramLoginWidgetData {
 export interface FortuneRateData {
   priceInSol: number;
   priceInUsd: number;
-  fortunePerUsd: number;
+  fortunePerUsd: number | null;
+  marketCapSol: number;
+  marketCapUsd: number;
+  solPriceUsd: number;
   updatedAt: string;
-  source: 'pumpportal' | 'fallback';
+  source: 'pumpportal';
 }
 
 export interface FortuneRateResponse {
   success: boolean;
-  data: FortuneRateData;
+  data: FortuneRateData | null;
 }

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { Gamepad2, Sparkles } from 'lucide-react';
 import type { Machine, MachineIncome } from '@/types';
 import { MachineCard } from './MachineCard';
@@ -27,6 +28,8 @@ export function MachineGrid({
   isCollecting,
   isLoading = false,
 }: MachineGridProps) {
+  const t = useTranslations('machines');
+
   // Loading state with skeletons
   if (isLoading) {
     return (
@@ -77,15 +80,15 @@ export function MachineGrid({
           </div>
         </motion.div>
 
-        <h3 className="text-2xl font-bold text-white mb-2 relative z-10">No machines yet</h3>
+        <h3 className="text-2xl font-bold text-white mb-2 relative z-10">{t('noMachinesYet')}</h3>
         <p className="text-[#b0b0b0] text-center mb-6 max-w-xs relative z-10">
-          Buy your first slot machine to start earning $FORTUNE!
+          {t('buyFirstMachine')}
         </p>
 
         <Link href="/shop" className="relative z-10">
           <Button variant="primary" size="lg" className="group">
             <span className="flex items-center gap-2">
-              Visit Shop
+              {t('visitShop')}
               <motion.span
                 animate={{ x: [0, 4, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity }}

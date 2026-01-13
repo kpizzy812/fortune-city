@@ -7,41 +7,30 @@ export class FortuneRateController {
 
   /**
    * Get current $FORTUNE token rate
-   * Returns price in SOL and USD, market cap, and last update time
+   * Returns null data if rate is unavailable (no mint address configured or connection failed)
    */
   @Get()
   getRate() {
     const rate = this.fortuneRateService.getRate();
+
+    if (!rate) {
+      return {
+        success: true,
+        data: null,
+      };
+    }
+
     return {
       success: true,
       data: {
         priceInSol: rate.priceInSol,
         priceInUsd: rate.priceInUsd,
+        fortunePerUsd: rate.priceInUsd > 0 ? 1 / rate.priceInUsd : null,
         marketCapSol: rate.marketCapSol,
         marketCapUsd: rate.marketCapUsd,
         solPriceUsd: rate.solPriceUsd,
         updatedAt: rate.updatedAt.toISOString(),
-      },
-    };
-  }
-
-  /**
-   * Convert USD to FORTUNE tokens
-   */
-  @Get('convert/usd-to-fortune')
-  convertUsdToFortune() {
-    // Example: convert $1 to FORTUNE
-    const rate = this.fortuneRateService.getRate();
-    const fortunePerUsd = rate.priceInUsd > 0 ? 1 / rate.priceInUsd : 10;
-
-    return {
-      success: true,
-      data: {
-        rate: fortunePerUsd,
-        example: {
-          usd: 1,
-          fortune: fortunePerUsd,
-        },
+        source: 'pumpportal' as const,
       },
     };
   }

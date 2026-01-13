@@ -53,9 +53,8 @@ export class FortuneRateService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     if (!this.fortuneMintAddress) {
       this.logger.warn(
-        'FORTUNE_MINT_ADDRESS not configured. Using fallback rate.',
+        'FORTUNE_MINT_ADDRESS not configured. Rate will be unavailable.',
       );
-      this.setFallbackRate();
       return;
     }
 
@@ -68,30 +67,33 @@ export class FortuneRateService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Get current $FORTUNE rate
+   * Get current $FORTUNE rate (null if unavailable)
    */
-  getRate(): FortuneRate {
-    if (!this.cachedRate) {
-      return this.getFallbackRate();
-    }
+  getRate(): FortuneRate | null {
     return this.cachedRate;
   }
 
   /**
-   * Convert USD amount to FORTUNE tokens
+   * Check if rate is available
    */
-  usdToFortune(usdAmount: number): number {
-    const rate = this.getRate();
-    if (rate.priceInUsd <= 0) return usdAmount * 10; // Fallback 1:10
-    return usdAmount / rate.priceInUsd;
+  isRateAvailable(): boolean {
+    return this.cachedRate !== null && this.cachedRate.priceInUsd > 0;
   }
 
   /**
-   * Convert FORTUNE tokens to USD
+   * Convert USD amount to FORTUNE tokens (returns null if rate unavailable)
    */
-  fortuneToUsd(fortuneAmount: number): number {
-    const rate = this.getRate();
-    return fortuneAmount * rate.priceInUsd;
+  usdToFortune(usdAmount: number): number | null {
+    if (!this.cachedRate || this.cachedRate.priceInUsd <= 0) return null;
+    return usdAmount / this.cachedRate.priceInUsd;
+  }
+
+  /**
+   * Convert FORTUNE tokens to USD (returns null if rate unavailable)
+   */
+  fortuneToUsd(fortuneAmount: number): number | null {
+    if (!this.cachedRate) return null;
+    return fortuneAmount * this.cachedRate.priceInUsd;
   }
 
   // ==================== Private Methods ====================
@@ -173,8 +175,7 @@ export class FortuneRateService implements OnModuleInit, OnModuleDestroy {
 
   private scheduleReconnect() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      this.logger.error('Max reconnect attempts reached. Using fallback rate.');
-      this.setFallbackRate();
+      this.logger.error('Max reconnect attempts reached. Rate will be unavailable.');
       return;
     }
 
@@ -246,21 +247,4 @@ export class FortuneRateService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // ==================== Fallback ====================
-
-  private setFallbackRate() {
-    this.cachedRate = this.getFallbackRate();
-  }
-
-  private getFallbackRate(): FortuneRate {
-    // Fallback: 1 USD = 10 FORTUNE (0.1 USD per FORTUNE)
-    return {
-      priceInSol: 0.000667, // ~$0.10 at $150/SOL
-      priceInUsd: 0.1,
-      marketCapSol: 667, // ~$100k market cap
-      marketCapUsd: 100000,
-      solPriceUsd: this.cachedSolPrice || 150,
-      updatedAt: new Date(),
-    };
-  }
 }

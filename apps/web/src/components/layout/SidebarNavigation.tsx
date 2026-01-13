@@ -30,7 +30,7 @@ export function SidebarNavigation() {
   const pathname = usePathname();
   const { user, clearAuth } = useAuthStore();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
-  const { usdToFortune } = useFortuneRateStore();
+  const { usdToFortune, isRateAvailable } = useFortuneRateStore();
   const t = useTranslations('nav');
   const tBrand = useTranslations('brand');
   const tCommon = useTranslations('common');
@@ -123,15 +123,20 @@ export function SidebarNavigation() {
               <p className="text-lg text-[#ffd700] font-mono font-bold">
                 ${parseFloat(user.fortuneBalance).toFixed(2)}
               </p>
-              <p className="text-[10px] text-[#b0b0b0] mt-0.5">
-                ({usdToFortune(parseFloat(user.fortuneBalance)).toLocaleString()} $FORTUNE)
-              </p>
+              {isRateAvailable() && (
+                <p className="text-[10px] text-[#b0b0b0] mt-0.5">
+                  ({Math.floor(usdToFortune(parseFloat(user.fortuneBalance)) ?? 0).toLocaleString()} $FORTUNE)
+                </p>
+              )}
             </div>
           )}
           {sidebarCollapsed && (
             <div
               className="mt-2 text-center"
-              title={`$${parseFloat(user.fortuneBalance).toFixed(2)} (${usdToFortune(parseFloat(user.fortuneBalance)).toLocaleString()} $FORTUNE)`}
+              title={isRateAvailable()
+                ? `$${parseFloat(user.fortuneBalance).toFixed(2)} (${Math.floor(usdToFortune(parseFloat(user.fortuneBalance)) ?? 0).toLocaleString()} $FORTUNE)`
+                : `$${parseFloat(user.fortuneBalance).toFixed(2)}`
+              }
             >
               <p className="text-xs text-[#ffd700] font-mono font-bold truncate">
                 ${parseFloat(user.fortuneBalance).toFixed(0)}

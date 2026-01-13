@@ -13,6 +13,7 @@ import {
   ReferralStats,
   ReferralListItem,
 } from './referrals.service';
+import { JwtPayload } from '../auth/auth.service';
 
 interface WithdrawDto {
   amount?: number;
@@ -32,9 +33,9 @@ export class ReferralsController {
    */
   @Get('stats')
   async getStats(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: JwtPayload },
   ): Promise<ReferralStats> {
-    return this.referralsService.getReferralStats(req.user.id);
+    return this.referralsService.getReferralStats(req.user.sub);
   }
 
   /**
@@ -42,11 +43,11 @@ export class ReferralsController {
    */
   @Get('list')
   async getList(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: JwtPayload },
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ): Promise<ReferralListItem[]> {
-    return this.referralsService.getReferralList(req.user.id, {
+    return this.referralsService.getReferralList(req.user.sub, {
       limit: limit ? parseInt(limit, 10) : undefined,
       offset: offset ? parseInt(offset, 10) : undefined,
     });
@@ -57,10 +58,10 @@ export class ReferralsController {
    */
   @Get('can-withdraw')
   async canWithdraw(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: JwtPayload },
   ): Promise<{ canWithdraw: boolean }> {
     const canWithdraw = await this.referralsService.canWithdrawReferralBalance(
-      req.user.id,
+      req.user.sub,
     );
     return { canWithdraw };
   }
@@ -70,7 +71,7 @@ export class ReferralsController {
    */
   @Post('withdraw')
   async withdraw(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: JwtPayload },
     @Body() body: WithdrawDto,
   ): Promise<{
     success: boolean;
@@ -78,7 +79,7 @@ export class ReferralsController {
     newReferralBalance: number;
   }> {
     const user = await this.referralsService.withdrawReferralBalance(
-      req.user.id,
+      req.user.sub,
       body.amount,
     );
     return {
@@ -93,10 +94,10 @@ export class ReferralsController {
    */
   @Post('set-referrer')
   async setReferrer(
-    @Request() req: { user: { id: string } },
+    @Request() req: { user: JwtPayload },
     @Body() body: SetReferrerDto,
   ): Promise<{ success: boolean }> {
-    await this.referralsService.setReferrer(req.user.id, body.referralCode);
+    await this.referralsService.setReferrer(req.user.sub, body.referralCode);
     return { success: true };
   }
 }

@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/stores/auth.store';
 import { useReferralsStore } from '@/stores/referrals.store';
 import { Button } from '@/components/ui/Button';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 
 const REFERRAL_RATES = [
   { level: 1, rate: '5%', color: '#00ff88' },
@@ -15,6 +17,9 @@ const REFERRAL_RATES = [
 export default function RefsPage() {
   const router = useRouter();
   const { user, token, refreshUser } = useAuthStore();
+  const t = useTranslations('refs');
+  const tCommon = useTranslations('common');
+
   const {
     stats,
     referrals,
@@ -101,30 +106,35 @@ export default function RefsPage() {
         <header className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-[#00d4ff]">
-              My Referrals
+              {t('title')}
             </h1>
             <p className="text-sm text-[#b0b0b0]">
-              Invite friends and earn rewards
+              {t('subtitle')}
             </p>
           </div>
-          {stats && (
-            <div className="text-right">
-              <p className="text-xs text-[#b0b0b0]">Referral Balance</p>
-              <p className="text-lg lg:text-xl text-[#ffd700] font-mono font-bold">
-                ${stats.referralBalance.toFixed(2)}
-              </p>
+          <div className="flex items-center gap-3">
+            {stats && (
+              <div className="text-right">
+                <p className="text-xs text-[#b0b0b0]">{t('referralBalance')}</p>
+                <p className="text-lg lg:text-xl text-[#ffd700] font-mono font-bold">
+                  ${stats.referralBalance.toFixed(2)}
+                </p>
+              </div>
+            )}
+            <div className="lg:hidden">
+              <LanguageSwitcher />
             </div>
-          )}
+          </div>
         </header>
 
         {/* Referral Link Card */}
         <div className="bg-[#2a1a4e] rounded-xl p-4 lg:p-6 border border-[#00d4ff]/30 mb-6">
           <h2 className="text-lg font-semibold text-white mb-3">
-            Your Referral Link
+            {t('yourReferralLink')}
           </h2>
           <div className="flex items-center gap-3">
             <div className="flex-1 bg-[#1a0a2e] rounded-lg px-4 py-3 font-mono text-sm text-[#b0b0b0] truncate">
-              {isLoading ? 'Loading...' : referralLink || 'No referral code'}
+              {isLoading ? tCommon('loading') : referralLink || t('noReferralCode')}
             </div>
             <Button
               onClick={handleCopy}
@@ -132,37 +142,36 @@ export default function RefsPage() {
               className="shrink-0"
               disabled={!referralLink}
             >
-              {copied ? 'Copied!' : 'Copy'}
+              {copied ? tCommon('copied') : tCommon('copy')}
             </Button>
           </div>
           <p className="mt-3 text-xs text-[#b0b0b0]">
-            Share this link with friends. You&apos;ll earn a percentage of their
-            machine purchases!
+            {t('shareHint')}
           </p>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#ff2d95]/30">
-            <p className="text-xs text-[#b0b0b0] mb-1">Total Referrals</p>
+            <p className="text-xs text-[#b0b0b0] mb-1">{t('totalReferrals')}</p>
             <p className="text-2xl font-bold text-white">
               {stats?.totalReferrals ?? 0}
             </p>
           </div>
           <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#00ff88]/30">
-            <p className="text-xs text-[#b0b0b0] mb-1">Active Referrals</p>
+            <p className="text-xs text-[#b0b0b0] mb-1">{t('activeReferrals')}</p>
             <p className="text-2xl font-bold text-[#00ff88]">
               {stats?.activeReferrals ?? 0}
             </p>
           </div>
           <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#ffd700]/30">
-            <p className="text-xs text-[#b0b0b0] mb-1">Total Earned</p>
+            <p className="text-xs text-[#b0b0b0] mb-1">{t('totalEarned')}</p>
             <p className="text-2xl font-bold text-[#ffd700]">
               ${stats?.totalEarned.toFixed(2) ?? '0.00'}
             </p>
           </div>
           <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#00d4ff]/30">
-            <p className="text-xs text-[#b0b0b0] mb-1">Ref Balance</p>
+            <p className="text-xs text-[#b0b0b0] mb-1">{t('refBalance')}</p>
             <p className="text-2xl font-bold text-[#00d4ff]">
               ${stats?.referralBalance.toFixed(2) ?? '0.00'}
             </p>
@@ -172,10 +181,10 @@ export default function RefsPage() {
         {/* Level Breakdown */}
         <div className="bg-[#2a1a4e] rounded-xl p-4 lg:p-6 border border-[#ff2d95]/30 mb-6">
           <h2 className="text-lg font-semibold text-white mb-4">
-            Earnings by Level
+            {t('earningsByLevel')}
           </h2>
           <div className="space-y-3">
-            {REFERRAL_RATES.map(({ level, rate, color }) => {
+            {REFERRAL_RATES.map(({ level, color }) => {
               const levelData = stats?.byLevel.find((l) => l.level === level);
               return (
                 <div
@@ -191,11 +200,10 @@ export default function RefsPage() {
                     </div>
                     <div>
                       <p className="text-white font-medium">
-                        Line {level}{' '}
-                        <span className="text-[#b0b0b0]">({rate})</span>
+                        {t(`line${level}` as 'line1' | 'line2' | 'line3')}
                       </p>
                       <p className="text-xs text-[#b0b0b0]">
-                        {levelData?.count ?? 0} referrals
+                        {levelData?.count ?? 0} {t('referrals')}
                       </p>
                     </div>
                   </div>
@@ -213,12 +221,12 @@ export default function RefsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-white">
-                Withdraw to Balance
+                {t('withdrawToBalance')}
               </h2>
               <p className="text-sm text-[#b0b0b0] mt-1">
                 {canWithdraw
-                  ? 'Transfer your referral earnings to your main balance'
-                  : 'You need an active machine to withdraw referral balance'}
+                  ? t('withdrawDescription')
+                  : t('needActiveMachine')}
               </p>
             </div>
             <Button
@@ -231,13 +239,13 @@ export default function RefsPage() {
                 stats.referralBalance <= 0
               }
             >
-              {isWithdrawing ? 'Processing...' : 'Withdraw All'}
+              {isWithdrawing ? tCommon('processing') : t('withdrawAll')}
             </Button>
           </div>
           {!canWithdraw && (
             <div className="mt-3 p-3 bg-[#ff4444]/10 border border-[#ff4444]/30 rounded-lg">
               <p className="text-sm text-[#ff4444]">
-                Purchase at least one machine to unlock withdrawals
+                {t('purchaseMachineToUnlock')}
               </p>
             </div>
           )}
@@ -251,7 +259,7 @@ export default function RefsPage() {
               onClick={clearError}
               className="text-[#ff4444] text-xs underline mt-1"
             >
-              Dismiss
+              {tCommon('dismiss')}
             </button>
           </div>
         )}
@@ -259,7 +267,7 @@ export default function RefsPage() {
         {/* Recent Referrals */}
         <div className="bg-[#2a1a4e] rounded-xl p-4 lg:p-6 border border-[#00d4ff]/30">
           <h2 className="text-lg font-semibold text-white mb-4">
-            Recent Referrals
+            {t('recentReferrals')}
           </h2>
           {isLoading ? (
             <div className="flex justify-center py-8">
@@ -268,9 +276,9 @@ export default function RefsPage() {
           ) : referrals.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-4xl mb-2">👥</p>
-              <p className="text-[#b0b0b0]">No referrals yet</p>
+              <p className="text-[#b0b0b0]">{t('noReferralsYet')}</p>
               <p className="text-sm text-[#b0b0b0] mt-1">
-                Share your link to start earning!
+                {t('shareToStart')}
               </p>
             </div>
           ) : (
@@ -303,7 +311,7 @@ export default function RefsPage() {
                       +${ref.totalContributed.toFixed(2)}
                     </p>
                     <p className="text-xs text-[#b0b0b0]">
-                      {ref.isActive ? 'Active' : 'Inactive'}
+                      {ref.isActive ? tCommon('active') : tCommon('inactive')}
                     </p>
                   </div>
                 </div>
@@ -315,27 +323,23 @@ export default function RefsPage() {
         {/* Info Box */}
         <div className="mt-6 bg-[#1a0a2e] rounded-xl p-4 border border-[#00d4ff]/20">
           <h3 className="text-sm font-semibold text-[#00d4ff] mb-2">
-            How it works
+            {t('howItWorks')}
           </h3>
           <ul className="text-sm text-[#b0b0b0] space-y-1">
             <li>
-              &bull; Earn <span className="text-[#00ff88]">5%</span> from direct
-              referrals (Line 1)
+              &bull; {t('howItWorks1')}
             </li>
             <li>
-              &bull; Earn <span className="text-[#00d4ff]">3%</span> from their
-              referrals (Line 2)
+              &bull; {t('howItWorks2')}
             </li>
             <li>
-              &bull; Earn <span className="text-[#ff2d95]">1%</span> from 3rd
-              level referrals (Line 3)
+              &bull; {t('howItWorks3')}
             </li>
             <li>
-              &bull; Bonuses are paid from{' '}
-              <span className="text-white">fresh deposits only</span>
+              &bull; {t('howItWorks4')}
             </li>
             <li>
-              &bull; Active referral = has purchased machine with own funds
+              &bull; {t('howItWorks5')}
             </li>
           </ul>
         </div>

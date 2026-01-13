@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { Clock, Zap } from 'lucide-react';
 import type { Machine, MachineIncome } from '@/types';
 import { ProgressBar } from '@/components/ui/ProgressBar';
@@ -17,12 +18,12 @@ interface MachineCardProps {
 }
 
 // Format remaining time
-function formatTimeRemaining(expiresAt: string): string {
+function formatTimeRemaining(expiresAt: string, expiredLabel: string): string {
   const now = new Date();
   const expires = new Date(expiresAt);
   const diffMs = expires.getTime() - now.getTime();
 
-  if (diffMs <= 0) return 'Expired';
+  if (diffMs <= 0) return expiredLabel;
 
   const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -35,8 +36,8 @@ function formatTimeRemaining(expiresAt: string): string {
 }
 
 // Format seconds to readable time
-function formatSecondsToTime(seconds: number): string {
-  if (seconds <= 0) return 'Ready!';
+function formatSecondsToTime(seconds: number, readyLabel: string): string {
+  if (seconds <= 0) return readyLabel;
 
   const hours = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
@@ -71,8 +72,11 @@ export function MachineCard({
   onAutoCollectClick,
   isCollecting,
 }: MachineCardProps) {
+  const t = useTranslations('machines');
+  const tCommon = useTranslations('common');
+
   const progress = calculateProgress(machine.startedAt, machine.expiresAt);
-  const timeRemaining = formatTimeRemaining(machine.expiresAt);
+  const timeRemaining = formatTimeRemaining(machine.expiresAt, tCommon('expired'));
   const isExpired = machine.status === 'expired';
 
   return (
@@ -116,7 +120,7 @@ export function MachineCard({
                   className="text-[10px] px-1.5 py-0.5 bg-[#00ff88]/20 text-[#00ff88] rounded flex items-center gap-0.5"
                 >
                   <Zap className="w-2.5 h-2.5" />
-                  Auto
+                  {t('auto')}
                 </motion.span>
               )}
             </div>
@@ -129,7 +133,7 @@ export function MachineCard({
             animate={{ scale: 1, opacity: 1 }}
             className="text-xs px-2 py-1 bg-[#ff4444]/20 text-[#ff4444] rounded-full"
           >
-            Expired
+            {tCommon('expired')}
           </motion.span>
         )}
         {income?.isFull && !isExpired && (
@@ -139,7 +143,7 @@ export function MachineCard({
             transition={{ scale: { duration: 1.5, repeat: Infinity } }}
             className="text-xs px-2 py-1 bg-[#00ff88]/20 text-[#00ff88] rounded-full"
           >
-            Ready!
+            {t('ready')}
           </motion.span>
         )}
       </div>
@@ -147,7 +151,7 @@ export function MachineCard({
       {/* Progress bar */}
       <div className="mb-3">
         <div className="flex justify-between text-xs text-[#b0b0b0] mb-1">
-          <span>Service Life</span>
+          <span>{t('wear')}</span>
           <span>{Math.round(progress)}%</span>
         </div>
         <ProgressBar
@@ -169,14 +173,14 @@ export function MachineCard({
             size="md"
           />
         ) : (
-          <div className="text-[#b0b0b0]">Loading...</div>
+          <div className="text-[#b0b0b0]">{tCommon('loading')}</div>
         )}
       </div>
 
       {/* Time remaining */}
       <div className="flex items-center gap-1 text-sm text-[#b0b0b0] mb-4">
         <Clock className="w-4 h-4" />
-        <span>{timeRemaining} remaining</span>
+        <span>{timeRemaining}</span>
       </div>
 
       {/* Collect button or timer - fixed height container */}
@@ -190,7 +194,7 @@ export function MachineCard({
               loading={isCollecting}
               onClick={onCollect}
             >
-              {isCollecting ? 'Collecting...' : `Collect $${income?.accumulated.toFixed(2) || '0.00'}`}
+              {isCollecting ? tCommon('processing') : `Collect $${income?.accumulated.toFixed(2) || '0.00'}`}
             </Button>
             {income?.isFull && !isExpired && onRiskyCollect && (
               <Button
@@ -200,15 +204,15 @@ export function MachineCard({
                 onClick={onRiskyCollect}
                 className="whitespace-nowrap px-4"
               >
-                🎲 Risk It!
+                {t('riskIt')}
               </Button>
             )}
           </div>
         ) : (
           <div className="bg-[#1a0a2e] rounded-lg p-3 text-center border border-[#00d4ff]/20">
-            <p className="text-[10px] text-[#b0b0b0] uppercase tracking-wider mb-1">Full in</p>
+            <p className="text-[10px] text-[#b0b0b0] uppercase tracking-wider mb-1">{t('fullIn')}</p>
             <p className="text-lg font-bold text-[#00d4ff] font-mono">
-              {income ? formatSecondsToTime(income.secondsUntilFull) : '--:--'}
+              {income ? formatSecondsToTime(income.secondsUntilFull, t('ready')) : '--:--'}
             </p>
             <div className="mt-2 h-1.5 bg-[#2a1a4e] rounded-full overflow-hidden">
               <div
@@ -228,7 +232,7 @@ export function MachineCard({
             className="w-full flex items-center justify-center gap-2 text-xs text-[#00ff88] hover:text-[#00d4ff] transition-colors group"
           >
             <Zap className="w-3.5 h-3.5 group-hover:animate-pulse" />
-            <span>{machine.autoCollectEnabled ? 'Auto Collect Active' : 'Enable Auto Collect'}</span>
+            <span>{machine.autoCollectEnabled ? t('autoCollectActive') : t('enableAutoCollect')}</span>
           </button>
         </div>
       )}

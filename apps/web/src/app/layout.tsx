@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import { TelegramProvider } from '@/providers/TelegramProvider';
 import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout';
@@ -20,32 +22,37 @@ export const metadata: Metadata = {
   description: 'Spin your fortune. Own the floor.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en" className="dark">
+    <html lang={locale} className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#1a0a2e] text-white min-h-screen`}
       >
-        <TelegramProvider>
-          <AuthenticatedLayout>{children}</AuthenticatedLayout>
-        </TelegramProvider>
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            style: {
-              background: '#2a1a4e',
-              border: '1px solid rgba(255, 45, 149, 0.3)',
-              color: '#ffffff',
-            },
-            className: 'font-sans',
-          }}
-          theme="dark"
-          richColors
-        />
+        <NextIntlClientProvider messages={messages}>
+          <TelegramProvider>
+            <AuthenticatedLayout>{children}</AuthenticatedLayout>
+          </TelegramProvider>
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              style: {
+                background: '#2a1a4e',
+                border: '1px solid rgba(255, 45, 149, 0.3)',
+                color: '#ffffff',
+              },
+              className: 'font-sans',
+            }}
+            theme="dark"
+            richColors
+          />
+        </NextIntlClientProvider>
       </body>
     </html>
   );
