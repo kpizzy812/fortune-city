@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import WebSocket from 'ws';
 
@@ -37,7 +42,12 @@ export class FortuneRateService implements OnModuleInit, OnModuleDestroy {
   private cachedRate: FortuneRate | null = null;
   private cachedSolPrice: number = 0;
   private solPriceUpdatedAt: Date | null = null;
-  private readonly SOL_PRICE_CACHE_TTL = 60000; // 1 minute
+  private readonly SOL_PRICE_CACHE_TTL = 300000; // 5 minutes - SOL price doesn't change that fast
+
+  // Rate limiting protection
+  private isFetchingSolPrice = false;
+  private rateLimitBackoffUntil: Date | null = null;
+  private readonly RATE_LIMIT_BACKOFF = 60000; // 1 minute backoff after 429
 
   // Config
   private readonly fortuneMintAddress: string;
@@ -175,7 +185,9 @@ export class FortuneRateService implements OnModuleInit, OnModuleDestroy {
 
   private scheduleReconnect() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      this.logger.error('Max reconnect attempts reached. Rate will be unavailable.');
+      this.logger.error(
+        'Max reconnect attempts reached. Rate will be unavailable.',
+      );
       return;
     }
 
@@ -215,20 +227,50 @@ export class FortuneRateService implements OnModuleInit, OnModuleDestroy {
 
   private async ensureSolPrice() {
     const now = new Date();
+
+    // Check if cache is still valid
     if (
-      !this.solPriceUpdatedAt ||
-      now.getTime() - this.solPriceUpdatedAt.getTime() > this.SOL_PRICE_CACHE_TTL
+      this.solPriceUpdatedAt &&
+      now.getTime() - this.solPriceUpdatedAt.getTime() <=
+        this.SOL_PRICE_CACHE_TTL
     ) {
-      await this.fetchSolPrice();
+      return; // Cache is fresh
     }
+
+    // Check if we're in rate limit backoff
+    if (this.rateLimitBackoffUntil && now < this.rateLimitBackoffUntil) {
+      return; // Still in backoff, use cached value
+    }
+
+    // Prevent concurrent fetches
+    if (this.isFetchingSolPrice) {
+      return; // Another fetch is in progress
+    }
+
+    await this.fetchSolPrice();
   }
 
   private async fetchSolPrice() {
+    // Double-check lock
+    if (this.isFetchingSolPrice) return;
+    this.isFetchingSolPrice = true;
+
     try {
       // CoinGecko free API for SOL price
       const response = await fetch(
         'https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd',
       );
+
+      if (response.status === 429) {
+        // Rate limited - set backoff
+        this.rateLimitBackoffUntil = new Date(
+          Date.now() + this.RATE_LIMIT_BACKOFF,
+        );
+        this.logger.warn(
+          `CoinGecko rate limited. Backing off for ${this.RATE_LIMIT_BACKOFF / 1000}s`,
+        );
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(`CoinGecko API error: ${response.status}`);
@@ -237,6 +279,7 @@ export class FortuneRateService implements OnModuleInit, OnModuleDestroy {
       const data = await response.json();
       this.cachedSolPrice = data.solana?.usd || 150; // Fallback to $150
       this.solPriceUpdatedAt = new Date();
+      this.rateLimitBackoffUntil = null; // Clear backoff on success
 
       this.logger.debug(`SOL price updated: $${this.cachedSolPrice}`);
     } catch (error) {
@@ -244,7 +287,8 @@ export class FortuneRateService implements OnModuleInit, OnModuleDestroy {
       if (!this.cachedSolPrice) {
         this.cachedSolPrice = 150; // Default fallback
       }
+    } finally {
+      this.isFetchingSolPrice = false;
     }
   }
-
 }
