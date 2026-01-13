@@ -1,7 +1,7 @@
 # Fortune City - Progress
 
 **Последнее обновление:** 2026-01-14
-**Текущий этап:** Phase 2 в процессе — User-level fund source tracking завершён ✅
+**Текущий этап:** Phase 3 — Solana Deposits (архитектура готова, начинаем реализацию)
 
 ## Архитектура платформ
 
@@ -214,13 +214,32 @@
 
 ---
 
-## Phase 3: Депозиты
+## Phase 3: Депозиты (Solana) — В ПРОЦЕССЕ
 
-- [ ] TON USDT Jetton
-- [ ] Solana USDT SPL
-- [ ] BNB Chain USDT BEP-20
-- [ ] Tron USDT TRC-20
-- [ ] Withdrawal flow
+**Архитектура:** см. [DEPOSITS_ARCHITECTURE.md](./DEPOSITS_ARCHITECTURE.md)
+
+### Backend
+- [ ] DepositsModule (controller, service, DTOs)
+- [ ] AddressGeneratorService (HD Wallet derivation)
+- [ ] HeliusWebhookService (регистрация адресов, валидация)
+- [ ] DepositProcessorService (конвертация в USD, зачисление)
+- [ ] SweepService (автосбор на hot wallet + gas management)
+- [ ] PriceOracleService (SOL/USD курс)
+- [ ] Prisma schema (Deposit, обновить DepositAddress)
+
+### Поддерживаемые валюты
+- [ ] SOL (native) → USD
+- [ ] USDT SPL (Es9vMF...) → USD (1:1)
+- [ ] FORTUNE SPL (4NBMaa...) → USD
+
+### Frontend
+- [ ] Страница /cash с выбором валюты
+- [ ] QR-код для адреса
+- [ ] История депозитов
+- [ ] Курсы валют в реальном времени
+
+### Withdrawal (Phase 3.5)
+- [ ] Withdrawal flow (после депозитов)
 
 ---
 
