@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { MachinesService } from './machines.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { FundSourceService } from '../economy/services/fund-source.service';
 import { Prisma } from '@prisma/client';
 import { calculateEarlySellCommission } from '@fortune-city/shared';
 
@@ -55,6 +56,17 @@ describe('MachinesService', () => {
               findUnique: jest.fn(),
             },
             $transaction: jest.fn(),
+          },
+        },
+        {
+          provide: FundSourceService,
+          useValue: {
+            recordProfitCollection: jest.fn().mockResolvedValue(undefined),
+            recordFreshDeposit: jest.fn().mockResolvedValue(undefined),
+            propagateMachineFundSourceToBalance: jest.fn().mockResolvedValue({
+              freshPortion: new Prisma.Decimal(0),
+              profitPortion: new Prisma.Decimal(0),
+            }),
           },
         },
       ],

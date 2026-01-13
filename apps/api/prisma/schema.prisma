@@ -20,6 +20,10 @@ model User {
   fortuneBalance  Decimal @default(0) @map("fortune_balance") @db.Decimal(20, 8)
   referralBalance Decimal @default(0) @map("referral_balance") @db.Decimal(20, 8)
 
+  // Fund source tracking (for correct taxation on withdrawal)
+  totalFreshDeposits   Decimal @default(0) @map("total_fresh_deposits") @db.Decimal(20, 8)   // Cumulative fresh USDT → FORTUNE
+  totalProfitCollected Decimal @default(0) @map("total_profit_collected") @db.Decimal(20, 8) // Cumulative profit from machines
+
   // Progression
   maxTierReached  Int     @default(0) @map("max_tier_reached")   // For tax rate calculation (updated on purchase)
   maxTierUnlocked Int     @default(1) @map("max_tier_unlocked")  // For tier access (updated on machine expire)

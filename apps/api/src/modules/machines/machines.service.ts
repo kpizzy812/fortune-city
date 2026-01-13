@@ -2,6 +2,8 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Machine, MachineStatus, Prisma } from '@prisma/client';
@@ -12,6 +14,7 @@ import {
   REINVEST_REDUCTION,
   calculateEarlySellCommission,
 } from '@fortune-city/shared';
+import { FundSourceService } from '../economy/services/fund-source.service';
 
 export interface CreateMachineInput {
   tier: number;
@@ -29,7 +32,11 @@ export interface MachineWithTierInfo extends Machine {
 
 @Injectable()
 export class MachinesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => FundSourceService))
+    private readonly fundSourceService: FundSourceService,
+  ) {}
 
   async findById(id: string): Promise<Machine | null> {
     return this.prisma.machine.findUnique({
@@ -305,7 +312,17 @@ export class MachinesService {
         },
       });
 
-      // 3. Create transaction record
+      // 3. Track profit collection for user-level fund source tracking
+      // Only the profit portion counts as profit collected (for tax calculation on withdrawal)
+      if (incomeState.currentProfit > 0) {
+        await this.fundSourceService.recordProfitCollection(
+          userId,
+          incomeState.currentProfit,
+          tx,
+        );
+      }
+
+      // 4. Create transaction record
       await tx.transaction.create({
         data: {
           userId,

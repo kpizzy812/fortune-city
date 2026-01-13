@@ -1,7 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { Machine, AuctionListing } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MachinesService } from '../machines.service';
+import { FundSourceService } from '../../economy/services/fund-source.service';
 import {
   calculateAuctionCommission,
   calculateMachineWear,
@@ -49,6 +50,8 @@ export class AuctionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly machinesService: MachinesService,
+    @Inject(forwardRef(() => FundSourceService))
+    private readonly fundSourceService: FundSourceService,
   ) {}
 
   /**
@@ -267,7 +270,16 @@ export class AuctionService {
         },
       });
 
-      // 4. Create transaction for seller
+      // 4. Propagate fund source from sold machine back to seller's balance trackers
+      // This maintains correct fresh/profit ratio for tax calculation on withdrawal
+      await this.fundSourceService.propagateMachineFundSourceToBalance(
+        listing.sellerId,
+        listing.machineId,
+        sellerPayout,
+        tx,
+      );
+
+      // 5. Create transaction for seller
       await tx.transaction.create({
         data: {
           userId: listing.sellerId,

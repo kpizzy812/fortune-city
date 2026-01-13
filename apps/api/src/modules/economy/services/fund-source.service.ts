@@ -86,9 +86,161 @@ export class FundSourceService {
     };
   }
 
-  // TODO: Add user-level tracking for fresh deposits vs profits
-  // when implementing detailed income/withdrawal tracking.
-  // Methods to add:
-  // - recordIncomeCollection(userId, incomeAmount, tx?)
-  // - recordFreshDeposit(userId, amount, tx?)
+  /**
+   * Record profit collection from machine income.
+   * Updates user's totalProfitCollected tracker.
+   */
+  async recordProfitCollection(
+    userId: string,
+    incomeAmount: Prisma.Decimal | number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const client = tx ?? this.prisma;
+    const amount = new Prisma.Decimal(incomeAmount);
+
+    if (amount.isZero() || amount.isNeg()) return;
+
+    await client.user.update({
+      where: { id: userId },
+      data: {
+        totalProfitCollected: { increment: amount },
+      },
+    });
+  }
+
+  /**
+   * Record fresh deposit (USDT → FORTUNE conversion).
+   * Updates user's totalFreshDeposits tracker.
+   */
+  async recordFreshDeposit(
+    userId: string,
+    amount: Prisma.Decimal | number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const client = tx ?? this.prisma;
+    const depositAmount = new Prisma.Decimal(amount);
+
+    if (depositAmount.isZero() || depositAmount.isNeg()) return;
+
+    await client.user.update({
+      where: { id: userId },
+      data: {
+        totalFreshDeposits: { increment: depositAmount },
+      },
+    });
+  }
+
+  /**
+   * When machine is sold (auction/pawnshop), propagate its fund_source back to user balance trackers.
+   * The payout amount maintains the same fresh/profit proportion as the original machine purchase.
+   */
+  async propagateMachineFundSourceToBalance(
+    userId: string,
+    machineId: string,
+    payoutAmount: Prisma.Decimal | number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<{ freshPortion: Prisma.Decimal; profitPortion: Prisma.Decimal }> {
+    const client = tx ?? this.prisma;
+    const amount = new Prisma.Decimal(payoutAmount);
+
+    // Get original fund source of the machine
+    const fundSource = await client.fundSource.findUnique({
+      where: { machineId },
+    });
+
+    if (!fundSource) {
+      // No fund source tracked - treat entire amount as profit (conservative approach)
+      await client.user.update({
+        where: { id: userId },
+        data: {
+          totalProfitCollected: { increment: amount },
+        },
+      });
+      return {
+        freshPortion: new Prisma.Decimal(0),
+        profitPortion: amount,
+      };
+    }
+
+    // Calculate proportions based on original fund source
+    const totalOriginal = new Prisma.Decimal(fundSource.freshDepositAmount).add(
+      new Prisma.Decimal(fundSource.profitDerivedAmount),
+    );
+
+    if (totalOriginal.isZero()) {
+      // Edge case: no original amount tracked - treat as profit
+      await client.user.update({
+        where: { id: userId },
+        data: {
+          totalProfitCollected: { increment: amount },
+        },
+      });
+      return {
+        freshPortion: new Prisma.Decimal(0),
+        profitPortion: amount,
+      };
+    }
+
+    // Calculate proportions of payout
+    const freshRatio = new Prisma.Decimal(fundSource.freshDepositAmount).div(totalOriginal);
+    const freshPortion = amount.mul(freshRatio);
+    const profitPortion = amount.sub(freshPortion);
+
+    // Update user trackers
+    await client.user.update({
+      where: { id: userId },
+      data: {
+        totalFreshDeposits: { increment: freshPortion },
+        totalProfitCollected: { increment: profitPortion },
+      },
+    });
+
+    return { freshPortion, profitPortion };
+  }
+
+  /**
+   * When user makes a withdrawal, deduct from trackers proportionally.
+   * Fresh deposits are deducted first (they have 0% tax), then profit.
+   */
+  async recordWithdrawal(
+    userId: string,
+    amount: Prisma.Decimal | number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<{ fromFresh: Prisma.Decimal; fromProfit: Prisma.Decimal }> {
+    const client = tx ?? this.prisma;
+    const withdrawAmount = new Prisma.Decimal(amount);
+
+    // Get current user trackers
+    const user = await client.user.findUnique({
+      where: { id: userId },
+      select: { totalFreshDeposits: true, totalProfitCollected: true },
+    });
+
+    if (!user) {
+      throw new Error(`User ${userId} not found`);
+    }
+
+    const freshAvailable = new Prisma.Decimal(user.totalFreshDeposits);
+    const profitAvailable = new Prisma.Decimal(user.totalProfitCollected);
+
+    // Deduct from fresh first (0% tax), then from profit
+    let fromFresh = Prisma.Decimal.min(withdrawAmount, freshAvailable);
+    let fromProfit = withdrawAmount.sub(fromFresh);
+
+    // If not enough profit either, cap at available
+    if (fromProfit.gt(profitAvailable)) {
+      fromProfit = profitAvailable;
+    }
+
+    // Update trackers
+    await client.user.update({
+      where: { id: userId },
+      data: {
+        totalFreshDeposits: { decrement: fromFresh },
+        totalProfitCollected: { decrement: fromProfit },
+      },
+    });
+
+    return { fromFresh, fromProfit };
+  }
 }

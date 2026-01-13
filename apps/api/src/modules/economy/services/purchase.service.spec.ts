@@ -3,6 +3,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PurchaseService } from './purchase.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MachinesService } from '../../machines/machines.service';
+import { AuctionService } from '../../machines/services/auction.service';
 import { TransactionsService } from './transactions.service';
 import { FundSourceService } from './fund-source.service';
 import { SettingsService } from '../../settings/settings.service';
@@ -123,11 +124,21 @@ describe('PurchaseService', () => {
       }),
     };
 
+    const mockAuctionService = {
+      getFirstPendingListing: jest.fn().mockResolvedValue(null),
+      processAuctionSale: jest.fn().mockResolvedValue({
+        sellerPayout: 0,
+        sellerNewBalance: 0,
+      }),
+      applyUpgradesToMachine: jest.fn().mockResolvedValue({}),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PurchaseService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: MachinesService, useValue: mockMachinesService },
+        { provide: AuctionService, useValue: mockAuctionService },
         { provide: TransactionsService, useValue: mockTransactionsService },
         { provide: FundSourceService, useValue: mockFundSourceService },
         { provide: SettingsService, useValue: mockSettingsService },

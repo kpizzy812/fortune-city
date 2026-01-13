@@ -1,7 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { Machine, User } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MachinesService } from '../machines.service';
+import { FundSourceService } from '../../economy/services/fund-source.service';
 import {
   calculatePawnshopPayout,
   PAWNSHOP_COMMISSION_RATE,
@@ -36,6 +37,8 @@ export class PawnshopService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly machinesService: MachinesService,
+    @Inject(forwardRef(() => FundSourceService))
+    private readonly fundSourceService: FundSourceService,
   ) {}
 
   /**
@@ -120,7 +123,28 @@ export class PawnshopService {
         },
       });
 
-      // 3. Create transaction record
+      // 3. Track profit from coin box collection
+      if (incomeState.currentProfit > 0) {
+        await this.fundSourceService.recordProfitCollection(
+          userId,
+          incomeState.currentProfit,
+          tx,
+        );
+      }
+
+      // 4. Propagate fund source from pawnshop payout (principal return) back to balance trackers
+      // Note: payout is the principal portion returned (tierPrice * 0.9 - collected_profit)
+      // This maintains correct fresh/profit ratio for tax calculation on withdrawal
+      if (payout > 0) {
+        await this.fundSourceService.propagateMachineFundSourceToBalance(
+          userId,
+          machineId,
+          payout,
+          tx,
+        );
+      }
+
+      // 5. Create transaction record
       await tx.transaction.create({
         data: {
           userId,
