@@ -336,7 +336,7 @@ export function TierCarousel({
         {/* Left edge gradient */}
         <div
           className={`
-            absolute left-0 top-0 bottom-0 w-12 z-20
+            absolute left-0 top-0 bottom-0 w-12 z-10
             bg-gradient-to-r from-[#1a0a2e] to-transparent
             pointer-events-none transition-opacity duration-300
             ${canScrollLeft ? 'opacity-100' : 'opacity-0'}
@@ -346,7 +346,7 @@ export function TierCarousel({
         {/* Right edge gradient */}
         <div
           className={`
-            absolute right-0 top-0 bottom-0 w-12 z-20
+            absolute right-0 top-0 bottom-0 w-12 z-10
             bg-gradient-to-l from-[#1a0a2e] to-transparent
             pointer-events-none transition-opacity duration-300
             ${canScrollRight ? 'opacity-100' : 'opacity-0'}
@@ -355,7 +355,7 @@ export function TierCarousel({
 
         <div
           ref={scrollContainerRef}
-          className="flex gap-5 overflow-x-auto snap-x snap-mandatory py-4 px-4 lg:px-8 max-lg:[scroll-padding-inline:calc(50%-140px)]"
+          className="flex gap-5 overflow-x-auto snap-x snap-mandatory py-6 px-6 lg:px-10 max-lg:[scroll-padding-inline:calc(50%-140px)]"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
@@ -368,7 +368,7 @@ export function TierCarousel({
             return (
               <div
                 key={tier.tier}
-                className="snap-center lg:snap-start flex-shrink-0 relative z-30 hover:z-40"
+                className="snap-center lg:snap-start flex-shrink-0 relative z-30 hover:z-40 p-2 -m-2"
               >
                 <TierCard
                   tier={tier}
