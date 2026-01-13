@@ -46,14 +46,8 @@ export function FortuneGambleUpgradeModal({
               <div className="bg-[#1a0a2e] rounded-lg p-3 border border-[#ff2d95]/30">
                 <div className="text-center">
                   <p className="text-xs text-[#b0b0b0] mb-2">Current</p>
-                  <div className="text-sm font-semibold text-white mb-1">
+                  <div className="text-2xl font-bold text-[#00d4ff]">
                     Level {gambleInfo.currentLevel}
-                  </div>
-                  <div className="text-lg font-bold text-[#00d4ff]">
-                    {(gambleInfo.currentWinChance * 100).toFixed(2)}%
-                  </div>
-                  <div className="text-xs text-[#b0b0b0] mt-1">
-                    EV: {(gambleInfo.currentEV * 100).toFixed(0)}%
                   </div>
                 </div>
               </div>
@@ -62,14 +56,8 @@ export function FortuneGambleUpgradeModal({
               <div className="bg-[#00ff88]/10 rounded-lg p-3 border border-[#00ff88]/30">
                 <div className="text-center">
                   <p className="text-xs text-[#00ff88] mb-2">Next Level</p>
-                  <div className="text-sm font-semibold text-white mb-1">
+                  <div className="text-2xl font-bold text-[#00ff88]">
                     Level {gambleInfo.nextLevel}
-                  </div>
-                  <div className="text-lg font-bold text-[#00ff88]">
-                    {gambleInfo.nextWinChance ? (gambleInfo.nextWinChance * 100).toFixed(2) : '-'}%
-                  </div>
-                  <div className="text-xs text-[#00ff88] mt-1">
-                    EV: {gambleInfo.nextEV ? (gambleInfo.nextEV * 100).toFixed(0) : '-'}%
                   </div>
                 </div>
               </div>
@@ -79,12 +67,7 @@ export function FortuneGambleUpgradeModal({
             <div className="bg-[#1a0a2e] rounded-lg p-3 border border-[#00d4ff]/20">
               <div className="flex items-center justify-center gap-2 text-sm">
                 <TrendingUp className="w-4 h-4 text-[#00ff88]" />
-                <span className="text-white">
-                  {gambleInfo.nextWinChance && gambleInfo.currentWinChance
-                    ? `+${((gambleInfo.nextWinChance - gambleInfo.currentWinChance) * 100).toFixed(2)}%`
-                    : '-'}{' '}
-                  better odds
-                </span>
+                <span className="text-white">Better odds at higher levels</span>
               </div>
             </div>
 
