@@ -162,11 +162,18 @@
     - nanoid(8) для генерации реферальных кодов
     - Endpoints: GET /referrals/stats, GET /referrals/list, POST /referrals/withdraw, POST /referrals/set-referrer
     - 22 unit теста (все проходят)
+  - Интеграция в авторизацию:
+    - referralCode в DTO авторизации (initData + loginWidget)
+    - UsersService связывает нового пользователя с реферером
+    - referralBalance/referralCode в ответе /me
+    - Обновлены тесты auth, purchase, machine-lifecycle
   - Frontend:
     - Страница /refs с полным UI
     - referrals.store.ts (Zustand)
     - Статистика, список рефералов, кнопка вывода
     - Копирование реферальной ссылки
+    - captureReferralCode() - захват ?ref= из URL в localStorage
+    - Автоматическая передача referralCode при авторизации
 - [ ] Push-уведомления
 
 ### Wheel of Fortune
