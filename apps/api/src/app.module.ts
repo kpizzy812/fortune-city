@@ -10,6 +10,7 @@ import { MachinesModule } from './modules/machines/machines.module';
 import { EconomyModule } from './modules/economy/economy.module';
 import { MachineLifecycleModule } from './modules/machine-lifecycle/machine-lifecycle.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { ReferralsModule } from './modules/referrals/referrals.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SettingsModule } from './modules/settings/settings.module';
     MachinesModule,
     EconomyModule,
     MachineLifecycleModule,
+    ReferralsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

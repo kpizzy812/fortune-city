@@ -17,7 +17,8 @@ model User {
   lastName    String?  @map("last_name")
 
   // Balance (only $FORTUNE, USDT converts on deposit/withdrawal)
-  fortuneBalance Decimal @default(0) @map("fortune_balance") @db.Decimal(20, 8)
+  fortuneBalance  Decimal @default(0) @map("fortune_balance") @db.Decimal(20, 8)
+  referralBalance Decimal @default(0) @map("referral_balance") @db.Decimal(20, 8)
 
   // Progression
   maxTierReached  Int     @default(0) @map("max_tier_reached")   // For tax rate calculation (updated on purchase)
@@ -248,13 +249,16 @@ model ReferralBonus {
   source     User   @relation("ReferralSource", fields: [sourceId], references: [id])
 
   level  Int // 1, 2, or 3
+  rate   Decimal @db.Decimal(5, 4) // 0.05, 0.03, 0.01
   amount Decimal @db.Decimal(20, 8)
 
-  // Original transaction that triggered this bonus
-  triggerAmount Decimal @map("trigger_amount") @db.Decimal(20, 8)
+  // What triggered this bonus
+  machineId   String  @map("machine_id")   // machine purchase that triggered
+  freshAmount Decimal @map("fresh_amount") @db.Decimal(20, 8) // fresh_usdt part of purchase
 
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([receiverId])
+  @@index([sourceId])
   @@map("referral_bonuses")
 }

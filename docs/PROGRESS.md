@@ -1,7 +1,7 @@
 # Fortune City - Progress
 
 **Последнее обновление:** 2026-01-13
-**Текущий этап:** Phase 2 в процессе — Auto Collect модуль полностью завершён (backend + frontend) ✅
+**Текущий этап:** Phase 2 в процессе — 3-уровневая реферальная система полностью завершена ✅
 
 ## Архитектура платформ
 
@@ -151,7 +151,22 @@
     - Store integration: autoCollectInfos state, purchaseAutoCollect/fetchAutoCollectInfo actions
     - Dashboard интеграция с modal state management
     - Все изменения прошли lint и build ✅
-- [ ] 3-уровневая реферальная система
+- [x] 3-уровневая реферальная система ✅
+  - Backend:
+    - ReferralsModule: service, controller (полный CRUD)
+    - processReferralBonus() - 3 уровня: 5%, 3%, 1% от fresh_usdt
+    - referralBalance - отдельный баланс для реферальных бонусов
+    - Требуется активная машина для вывода referralBalance
+    - Интеграция в PurchaseService (бонус при покупке машины)
+    - referralBalance можно использовать для покупок
+    - nanoid(8) для генерации реферальных кодов
+    - Endpoints: GET /referrals/stats, GET /referrals/list, POST /referrals/withdraw, POST /referrals/set-referrer
+    - 22 unit теста (все проходят)
+  - Frontend:
+    - Страница /refs с полным UI
+    - referrals.store.ts (Zustand)
+    - Статистика, список рефералов, кнопка вывода
+    - Копирование реферальной ссылки
 - [ ] Push-уведомления
 
 ### Wheel of Fortune
@@ -220,6 +235,7 @@ apps/web/src/
 ├── app/
 │   ├── page.tsx          # Dashboard с машинами
 │   ├── shop/page.tsx     # Магазин тиров
+│   ├── refs/page.tsx     # Реферальная страница
 │   └── layout.tsx        # Layout с BottomNavigation
 ├── components/
 │   ├── ui/               # Button, Modal, ProgressBar
@@ -228,7 +244,8 @@ apps/web/src/
 │   └── layout/           # BottomNavigation, AuthenticatedLayout
 ├── stores/
 │   ├── auth.store.ts     # Auth state (Zustand)
-│   └── machines.store.ts # Machines state (Zustand)
+│   ├── machines.store.ts # Machines state (Zustand)
+│   └── referrals.store.ts # Referrals state (Zustand)
 ├── hooks/
 │   └── useInterval.ts    # Real-time income interpolation
 └── types/

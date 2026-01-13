@@ -202,6 +202,48 @@ class ApiClient {
   }> {
     return this.request(`/economy/transactions/stats`, { token });
   }
+
+  // ============================================
+  // Referral endpoints
+  // ============================================
+
+  async getReferralStats(token: string): Promise<ReferralStats> {
+    return this.request<ReferralStats>('/referrals/stats', { token });
+  }
+
+  async getReferralList(
+    token: string,
+    limit = 50,
+    offset = 0
+  ): Promise<ReferralListItem[]> {
+    return this.request<ReferralListItem[]>(
+      `/referrals/list?limit=${limit}&offset=${offset}`,
+      { token }
+    );
+  }
+
+  async canWithdrawReferralBalance(token: string): Promise<{ canWithdraw: boolean }> {
+    return this.request<{ canWithdraw: boolean }>('/referrals/can-withdraw', { token });
+  }
+
+  async withdrawReferralBalance(
+    token: string,
+    amount?: number
+  ): Promise<WithdrawReferralResult> {
+    return this.request<WithdrawReferralResult>('/referrals/withdraw', {
+      token,
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    });
+  }
+
+  async setReferrer(token: string, referralCode: string): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>('/referrals/set-referrer', {
+      token,
+      method: 'POST',
+      body: JSON.stringify({ referralCode }),
+    });
+  }
 }
 
 export const api = new ApiClient(API_URL);
@@ -217,8 +259,39 @@ export interface UserData {
   firstName: string | null;
   lastName: string | null;
   fortuneBalance: string;
+  referralBalance: string;
   maxTierReached: number;
   currentTaxRate: string;
+  referralCode: string;
+}
+
+export interface ReferralStats {
+  totalReferrals: number;
+  activeReferrals: number;
+  byLevel: {
+    level: number;
+    count: number;
+    earned: number;
+  }[];
+  totalEarned: number;
+  referralBalance: number;
+  referralCode: string;
+}
+
+export interface ReferralListItem {
+  id: string;
+  username: string | null;
+  firstName: string | null;
+  level: number;
+  isActive: boolean;
+  totalContributed: number;
+  joinedAt: string;
+}
+
+export interface WithdrawReferralResult {
+  success: boolean;
+  newFortuneBalance: number;
+  newReferralBalance: number;
 }
 
 export interface AuthResponse {

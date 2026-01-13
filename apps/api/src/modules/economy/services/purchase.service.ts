@@ -9,6 +9,7 @@ import { MachinesService } from '../../machines/machines.service';
 import { TransactionsService } from './transactions.service';
 import { FundSourceService } from './fund-source.service';
 import { SettingsService } from '../../settings/settings.service';
+import { ReferralsService } from '../../referrals/referrals.service';
 import { getTierConfigOrThrow, TAX_RATES_BY_TIER } from '@fortune-city/shared';
 
 export interface PurchaseMachineInput {
@@ -30,6 +31,7 @@ export class PurchaseService {
     private readonly transactionsService: TransactionsService,
     private readonly fundSourceService: FundSourceService,
     private readonly settingsService: SettingsService,
+    private readonly referralsService: ReferralsService,
   ) {}
 
   async purchaseMachine(
@@ -48,10 +50,11 @@ export class PurchaseService {
       throw new NotFoundException('User not found');
     }
 
-    // Check balance
-    if (user.fortuneBalance.lt(price)) {
+    // Check total balance (fortuneBalance + referralBalance)
+    const totalBalance = user.fortuneBalance.add(user.referralBalance);
+    if (totalBalance.lt(price)) {
       throw new BadRequestException(
-        `Insufficient balance. Need ${tierConfig.price} $FORTUNE, have ${user.fortuneBalance.toString()}`,
+        `Insufficient balance. Need ${tierConfig.price} $FORTUNE, have ${totalBalance.toString()}`,
       );
     }
 
@@ -83,24 +86,28 @@ export class PurchaseService {
       );
     }
 
+    // Calculate how much to take from each balance
+    // Priority: fortuneBalance first, then referralBalance
+    const fromFortuneBalance = Prisma.Decimal.min(user.fortuneBalance, price);
+    const fromReferralBalance = price.sub(fromFortuneBalance);
+
     // Calculate fund source breakdown (how much is fresh deposit vs profit)
-    // For simplicity in MVP, we consider all balance as potentially mixed
-    // In production, we'd track user's fresh deposit amount separately
+    // Note: referralBalance is NOT fresh deposit, so we exclude it from fresh calculation
+    const effectiveBalance = user.fortuneBalance; // Only fortuneBalance can have fresh deposits
     const sourceBreakdown = this.fundSourceService.calculateSourceBreakdown(
-      user.fortuneBalance,
-      user.fortuneBalance, // TODO: Track actual fresh deposits at user level
-      price,
+      effectiveBalance,
+      effectiveBalance, // TODO: Track actual fresh deposits at user level
+      fromFortuneBalance, // Only calculate source for fortuneBalance portion
     );
 
     // Execute purchase in transaction
     const result = await this.prisma.$transaction(async (tx) => {
-      // 1. Deduct balance from user
+      // 1. Deduct balance from user (both fortuneBalance and referralBalance if needed)
       const updatedUser = await tx.user.update({
         where: { id: userId },
         data: {
-          fortuneBalance: {
-            decrement: price,
-          },
+          fortuneBalance: { decrement: fromFortuneBalance },
+          referralBalance: { decrement: fromReferralBalance },
         },
       });
 
@@ -150,6 +157,14 @@ export class PurchaseService {
         tx,
       );
 
+      // 6. Process referral bonuses (only on fresh_usdt portion)
+      await this.referralsService.processReferralBonus(
+        userId,
+        machine.id,
+        new Prisma.Decimal(sourceBreakdown.freshDeposit),
+        tx,
+      );
+
       return {
         machine,
         transaction,
@@ -183,6 +198,8 @@ export class PurchaseService {
     canAfford: boolean;
     price: number;
     currentBalance: number;
+    fortuneBalance: number;
+    referralBalance: number;
     shortfall: number;
     tierLocked: boolean;
     hasActiveMachine: boolean;
@@ -196,7 +213,9 @@ export class PurchaseService {
       throw new NotFoundException('User not found');
     }
 
-    const balance = Number(user.fortuneBalance);
+    const fortuneBalance = Number(user.fortuneBalance);
+    const referralBalance = Number(user.referralBalance);
+    const totalBalance = fortuneBalance + referralBalance;
     const price = tierConfig.price;
     const maxGlobalTier = await this.settingsService.getMaxGlobalTier();
     const maxAllowedTier = Math.max(maxGlobalTier, user.maxTierUnlocked);
@@ -211,10 +230,12 @@ export class PurchaseService {
     });
 
     return {
-      canAfford: balance >= price,
+      canAfford: totalBalance >= price,
       price,
-      currentBalance: balance,
-      shortfall: Math.max(0, price - balance),
+      currentBalance: totalBalance,
+      fortuneBalance,
+      referralBalance,
+      shortfall: Math.max(0, price - totalBalance),
       tierLocked: tier > maxAllowedTier,
       hasActiveMachine: !!activeMachineOfSameTier,
     };

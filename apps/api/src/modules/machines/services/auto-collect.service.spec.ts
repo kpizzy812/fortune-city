@@ -106,7 +106,10 @@ describe('AutoCollectService', () => {
       const mockMachine = createMockMachine();
       machinesService.findByIdOrThrow.mockResolvedValue(mockMachine as any);
 
-      const result = await service.getAutoCollectInfo(mockMachineId, mockUserId);
+      const result = await service.getAutoCollectInfo(
+        mockMachineId,
+        mockUserId,
+      );
 
       expect(result).toEqual({
         enabled: false,
@@ -125,7 +128,10 @@ describe('AutoCollectService', () => {
       });
       machinesService.findByIdOrThrow.mockResolvedValue(mockMachine as any);
 
-      const result = await service.getAutoCollectInfo(mockMachineId, mockUserId);
+      const result = await service.getAutoCollectInfo(
+        mockMachineId,
+        mockUserId,
+      );
 
       expect(result).toEqual({
         enabled: true,
@@ -173,7 +179,10 @@ describe('AutoCollectService', () => {
         });
       });
 
-      const result = await service.purchaseAutoCollect(mockMachineId, mockUserId);
+      const result = await service.purchaseAutoCollect(
+        mockMachineId,
+        mockUserId,
+      );
 
       expect(result.cost).toBe(upgradeCost);
       expect(result.machine.autoCollectEnabled).toBe(true);

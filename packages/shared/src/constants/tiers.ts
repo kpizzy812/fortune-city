@@ -171,6 +171,15 @@ export function calculateGambleEV(level: number): number {
          ((1 - config.winChance) * GAMBLE_LOSE_MULTIPLIER);
 }
 
+// Referral system rates by level (3 levels deep)
+export const REFERRAL_RATES: Record<number, number> = {
+  1: 0.05, // 5% from line 1
+  2: 0.03, // 3% from line 2
+  3: 0.01, // 1% from line 3
+};
+
+export const REFERRAL_MAX_LEVELS = 3;
+
 // Early sell commission based on progress to breakeven
 // Breakeven is at 67% of lifecycle for all tiers
 export function calculateEarlySellCommission(
