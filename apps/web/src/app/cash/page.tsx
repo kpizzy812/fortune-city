@@ -69,7 +69,7 @@ export default function CashPage() {
     }
   }, [token, router]);
 
-  // Fetch initial data
+  // Fetch initial data - только при монтировании
   useEffect(() => {
     if (token) {
       fetchDeposits(token);
@@ -81,10 +81,11 @@ export default function CashPage() {
   // Save wallet connection when connected
   useEffect(() => {
     if (connected && publicKey && token) {
-      saveWalletToBackend(token, publicKey.toBase58()).catch(() => {});
+      const walletAddress = publicKey.toBase58();
+      saveWalletToBackend(token, walletAddress).catch(() => {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connected, publicKey, token]);
+  }, [connected, publicKey?.toBase58(), token]);
 
   // Fetch deposit address when switching to address tab
   useEffect(() => {
@@ -92,11 +93,13 @@ export default function CashPage() {
       fetchDepositAddress(token);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, token, depositAddress]);
+  }, [activeTab, token]);
 
   // Clear error on currency change
   useEffect(() => {
-    clearError();
+    if (error) {
+      clearError();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCurrency]);
 
