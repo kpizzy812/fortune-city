@@ -85,9 +85,9 @@ export class DepositsService {
       );
     }
 
-    // Get hot wallet address
-    const hotWallet = this.config.get<string>('SOLANA_HOT_WALLET');
-    if (!hotWallet) {
+    // Get deposit address (hot wallet receives deposits, separate from payout wallet)
+    const depositAddress = this.config.get<string>('SOLANA_HOT_WALLET');
+    if (!depositAddress) {
       throw new BadRequestException('Deposits are not configured');
     }
 
@@ -118,7 +118,7 @@ export class DepositsService {
     return {
       depositId: deposit.id,
       memo,
-      recipientAddress: hotWallet,
+      recipientAddress: depositAddress,
       amount,
       currency,
     };
@@ -363,10 +363,10 @@ export class DepositsService {
   private async findUserForDeposit(
     parsed: ParsedDeposit,
   ): Promise<string | null> {
-    const hotWallet = this.config.get<string>('SOLANA_HOT_WALLET');
+    const hotWalletAddress = this.config.get<string>('SOLANA_HOT_WALLET');
 
-    // If deposit is to hot wallet, check wallet connections
-    if (parsed.toAddress === hotWallet) {
+    // If deposit is to hot wallet (deposit address), check wallet connections
+    if (parsed.toAddress === hotWalletAddress) {
       const walletConnection = await this.prisma.walletConnection.findFirst({
         where: { walletAddress: parsed.fromAddress, chain: 'solana' },
       });

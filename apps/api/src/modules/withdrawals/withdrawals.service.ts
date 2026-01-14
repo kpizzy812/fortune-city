@@ -120,24 +120,24 @@ export class WithdrawalsService {
     // Get preview for tax calculation
     const preview = await this.previewWithdrawal(userId, amount);
 
-    // Check hot wallet
-    const hotWallet = this.solanaRpc.getHotWalletKeypair();
-    if (!hotWallet) {
+    // Check payout wallet (separate from hot wallet for security)
+    const payoutWallet = this.solanaRpc.getPayoutWalletKeypair();
+    if (!payoutWallet) {
       throw new BadRequestException('Withdrawal service not configured');
     }
 
-    // Check hot wallet USDT balance
+    // Check payout wallet USDT balance
     const usdtMint =
       this.config.get<string>('USDT_MINT') || SOLANA_TOKENS.USDT.mint;
-    const hotWalletUsdtBalance = await this.solanaRpc.getTokenBalance(
-      hotWallet.publicKey,
+    const payoutWalletUsdtBalance = await this.solanaRpc.getTokenBalance(
+      payoutWallet.publicKey,
       usdtMint,
     );
     const requiredUsdtRaw = Math.floor(
       preview.usdtAmount * Math.pow(10, SOLANA_TOKENS.USDT.decimals),
     );
 
-    if (hotWalletUsdtBalance < requiredUsdtRaw) {
+    if (payoutWalletUsdtBalance < requiredUsdtRaw) {
       throw new BadRequestException('Withdrawal temporarily unavailable');
     }
 
@@ -202,21 +202,21 @@ export class WithdrawalsService {
     transaction.recentBlockhash = blockhash;
     transaction.lastValidBlockHeight = lastValidBlockHeight;
 
-    // Instruction 1: User pays fee to hot wallet
+    // Instruction 1: User pays fee to payout wallet
     const feeInLamports = Math.floor(WITHDRAWAL_FEE_SOL * LAMPORTS_PER_SOL);
     transaction.add(
       SystemProgram.transfer({
         fromPubkey: userPubkey,
-        toPubkey: hotWallet.publicKey,
+        toPubkey: payoutWallet.publicKey,
         lamports: feeInLamports,
       }),
     );
 
-    // Instruction 2: Hot wallet sends USDT to user
+    // Instruction 2: Payout wallet sends USDT to user
     const usdtMintPubkey = new PublicKey(usdtMint);
-    const hotWalletAta = await getAssociatedTokenAddress(
+    const payoutWalletAta = await getAssociatedTokenAddress(
       usdtMintPubkey,
-      hotWallet.publicKey,
+      payoutWallet.publicKey,
     );
     const userAta = await getAssociatedTokenAddress(usdtMintPubkey, userPubkey);
 
@@ -227,7 +227,7 @@ export class WithdrawalsService {
       // ATA doesn't exist, add instruction to create it
       transaction.add(
         createAssociatedTokenAccountInstruction(
-          hotWallet.publicKey, // payer (hot wallet pays for ATA creation)
+          payoutWallet.publicKey, // payer (payout wallet pays for ATA creation)
           userAta,
           userPubkey,
           usdtMintPubkey,
@@ -243,9 +243,9 @@ export class WithdrawalsService {
     );
     transaction.add(
       createTransferInstruction(
-        hotWalletAta,
+        payoutWalletAta,
         userAta,
-        hotWallet.publicKey,
+        payoutWallet.publicKey,
         usdtAmountRaw,
         [],
         TOKEN_PROGRAM_ID,
@@ -255,8 +255,8 @@ export class WithdrawalsService {
     // Set fee payer to user (they pay the network fee + our fee)
     transaction.feePayer = userPubkey;
 
-    // Partially sign with hot wallet
-    transaction.partialSign(hotWallet);
+    // Partially sign with payout wallet
+    transaction.partialSign(payoutWallet);
 
     // Serialize and return
     const serializedTransaction = transaction
@@ -410,7 +410,7 @@ export class WithdrawalsService {
 
   /**
    * Create instant withdrawal (manual address method).
-   * Hot wallet sends USDT directly to specified address.
+   * Payout wallet sends USDT directly to specified address.
    */
   async createInstantWithdrawal(
     userId: string,
@@ -429,24 +429,24 @@ export class WithdrawalsService {
     // Get preview
     const preview = await this.previewWithdrawal(userId, amount);
 
-    // Check hot wallet
-    const hotWallet = this.solanaRpc.getHotWalletKeypair();
-    if (!hotWallet) {
+    // Check payout wallet (separate from hot wallet for security)
+    const payoutWallet = this.solanaRpc.getPayoutWalletKeypair();
+    if (!payoutWallet) {
       throw new BadRequestException('Withdrawal service not configured');
     }
 
-    // Check hot wallet USDT balance
+    // Check payout wallet USDT balance
     const usdtMint =
       this.config.get<string>('USDT_MINT') || SOLANA_TOKENS.USDT.mint;
-    const hotWalletUsdtBalance = await this.solanaRpc.getTokenBalance(
-      hotWallet.publicKey,
+    const payoutWalletUsdtBalance = await this.solanaRpc.getTokenBalance(
+      payoutWallet.publicKey,
       usdtMint,
     );
     const requiredUsdtRaw = Math.floor(
       preview.usdtAmount * Math.pow(10, SOLANA_TOKENS.USDT.decimals),
     );
 
-    if (hotWalletUsdtBalance < requiredUsdtRaw) {
+    if (payoutWalletUsdtBalance < requiredUsdtRaw) {
       throw new BadRequestException('Withdrawal temporarily unavailable');
     }
 
@@ -488,14 +488,14 @@ export class WithdrawalsService {
         });
       });
 
-      // Send USDT
+      // Send USDT from payout wallet
       const usdtMintPubkey = new PublicKey(usdtMint);
       const usdtAmountRaw = Math.floor(
         preview.usdtAmount * Math.pow(10, SOLANA_TOKENS.USDT.decimals),
       );
 
       txSignature = await this.solanaRpc.transferToken(
-        hotWallet,
+        payoutWallet,
         recipientPubkey,
         usdtMintPubkey,
         usdtAmountRaw,

@@ -23,6 +23,7 @@ export class SolanaRpcService implements OnModuleInit {
   private readonly logger = new Logger(SolanaRpcService.name);
   private connection: Connection;
   private hotWalletKeypair: Keypair | null = null;
+  private payoutWalletKeypair: Keypair | null = null;
 
   constructor(private config: ConfigService) {}
 
@@ -36,22 +37,11 @@ export class SolanaRpcService implements OnModuleInit {
     this.connection = new Connection(rpcUrl, 'confirmed');
     this.logger.log(`Connected to Solana RPC: ${rpcUrl.split('?')[0]}...`);
 
-    // Load hot wallet keypair if configured
+    // Load hot wallet keypair if configured (for deposits/sweep)
     const hotWalletSecret = this.config.get<string>('SOLANA_HOT_WALLET_SECRET');
     if (hotWalletSecret) {
       try {
-        // Support both base58 and JSON array formats
-        if (hotWalletSecret.startsWith('[')) {
-          const secretArray = JSON.parse(hotWalletSecret) as number[];
-          this.hotWalletKeypair = Keypair.fromSecretKey(
-            Uint8Array.from(secretArray),
-          );
-        } else {
-          const decoded = bs58.decode(hotWalletSecret);
-          this.hotWalletKeypair = Keypair.fromSecretKey(
-            new Uint8Array(decoded),
-          );
-        }
+        this.hotWalletKeypair = this.loadKeypairFromSecret(hotWalletSecret);
         this.logger.log(
           `Hot wallet loaded: ${this.hotWalletKeypair.publicKey.toBase58()}`,
         );
@@ -59,6 +49,34 @@ export class SolanaRpcService implements OnModuleInit {
         this.logger.error('Failed to load hot wallet keypair', error);
       }
     }
+
+    // Load payout wallet keypair if configured (for withdrawals)
+    const payoutWalletSecret = this.config.get<string>(
+      'SOLANA_PAYOUT_WALLET_SECRET',
+    );
+    if (payoutWalletSecret) {
+      try {
+        this.payoutWalletKeypair =
+          this.loadKeypairFromSecret(payoutWalletSecret);
+        this.logger.log(
+          `Payout wallet loaded: ${this.payoutWalletKeypair.publicKey.toBase58()}`,
+        );
+      } catch (error) {
+        this.logger.error('Failed to load payout wallet keypair', error);
+      }
+    }
+  }
+
+  /**
+   * Load keypair from secret (supports base58 and JSON array formats)
+   */
+  private loadKeypairFromSecret(secret: string): Keypair {
+    if (secret.startsWith('[')) {
+      const secretArray = JSON.parse(secret) as number[];
+      return Keypair.fromSecretKey(Uint8Array.from(secretArray));
+    }
+    const decoded = bs58.decode(secret);
+    return Keypair.fromSecretKey(new Uint8Array(decoded));
   }
 
   getConnection(): Connection {
@@ -71,6 +89,20 @@ export class SolanaRpcService implements OnModuleInit {
 
   getHotWalletAddress(): string | null {
     return this.config.get<string>('SOLANA_HOT_WALLET') || null;
+  }
+
+  /**
+   * Get payout wallet keypair (for withdrawals)
+   */
+  getPayoutWalletKeypair(): Keypair | null {
+    return this.payoutWalletKeypair;
+  }
+
+  /**
+   * Get payout wallet address
+   */
+  getPayoutWalletAddress(): string | null {
+    return this.config.get<string>('SOLANA_PAYOUT_WALLET') || null;
   }
 
   /**

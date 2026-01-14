@@ -1,8 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { WithdrawalsService } from './withdrawals.service';
@@ -230,7 +227,11 @@ describe('WithdrawalsService', () => {
       );
 
       await expect(
-        service.confirmAtomicWithdrawal(mockUserId, mockWithdrawalId, txSignature),
+        service.confirmAtomicWithdrawal(
+          mockUserId,
+          mockWithdrawalId,
+          txSignature,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -240,10 +241,18 @@ describe('WithdrawalsService', () => {
       );
 
       await expect(
-        service.confirmAtomicWithdrawal(mockUserId, mockWithdrawalId, txSignature),
+        service.confirmAtomicWithdrawal(
+          mockUserId,
+          mockWithdrawalId,
+          txSignature,
+        ),
       ).rejects.toThrow(BadRequestException);
       await expect(
-        service.confirmAtomicWithdrawal(mockUserId, mockWithdrawalId, txSignature),
+        service.confirmAtomicWithdrawal(
+          mockUserId,
+          mockWithdrawalId,
+          txSignature,
+        ),
       ).rejects.toThrow('Withdrawal does not belong to user');
     });
 
@@ -253,10 +262,18 @@ describe('WithdrawalsService', () => {
       );
 
       await expect(
-        service.confirmAtomicWithdrawal(mockUserId, mockWithdrawalId, txSignature),
+        service.confirmAtomicWithdrawal(
+          mockUserId,
+          mockWithdrawalId,
+          txSignature,
+        ),
       ).rejects.toThrow(BadRequestException);
       await expect(
-        service.confirmAtomicWithdrawal(mockUserId, mockWithdrawalId, txSignature),
+        service.confirmAtomicWithdrawal(
+          mockUserId,
+          mockWithdrawalId,
+          txSignature,
+        ),
       ).rejects.toThrow('Withdrawal already processed');
     });
 
