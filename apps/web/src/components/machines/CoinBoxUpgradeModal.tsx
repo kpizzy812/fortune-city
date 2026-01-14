@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Package, TrendingUp } from 'lucide-react';
@@ -22,21 +23,22 @@ export function CoinBoxUpgradeModal({
   userBalance,
   isLoading,
 }: CoinBoxUpgradeModalProps) {
+  const t = useTranslations('coinBoxUpgrade');
+  const tCommon = useTranslations('common');
+
   if (!coinBoxInfo) return null;
 
   const canAfford = coinBoxInfo.upgradeCost !== null && userBalance >= coinBoxInfo.upgradeCost;
   const isMaxLevel = !coinBoxInfo.canUpgrade;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="📦 Upgrade Coin Box">
+    <Modal isOpen={isOpen} onClose={onClose} title={`📦 ${t('title')}`}>
       <div className="space-y-4">
         {isMaxLevel ? (
           <div className="text-center py-6">
             <div className="text-6xl mb-4">👑</div>
-            <h3 className="text-xl font-bold text-white mb-2">Maximum Capacity Reached!</h3>
-            <p className="text-[#b0b0b0]">
-              Your Coin Box has the maximum storage capacity (48 hours).
-            </p>
+            <h3 className="text-xl font-bold text-white mb-2">{t('maxReachedTitle')}</h3>
+            <p className="text-[#b0b0b0]">{t('maxReachedDescription')}</p>
           </div>
         ) : (
           <>
@@ -45,32 +47,28 @@ export function CoinBoxUpgradeModal({
               {/* Current level */}
               <div className="bg-[#1a0a2e] rounded-lg p-3 border border-[#ff2d95]/30">
                 <div className="text-center">
-                  <p className="text-xs text-[#b0b0b0] mb-2">Current</p>
+                  <p className="text-xs text-[#b0b0b0] mb-2">{t('current')}</p>
                   <div className="text-sm font-semibold text-white mb-1">
-                    Level {coinBoxInfo.currentLevel}
+                    {t('level', { level: coinBoxInfo.currentLevel })}
                   </div>
                   <div className="text-lg font-bold text-[#00d4ff]">
                     {coinBoxInfo.currentCapacityHours}h
                   </div>
-                  <div className="text-xs text-[#b0b0b0] mt-1">
-                    Capacity
-                  </div>
+                  <div className="text-xs text-[#b0b0b0] mt-1">{t('capacity')}</div>
                 </div>
               </div>
 
               {/* Next level */}
               <div className="bg-[#00ff88]/10 rounded-lg p-3 border border-[#00ff88]/30">
                 <div className="text-center">
-                  <p className="text-xs text-[#00ff88] mb-2">Next Level</p>
+                  <p className="text-xs text-[#00ff88] mb-2">{t('nextLevel')}</p>
                   <div className="text-sm font-semibold text-white mb-1">
-                    Level {coinBoxInfo.nextLevel}
+                    {t('level', { level: coinBoxInfo.nextLevel ?? '-' })}
                   </div>
                   <div className="text-lg font-bold text-[#00ff88]">
                     {coinBoxInfo.nextCapacityHours || '-'}h
                   </div>
-                  <div className="text-xs text-[#00ff88] mt-1">
-                    Capacity
-                  </div>
+                  <div className="text-xs text-[#00ff88] mt-1">{t('capacity')}</div>
                 </div>
               </div>
             </div>
@@ -83,7 +81,7 @@ export function CoinBoxUpgradeModal({
                   {coinBoxInfo.nextCapacityHours
                     ? `+${coinBoxInfo.nextCapacityHours - coinBoxInfo.currentCapacityHours}h`
                     : '-'}{' '}
-                  more storage
+                  {t('moreStorage')}
                 </span>
               </div>
             </div>
@@ -93,9 +91,9 @@ export function CoinBoxUpgradeModal({
               <div className="flex items-start gap-2">
                 <Package className="w-4 h-4 text-[#ffd700] mt-0.5" />
                 <div className="text-xs text-[#b0b0b0]">
-                  <span className="text-white font-semibold">Why upgrade?</span>
+                  <span className="text-white font-semibold">{t('whyUpgrade')}</span>
                   <br />
-                  Larger capacity means less frequent collections and no income loss when away.
+                  {t('whyUpgradeDesc')}
                 </div>
               </div>
             </div>
@@ -103,13 +101,13 @@ export function CoinBoxUpgradeModal({
             {/* Cost */}
             <div className="bg-[#1a0a2e] rounded-lg p-4 border border-[#ff2d95]/30">
               <div className="flex justify-between items-center">
-                <span className="text-[#b0b0b0]">Upgrade Cost:</span>
+                <span className="text-[#b0b0b0]">{t('upgradeCost')}</span>
                 <div className="text-right">
                   <div className="text-xl font-bold text-white">
                     ${coinBoxInfo.upgradeCost?.toFixed(2) || '0.00'}
                   </div>
                   <div className="text-xs text-[#b0b0b0]">
-                    Your balance: ${userBalance.toFixed(2)}
+                    {tCommon('yourBalance')}: ${userBalance.toFixed(2)}
                   </div>
                 </div>
               </div>
@@ -119,7 +117,7 @@ export function CoinBoxUpgradeModal({
             {!canAfford && coinBoxInfo.upgradeCost !== null && (
               <div className="bg-[#ff4444]/10 rounded-lg p-3 border border-[#ff4444]/30">
                 <p className="text-xs text-center text-[#ff4444]">
-                  Insufficient balance. Need ${(coinBoxInfo.upgradeCost - userBalance).toFixed(2)} more.
+                  {t('insufficientBalance', { amount: (coinBoxInfo.upgradeCost - userBalance).toFixed(2) })}
                 </p>
               </div>
             )}
@@ -133,7 +131,7 @@ export function CoinBoxUpgradeModal({
                 onClick={onClose}
                 disabled={isLoading}
               >
-                Cancel
+                {tCommon('cancel')}
               </Button>
               <Button
                 variant="primary"
@@ -143,7 +141,7 @@ export function CoinBoxUpgradeModal({
                 loading={isLoading}
                 disabled={!canAfford}
               >
-                📦 Upgrade
+                📦 {t('upgrade')}
               </Button>
             </div>
           </>
@@ -152,7 +150,7 @@ export function CoinBoxUpgradeModal({
         {/* Info */}
         {isMaxLevel && (
           <Button variant="primary" size="md" fullWidth onClick={onClose}>
-            Close
+            {tCommon('close')}
           </Button>
         )}
       </div>
