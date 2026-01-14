@@ -263,8 +263,18 @@
 - GET /deposits/rates — текущие курсы
 - POST /webhooks/helius — Helius webhook callback
 
-### Withdrawal (Phase 3.5)
-- [ ] Withdrawal flow (после депозитов)
+### Withdrawal (Phase 3.5) — В РАЗРАБОТКЕ
+- [ ] Withdrawal flow (вывод в USDT SPL на Solana)
+- **Документация:** см. [WITHDRAWAL_IMPLEMENTATION.md](./WITHDRAWAL_IMPLEMENTATION.md)
+- **Статус:** Архитектура спроектирована, готово к реализации
+
+**Чеклист:**
+- [ ] Prisma schema (Withdrawal model)
+- [ ] WithdrawalsModule (service, controller, DTOs)
+- [ ] Логика налогообложения (Fresh vs Profit)
+- [ ] Frontend (store, компоненты, страница)
+- [ ] Локализация
+- [ ] Тесты
 
 ---
 
