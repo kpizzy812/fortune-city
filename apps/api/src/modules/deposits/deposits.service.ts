@@ -409,18 +409,14 @@ export class DepositsService {
 
   /**
    * Get current exchange rates
-   * Throws if FORTUNE rate is unavailable
+   * Returns 0 for FORTUNE if rate is unavailable
    */
   async getRates(): Promise<{ sol: number; fortune: number; usdt: number }> {
     const rates = await this.priceOracle.getRates();
 
-    if (rates.fortune === null) {
-      throw new Error('FORTUNE rate unavailable - cannot process rates');
-    }
-
     return {
       sol: rates.sol,
-      fortune: rates.fortune,
+      fortune: rates.fortune ?? 0, // Возвращаем 0 если rate недоступен
       usdt: rates.usdt,
     };
   }
