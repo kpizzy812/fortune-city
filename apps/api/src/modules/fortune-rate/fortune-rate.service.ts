@@ -139,9 +139,10 @@ export class FortuneRateService implements OnModuleInit, OnModuleDestroy {
       this.subscribeToToken();
     });
 
-    this.ws.on('message', (data: WebSocket.Data) => {
+    this.ws.on('message', (rawData: WebSocket.Data) => {
       try {
-        const message = JSON.parse(data.toString());
+        const dataStr = typeof rawData === 'string' ? rawData : String(rawData);
+        const message = JSON.parse(dataStr) as TradeEvent;
         this.handleTradeEvent(message);
       } catch (error) {
         this.logger.error('Failed to parse WebSocket message', error);
@@ -292,7 +293,7 @@ export class FortuneRateService implements OnModuleInit, OnModuleDestroy {
         throw new Error(`CoinGecko API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { solana?: { usd?: number } };
       const price = data.solana?.usd;
 
       if (!price || price <= 0) {

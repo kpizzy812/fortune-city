@@ -26,7 +26,7 @@ export class PriceOracleService {
    * Get FORTUNE price in USD from FortuneRateService
    * Throws error if rate is unavailable (no fallback!)
    */
-  async getFortunePrice(): Promise<number> {
+  getFortunePrice(): number {
     const rate = this.fortuneRateService.getRate();
     if (!rate || rate.priceInUsd <= 0) {
       throw new Error(
@@ -78,12 +78,12 @@ export class PriceOracleService {
       }
 
       case 'FORTUNE': {
-        const fortunePrice = await this.getFortunePrice();
+        const fortunePrice = this.getFortunePrice();
         return amount * fortunePrice;
       }
 
       default:
-        throw new Error(`Unknown currency: ${currency}`);
+        throw new Error(`Unknown currency: ${String(currency)}`);
     }
   }
 }
