@@ -44,6 +44,7 @@ model User {
   transactions      Transaction[]
   depositAddresses  DepositAddress[]
   deposits          Deposit[]
+  withdrawals       Withdrawal[]
   walletConnections WalletConnection[]
   referralBonuses   ReferralBonus[]    @relation("ReferralReceiver")
   referralBonusesSent ReferralBonus[]  @relation("ReferralSource")
@@ -405,4 +406,70 @@ enum AuctionListingStatus {
   sold      // Successfully sold
   cancelled // Seller cancelled
   expired   // Machine expired while listed
+}
+
+// ============== WITHDRAWALS ==============
+// Two methods: wallet_connect (atomic tx) and manual_address (instant send)
+
+model Withdrawal {
+  id        String @id @default(cuid())
+  userId    String @map("user_id")
+  user      User   @relation(fields: [userId], references: [id])
+
+  // Method
+  method    WithdrawalMethod
+
+  // Destination
+  chain           Chain    @default(solana)
+  currency        WithdrawalCurrency  // Only USDT_SOL for now
+  walletAddress   String   @map("wallet_address")
+
+  // Amounts (all in USD, fortuneBalance = USD)
+  requestedAmount Decimal  @map("requested_amount") @db.Decimal(20, 8)  // Amount requested
+
+  // Tax breakdown (profit taxed first, fresh = 0%)
+  fromFreshDeposit Decimal @map("from_fresh_deposit") @db.Decimal(20, 8)  // From fresh (0% tax)
+  fromProfit       Decimal @map("from_profit") @db.Decimal(20, 8)         // From profit (taxed)
+  taxAmount        Decimal @map("tax_amount") @db.Decimal(20, 8)          // Tax amount
+  taxRate          Decimal @map("tax_rate") @db.Decimal(5, 4)             // Rate at withdrawal
+
+  // Final amounts
+  netAmount        Decimal @map("net_amount") @db.Decimal(20, 8)          // After tax (USD)
+  usdtAmount       Decimal @map("usdt_amount") @db.Decimal(20, 8)         // USDT to send (= netAmount)
+
+  // For wallet_connect: fee paid by user in SOL
+  feeSolAmount     Decimal? @map("fee_sol_amount") @db.Decimal(20, 9)
+
+  // Transaction
+  txSignature      String? @unique @map("tx_signature")
+
+  // Status
+  status           WithdrawalStatus @default(pending)
+  errorMessage     String?          @map("error_message")
+
+  // Timestamps
+  processedAt      DateTime?        @map("processed_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("withdrawals")
+}
+
+enum WithdrawalMethod {
+  wallet_connect  // Atomic tx: user pays SOL fee, receives USDT in one tx
+  manual_address  // User enters address, hot wallet sends USDT instantly
+}
+
+enum WithdrawalCurrency {
+  USDT_SOL
+}
+
+enum WithdrawalStatus {
+  pending      // Created, awaiting processing
+  processing   // Being sent
+  completed    // Successfully sent
+  failed       // Error occurred
+  cancelled    // Cancelled by user
 }

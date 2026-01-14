@@ -343,6 +343,104 @@ class ApiClient {
   async getDepositRates(): Promise<DepositRatesResponse> {
     return this.request<DepositRatesResponse>('/deposits/rates');
   }
+
+  // ============================================
+  // Withdrawals endpoints
+  // ============================================
+
+  /**
+   * Preview withdrawal with tax calculation
+   */
+  async previewWithdrawal(
+    token: string,
+    amount: number,
+  ): Promise<WithdrawalPreviewData> {
+    return this.request<WithdrawalPreviewData>(
+      `/withdrawals/preview?amount=${amount}`,
+      { token },
+    );
+  }
+
+  /**
+   * Prepare atomic withdrawal (wallet_connect method)
+   * Returns partially signed transaction for user to sign
+   */
+  async prepareAtomicWithdrawal(
+    token: string,
+    amount: number,
+    walletAddress: string,
+  ): Promise<PreparedAtomicWithdrawalData> {
+    return this.request<PreparedAtomicWithdrawalData>('/withdrawals/prepare-atomic', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ amount, walletAddress }),
+    });
+  }
+
+  /**
+   * Confirm atomic withdrawal after user signs and sends tx
+   */
+  async confirmAtomicWithdrawal(
+    token: string,
+    withdrawalId: string,
+    txSignature: string,
+  ): Promise<WithdrawalData> {
+    return this.request<WithdrawalData>('/withdrawals/confirm-atomic', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ withdrawalId, txSignature }),
+    });
+  }
+
+  /**
+   * Cancel pending atomic withdrawal
+   */
+  async cancelAtomicWithdrawal(
+    token: string,
+    withdrawalId: string,
+  ): Promise<WithdrawalData> {
+    return this.request<WithdrawalData>(`/withdrawals/cancel/${withdrawalId}`, {
+      method: 'POST',
+      token,
+    });
+  }
+
+  /**
+   * Create instant withdrawal (manual_address method)
+   * Hot wallet sends USDT directly to specified address
+   */
+  async createInstantWithdrawal(
+    token: string,
+    amount: number,
+    walletAddress: string,
+  ): Promise<InstantWithdrawalData> {
+    return this.request<InstantWithdrawalData>('/withdrawals/instant', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ amount, walletAddress, method: 'manual_address' }),
+    });
+  }
+
+  /**
+   * Get user's withdrawal history
+   */
+  async getWithdrawals(
+    token: string,
+    limit = 20,
+    offset = 0,
+  ): Promise<WithdrawalData[]> {
+    return this.request<WithdrawalData[]>(
+      `/withdrawals?limit=${limit}&offset=${offset}`,
+      { token },
+    );
+  }
+
+  /**
+   * Get single withdrawal by ID
+   */
+  async getWithdrawalById(token: string, id: string): Promise<WithdrawalData> {
+    return this.request<WithdrawalData>(`/withdrawals/${id}`, { token });
+  }
 }
 
 export const api = new ApiClient(API_URL);
@@ -488,4 +586,61 @@ export interface DepositRatesResponse {
   sol: number;
   fortune: number;
   usdt: number;
+}
+
+// ============================================
+// Withdrawals Types
+// ============================================
+
+export type WithdrawalStatus =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
+
+export type WithdrawalMethod = 'wallet_connect' | 'manual_address';
+
+export interface WithdrawalPreviewData {
+  requestedAmount: number;
+  fromFreshDeposit: number;
+  fromProfit: number;
+  taxRate: number;
+  taxAmount: number;
+  netAmount: number;
+  usdtAmount: number;
+  feeSol: number;
+}
+
+export interface PreparedAtomicWithdrawalData {
+  withdrawalId: string;
+  serializedTransaction: string; // Base64 encoded, partially signed
+  requestedAmount: number;
+  netAmount: number;
+  usdtAmount: number;
+  taxAmount: number;
+  feeSol: number;
+  recipientAddress: string;
+}
+
+export interface WithdrawalData {
+  id: string;
+  status: WithdrawalStatus;
+  method: WithdrawalMethod;
+  requestedAmount: number;
+  netAmount: number;
+  usdtAmount: number;
+  taxAmount: number;
+  txSignature: string | null;
+  createdAt: string;
+  processedAt: string | null;
+}
+
+export interface InstantWithdrawalData {
+  id: string;
+  status: string;
+  txSignature: string;
+  requestedAmount: number;
+  netAmount: number;
+  usdtAmount: number;
 }

@@ -13,6 +13,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { ReferralsModule } from './modules/referrals/referrals.module';
 import { FortuneRateModule } from './modules/fortune-rate/fortune-rate.module';
 import { DepositsModule } from './modules/deposits/deposits.module';
+import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { DepositsModule } from './modules/deposits/deposits.module';
     ReferralsModule,
     FortuneRateModule,
     DepositsModule,
+    WithdrawalsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

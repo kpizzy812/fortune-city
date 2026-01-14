@@ -1,7 +1,7 @@
 # Fortune City - Progress
 
 **Последнее обновление:** 2026-01-14
-**Текущий этап:** Phase 3 — Solana Deposits ✅ ГОТОВО (гибридный подход: Wallet Connect + Deposit Address)
+**Текущий этап:** Phase 3.5 — Withdrawals ✅ ГОТОВО (Atomic via Wallet Connect + Instant via Manual Address)
 
 ## Архитектура платформ
 
@@ -263,18 +263,39 @@
 - GET /deposits/rates — текущие курсы
 - POST /webhooks/helius — Helius webhook callback
 
-### Withdrawal (Phase 3.5) — В РАЗРАБОТКЕ
-- [ ] Withdrawal flow (вывод в USDT SPL на Solana)
+### Withdrawal (Phase 3.5) — ✅ ГОТОВО
+- [x] Withdrawal flow (вывод в USDT SPL на Solana)
 - **Документация:** см. [WITHDRAWAL_IMPLEMENTATION.md](./WITHDRAWAL_IMPLEMENTATION.md)
-- **Статус:** Архитектура спроектирована, готово к реализации
+
+**Реализованы два метода вывода:**
+
+1. **Atomic Withdrawal (Wallet Connect)**
+   - Пользователь подключает кошелёк
+   - Одна атомарная транзакция: user → SOL fee → master + hot wallet → USDT → user
+   - Backend частично подписывает транзакцию, user доподписывает и отправляет
+   - Либо оба transfer происходят, либо оба отменяются
+
+2. **Instant Withdrawal (Manual Address)**
+   - Пользователь вводит адрес кошелька
+   - Hot wallet сразу отправляет USDT
+   - Простой flow без подключения кошелька
 
 **Чеклист:**
-- [ ] Prisma schema (Withdrawal model)
-- [ ] WithdrawalsModule (service, controller, DTOs)
-- [ ] Логика налогообложения (Fresh vs Profit)
-- [ ] Frontend (store, компоненты, страница)
-- [ ] Локализация
-- [ ] Тесты
+- [x] Prisma schema (Withdrawal model + enums)
+- [x] WithdrawalsModule (service, controller, DTOs)
+- [x] Логика налогообложения (Fresh vs Profit через FundSourceService)
+- [x] Frontend (withdrawals.store.ts, cash/page.tsx с вкладками Withdraw)
+- [ ] Локализация (TODO)
+- [ ] Тесты (TODO)
+
+**Endpoints:**
+- GET /withdrawals/preview?amount=X — предпросмотр с расчётом налога
+- POST /withdrawals/prepare-atomic — подготовить atomic транзакцию
+- POST /withdrawals/confirm-atomic — подтвердить после подписи user
+- POST /withdrawals/cancel/:id — отменить pending withdrawal
+- POST /withdrawals/instant — instant вывод на указанный адрес
+- GET /withdrawals — история выводов
+- GET /withdrawals/:id — детали вывода
 
 ---
 
@@ -344,7 +365,8 @@ apps/web/src/
 │   ├── machines.store.ts     # Machines state (Zustand)
 │   ├── referrals.store.ts    # Referrals state (Zustand)
 │   ├── fortune-rate.store.ts # Fortune rate state (Zustand)
-│   └── deposits.store.ts     # Deposits state (Zustand)
+│   ├── deposits.store.ts     # Deposits state (Zustand)
+│   └── withdrawals.store.ts  # Withdrawals state (Zustand)
 ├── hooks/
 │   └── useInterval.ts    # Real-time income interpolation
 └── types/
