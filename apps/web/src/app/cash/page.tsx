@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
@@ -62,6 +62,12 @@ export default function CashPage() {
   const [amount, setAmount] = useState<string>('');
   const [isSending, setIsSending] = useState(false);
 
+  // Memoize wallet address to prevent re-renders
+  const walletAddress = useMemo(
+    () => (publicKey ? publicKey.toBase58() : null),
+    [publicKey]
+  );
+
   // Redirect if not authenticated
   useEffect(() => {
     if (!token) {
@@ -80,12 +86,11 @@ export default function CashPage() {
 
   // Save wallet connection when connected
   useEffect(() => {
-    if (connected && publicKey && token) {
-      const walletAddress = publicKey.toBase58();
+    if (connected && walletAddress && token) {
       saveWalletToBackend(token, walletAddress).catch(() => {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connected, publicKey?.toBase58(), token]);
+  }, [connected, walletAddress, token]);
 
   // Fetch deposit address when switching to address tab
   useEffect(() => {
