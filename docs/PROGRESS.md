@@ -286,7 +286,7 @@
 - [x] Логика налогообложения (Fresh vs Profit через FundSourceService)
 - [x] Frontend (withdrawals.store.ts, cash/page.tsx с вкладками Withdraw)
 - [ ] Локализация (TODO)
-- [ ] Тесты (TODO)
+- [x] Unit тесты (22 теста для WithdrawalsService)
 
 **Endpoints:**
 - GET /withdrawals/preview?amount=X — предпросмотр с расчётом налога
