@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, Suspense } from 'react';
+import { ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 
 // Dynamic import to avoid SSR issues with wallet adapter
@@ -9,21 +9,16 @@ const SolanaWalletProvider = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#ff2d95]/30 border-t-[#ff2d95] rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#0d0416]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[#ff2d95]/30 border-t-[#ff2d95] rounded-full animate-spin" />
+          <p className="text-gray-400 text-sm">Loading wallet...</p>
+        </div>
       </div>
     ),
   }
 );
 
 export default function CashLayout({ children }: { children: ReactNode }) {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#ff2d95]/30 border-t-[#ff2d95] rounded-full animate-spin" />
-      </div>
-    }>
-      <SolanaWalletProvider>{children}</SolanaWalletProvider>
-    </Suspense>
-  );
+  return <SolanaWalletProvider>{children}</SolanaWalletProvider>;
 }
