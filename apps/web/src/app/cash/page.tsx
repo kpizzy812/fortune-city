@@ -75,26 +75,30 @@ export default function CashPage() {
       fetchDeposits(token);
       fetchRates();
     }
-  }, [token, fetchDeposits, fetchRates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   // Save wallet connection when connected
   useEffect(() => {
     if (connected && publicKey && token) {
       saveWalletToBackend(token, publicKey.toBase58()).catch(() => {});
     }
-  }, [connected, publicKey, token, saveWalletToBackend]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected, publicKey, token]);
 
   // Fetch deposit address when switching to address tab
   useEffect(() => {
     if (activeTab === 'address' && token && !depositAddress) {
       fetchDepositAddress(token);
     }
-  }, [activeTab, token, depositAddress, fetchDepositAddress]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, token, depositAddress]);
 
   // Clear error on currency change
   useEffect(() => {
     clearError();
-  }, [selectedCurrency, clearError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCurrency]);
 
   // Calculate USD value
   const usdValue = useCallback(() => {
