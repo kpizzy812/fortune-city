@@ -1,24 +1,492 @@
 'use client';
 
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import {
+  PublicKey,
+  Transaction,
+  SystemProgram,
+  LAMPORTS_PER_SOL,
+} from '@solana/web3.js';
+import {
+  getAssociatedTokenAddress,
+  createTransferInstruction,
+  TOKEN_PROGRAM_ID,
+} from '@solana/spl-token';
+import { toast } from 'sonner';
+import { Copy, ArrowLeft, QrCode, Wallet, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
+import { useDepositsStore } from '@/stores/deposits.store';
+import type { DepositCurrency } from '@/lib/api';
 
-export default function CashPageMinimal() {
-  const { user, token } = useAuthStore();
+// Token mints (mainnet)
+const USDT_MINT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
+const FORTUNE_MINT = process.env.NEXT_PUBLIC_FORTUNE_MINT_ADDRESS;
+
+type TabType = 'wallet' | 'address';
+
+const CURRENCIES: { id: DepositCurrency; label: string; icon: string }[] = [
+  { id: 'SOL', label: 'SOL', icon: '◎' },
+  { id: 'USDT_SOL', label: 'USDT', icon: '$' },
+  { id: 'FORTUNE', label: 'FORTUNE', icon: '🎰' },
+];
+
+export default function CashPage() {
+  const router = useRouter();
+  const { user, token, refreshUser } = useAuthStore();
+  const {
+    deposits,
+    depositAddress,
+    rates,
+    isLoading,
+    isInitiating,
+    isConfirming,
+    error,
+    fetchDeposits,
+    fetchDepositAddress,
+    fetchRates,
+    connectWallet: saveWalletToBackend,
+    initiateDeposit,
+    confirmDeposit,
+    clearPendingDeposit,
+    clearError,
+  } = useDepositsStore();
+
+  const { publicKey, connected, sendTransaction } = useWallet();
+  const { connection } = useConnection();
+
+  const [activeTab, setActiveTab] = useState<TabType>('wallet');
+  const [selectedCurrency, setSelectedCurrency] = useState<DepositCurrency>('SOL');
+  const [amount, setAmount] = useState<string>('');
+  const [isSending, setIsSending] = useState(false);
+
+  // Memoize wallet address to prevent re-renders
+  const walletAddress = useMemo(
+    () => (publicKey ? publicKey.toBase58() : null),
+    [publicKey]
+  );
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!token) {
+      router.push('/');
+    }
+  }, [token, router]);
+
+  // Fetch initial data - только при монтировании
+  useEffect(() => {
+    if (token) {
+      fetchDeposits(token);
+      fetchRates();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  // Save wallet connection when connected
+  useEffect(() => {
+    if (connected && walletAddress && token) {
+      saveWalletToBackend(token, walletAddress).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected, walletAddress, token]);
+
+  // Fetch deposit address when switching to address tab
+  useEffect(() => {
+    if (activeTab === 'address' && token && !depositAddress) {
+      fetchDepositAddress(token);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, token]);
+
+  // Clear error on currency change
+  useEffect(() => {
+    if (error) {
+      clearError();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCurrency]);
+
+  // Calculate USD value
+  const usdValue = useCallback(() => {
+    if (!rates || !amount) return 0;
+    const amountNum = parseFloat(amount) || 0;
+    switch (selectedCurrency) {
+      case 'SOL':
+        return amountNum * rates.sol;
+      case 'USDT_SOL':
+        return amountNum;
+      case 'FORTUNE':
+        return amountNum * rates.fortune;
+      default:
+        return 0;
+    }
+  }, [rates, amount, selectedCurrency]);
+
+  // Handle deposit with wallet
+  const handleWalletDeposit = useCallback(async () => {
+    if (!connected || !publicKey || !token || !amount) {
+      toast.error('Please connect wallet and enter amount');
+      return;
+    }
+
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      toast.error('Invalid amount');
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const depositInfo = await initiateDeposit(
+        token,
+        selectedCurrency,
+        amountNum,
+        publicKey.toBase58(),
+      );
+
+      const recipientPubkey = new PublicKey(depositInfo.recipientAddress);
+      const transaction = new Transaction();
+
+      if (selectedCurrency === 'SOL') {
+        transaction.add(
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: recipientPubkey,
+            lamports: Math.floor(amountNum * LAMPORTS_PER_SOL),
+          }),
+        );
+      } else {
+        const mintAddress = selectedCurrency === 'USDT_SOL' ? USDT_MINT : FORTUNE_MINT;
+        if (!mintAddress) {
+          throw new Error('Token mint not configured');
+        }
+
+        const mint = new PublicKey(mintAddress);
+        const fromAta = await getAssociatedTokenAddress(mint, publicKey);
+        const toAta = await getAssociatedTokenAddress(mint, recipientPubkey);
+        const decimals = selectedCurrency === 'USDT_SOL' ? 6 : 9;
+        const tokenAmount = Math.floor(amountNum * Math.pow(10, decimals));
+
+        transaction.add(
+          createTransferInstruction(fromAta, toAta, publicKey, tokenAmount, [], TOKEN_PROGRAM_ID),
+        );
+      }
+
+      const signature = await sendTransaction(transaction, connection);
+      await connection.confirmTransaction(signature, 'confirmed');
+      await confirmDeposit(token, depositInfo.depositId, signature);
+
+      toast.success('Deposit confirmed!');
+      setAmount('');
+      refreshUser();
+    } catch (err) {
+      console.error('Deposit failed:', err);
+      toast.error(err instanceof Error ? err.message : 'Deposit failed');
+      clearPendingDeposit();
+    } finally {
+      setIsSending(false);
+    }
+  }, [
+    connected,
+    publicKey,
+    token,
+    amount,
+    selectedCurrency,
+    connection,
+    sendTransaction,
+    initiateDeposit,
+    confirmDeposit,
+    clearPendingDeposit,
+    refreshUser,
+  ]);
+
+  // Copy address to clipboard
+  const copyAddress = useCallback(() => {
+    if (depositAddress?.address) {
+      navigator.clipboard.writeText(depositAddress.address);
+      toast.success('Address copied!');
+    }
+  }, [depositAddress?.address]);
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'credited':
+        return <CheckCircle className="w-4 h-4 text-green-400" />;
+      case 'failed':
+        return <XCircle className="w-4 h-4 text-red-400" />;
+      default:
+        return <Clock className="w-4 h-4 text-yellow-400" />;
+    }
+  };
 
   if (!token || !user) {
-    return (
-      <div className="min-h-screen p-4 bg-[#0d0416] text-white">
-        <h1>Not authenticated</h1>
-      </div>
-    );
+    return null;
   }
 
+  const isProcessing = isSending || isInitiating || isConfirming;
+
   return (
-    <div className="min-h-screen p-4 bg-[#0d0416] text-white">
-      <h1 className="text-2xl font-bold mb-4">Cash Page - Minimal</h1>
-      <p>User: {user.firstName}</p>
-      <p>Balance: ${user.fortuneBalance}</p>
-      <p className="mt-4 text-green-400">✓ Page loaded successfully!</p>
+    <div className="min-h-screen pb-24">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-[#0d0416]/95 backdrop-blur-lg border-b border-[#ff2d95]/10">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
+          <button
+            onClick={() => router.back()}
+            className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-400" />
+          </button>
+          <h1 className="text-lg font-semibold">Deposit Funds</h1>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* Balance Card */}
+        <div className="bg-gradient-to-br from-[#1a0a2e] to-[#2a1040] rounded-2xl p-6 mb-6 border border-[#ff2d95]/20">
+          <div className="text-sm text-gray-400 mb-1">Available Balance</div>
+          <div className="text-3xl font-bold text-white">
+            ${parseFloat(user.fortuneBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex bg-[#1a0a2e] rounded-xl p-1 mb-6">
+          <button
+            onClick={() => setActiveTab('wallet')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'wallet'
+                ? 'bg-[#ff2d95] text-white shadow-lg shadow-[#ff2d95]/25'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Wallet className="w-4 h-4" />
+            <span>Wallet</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('address')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'address'
+                ? 'bg-[#ff2d95] text-white shadow-lg shadow-[#ff2d95]/25'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <QrCode className="w-4 h-4" />
+            <span>QR / Address</span>
+          </button>
+        </div>
+
+        {/* Wallet Connect Tab */}
+        {activeTab === 'wallet' && (
+          <div className="space-y-6">
+            {/* Wallet Connection */}
+            <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h3 className="font-medium text-white mb-1">Connect Wallet</h3>
+                  <p className="text-sm text-gray-400">
+                    {connected ? 'Wallet connected. Select currency and amount.' : 'Connect your Solana wallet to deposit'}
+                  </p>
+                </div>
+                <WalletMultiButton className="!bg-gradient-to-r !from-[#ff2d95] !to-[#8b5cf6] !rounded-xl !h-11 !text-sm !font-medium" />
+              </div>
+            </div>
+
+            {connected && (
+              <>
+                {/* Currency Selection */}
+                <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
+                  <h3 className="font-medium text-white mb-4">Select Currency</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    {CURRENCIES.map((currency) => (
+                      <button
+                        key={currency.id}
+                        onClick={() => setSelectedCurrency(currency.id)}
+                        className={`relative p-4 rounded-xl border-2 transition-all ${
+                          selectedCurrency === currency.id
+                            ? 'border-[#ff2d95] bg-[#ff2d95]/10'
+                            : 'border-transparent bg-[#0d0416] hover:border-[#ff2d95]/30'
+                        }`}
+                      >
+                        <div className="text-2xl mb-2">{currency.icon}</div>
+                        <div className="font-medium text-white text-sm">{currency.label}</div>
+                        {rates && currency.id === 'SOL' && (
+                          <div className="text-xs text-gray-500 mt-1">${rates.sol.toFixed(2)}</div>
+                        )}
+                        {rates && currency.id === 'FORTUNE' && rates.fortune > 0 && (
+                          <div className="text-xs text-gray-500 mt-1">${rates.fortune.toFixed(6)}</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Amount Input */}
+                <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
+                  <h3 className="font-medium text-white mb-4">Amount</h3>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full bg-[#0d0416] border border-[#2a1a4e] rounded-xl px-4 py-4 text-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d95] transition-colors"
+                      min="0"
+                      step="0.01"
+                    />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
+                      {CURRENCIES.find(c => c.id === selectedCurrency)?.label}
+                    </div>
+                  </div>
+                  {amount && parseFloat(amount) > 0 && rates && (
+                    <div className="mt-3 text-right text-gray-400">
+                      ≈ <span className="text-white font-medium">${usdValue().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> USD
+                    </div>
+                  )}
+                </div>
+
+                {/* Deposit Button */}
+                <button
+                  onClick={handleWalletDeposit}
+                  disabled={!amount || parseFloat(amount) <= 0 || isProcessing}
+                  className="w-full py-4 bg-gradient-to-r from-[#ff2d95] to-[#8b5cf6] rounded-xl font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-opacity shadow-lg shadow-[#ff2d95]/20"
+                >
+                  {isProcessing ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    'Deposit'
+                  )}
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Deposit Address Tab */}
+        {activeTab === 'address' && (
+          <div className="space-y-6">
+            {isLoading && !depositAddress ? (
+              <div className="bg-[#1a0a2e] rounded-2xl p-12 border border-[#ff2d95]/10 text-center">
+                <div className="w-8 h-8 border-2 border-[#ff2d95]/30 border-t-[#ff2d95] rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-gray-400">Loading deposit address...</p>
+              </div>
+            ) : depositAddress ? (
+              <>
+                {/* QR Code Card */}
+                <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                    {/* QR Code */}
+                    <div className="flex-shrink-0 mx-auto lg:mx-0">
+                      <div className="bg-white p-4 rounded-xl">
+                        <img
+                          src={depositAddress.qrCode}
+                          alt="Deposit QR Code"
+                          className="w-40 h-40 lg:w-48 lg:h-48"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Address Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-white mb-2">Deposit Address</h3>
+                      <p className="text-sm text-gray-400 mb-4">
+                        Send SOL, USDT, or FORTUNE to this address
+                      </p>
+                      <div className="bg-[#0d0416] rounded-xl p-4 mb-4">
+                        <code className="text-sm text-[#ff2d95] break-all font-mono">
+                          {depositAddress.address}
+                        </code>
+                      </div>
+                      <button
+                        onClick={copyAddress}
+                        className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-[#2a1a4e] hover:bg-[#3a2a5e] rounded-xl text-white font-medium transition-colors"
+                      >
+                        <Copy className="w-4 h-4" />
+                        Copy Address
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Info Card */}
+                <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-yellow-500/20">
+                  <div className="flex gap-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-yellow-500 mb-2">Important</h4>
+                      <ul className="text-sm text-gray-400 space-y-1">
+                        <li>• Only send SOL, USDT (SPL), or FORTUNE tokens</li>
+                        <li>• Minimum deposit: {depositAddress.minDeposit} SOL</li>
+                        <li>• Deposits credited automatically after 1 confirmation</li>
+                        <li>• Sending other tokens may result in loss of funds</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </div>
+        )}
+
+        {/* Recent Deposits */}
+        {deposits.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-white mb-4">Recent Deposits</h2>
+            <div className="bg-[#1a0a2e] rounded-2xl border border-[#ff2d95]/10 overflow-hidden">
+              {deposits.slice(0, 5).map((deposit, index) => (
+                <div
+                  key={deposit.id}
+                  className={`flex items-center justify-between p-4 ${
+                    index !== 0 ? 'border-t border-[#2a1a4e]' : ''
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    {getStatusIcon(deposit.status)}
+                    <div>
+                      <div className="font-medium text-white">
+                        {deposit.amount} {deposit.currency === 'USDT_SOL' ? 'USDT' : deposit.currency}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(deposit.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className={`text-xs font-medium px-3 py-1 rounded-full ${
+                      deposit.status === 'credited'
+                        ? 'bg-green-500/10 text-green-400'
+                        : deposit.status === 'failed'
+                          ? 'bg-red-500/10 text-red-400'
+                          : 'bg-yellow-500/10 text-yellow-400'
+                    }`}
+                  >
+                    {deposit.status}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Error Toast */}
+      {error && (
+        <div className="fixed bottom-20 left-4 right-4 max-w-lg mx-auto bg-red-900/95 backdrop-blur text-red-200 px-4 py-3 rounded-xl flex items-center justify-between shadow-xl">
+          <span className="text-sm">{error}</span>
+          <button onClick={clearError} className="p-1 hover:bg-red-800 rounded">
+            <XCircle className="w-5 h-5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
