@@ -121,7 +121,7 @@
     "lost": "YOU LOST!",
     "original": "Original",
     "lostFrom": "Lost from",
-    "multiplier": "x multiplier",
+    "multiplier": "{multiplier}x multiplier",
     "newBalance": "New Balance:",
     "continue": "Continue"
   },
@@ -167,7 +167,8 @@
     "level": "Level {level}",
     "ev": "EV: {value}%",
     "nextLevel": "Next Level",
-    "betterOdds": "better odds",
+    "betterOdds": "Better odds at higher levels",
+    "yourBalance": "Your balance:",
     "upgradeCost": "Upgrade Cost:",
     "insufficientBalance": "Insufficient balance. Need ${amount} more.",
     "upgrade": "Upgrade"

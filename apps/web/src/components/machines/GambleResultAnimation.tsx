@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { useTranslations } from 'next-intl';
 import type { RiskyCollectResult } from '@/types';
 
 interface GambleResultAnimationProps {
@@ -16,11 +17,13 @@ export function GambleResultAnimation({
   onClose,
   result,
 }: GambleResultAnimationProps) {
+  const t = useTranslations('gambleResult');
+
   if (!result) return null;
 
   const won = result.won;
   const emoji = won ? '🎰' : '💔';
-  const title = won ? 'YOU WON!' : 'YOU LOST!';
+  const title = won ? t('won') : t('lost');
   const color = won ? '#00ff88' : '#ff4444';
   const bgColor = won ? '#00ff88/20' : '#ff4444/20';
 
@@ -71,7 +74,7 @@ export function GambleResultAnimation({
         >
           <div className="text-center space-y-2">
             <p className="text-sm text-[#b0b0b0]">
-              {won ? 'Original' : 'Lost from'} ${result.originalAmount.toFixed(2)}
+              {won ? t('original') : t('lostFrom')} ${result.originalAmount.toFixed(2)}
             </p>
             <motion.p
               initial={{ scale: 0.5 }}
@@ -83,7 +86,7 @@ export function GambleResultAnimation({
               ${result.finalAmount.toFixed(2)}
             </motion.p>
             <p className="text-xs text-[#b0b0b0]">
-              {result.multiplier}x multiplier
+              {t('multiplier', { multiplier: result.multiplier })}
             </p>
           </div>
         </motion.div>
@@ -95,7 +98,7 @@ export function GambleResultAnimation({
           transition={{ delay: 0.9 }}
           className="text-center text-sm text-[#b0b0b0]"
         >
-          New Balance: <span className="text-white font-semibold">${result.newBalance.toFixed(2)}</span>
+          {t('newBalance')} <span className="text-white font-semibold">${result.newBalance.toFixed(2)}</span>
         </motion.div>
 
         {/* Close button */}
@@ -110,7 +113,7 @@ export function GambleResultAnimation({
             fullWidth
             onClick={onClose}
           >
-            Continue
+            {t('continue')}
           </Button>
         </motion.div>
       </div>

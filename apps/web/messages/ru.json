@@ -121,7 +121,7 @@
     "lost": "ТЫ ПРОИГРАЛ!",
     "original": "Было",
     "lostFrom": "Потеряно из",
-    "multiplier": "x множитель",
+    "multiplier": "{multiplier}x множитель",
     "newBalance": "Новый баланс:",
     "continue": "Продолжить"
   },
@@ -167,7 +167,8 @@
     "level": "Уровень {level}",
     "ev": "EV: {value}%",
     "nextLevel": "Следующий уровень",
-    "betterOdds": "лучше шансы",
+    "betterOdds": "Лучшие шансы на более высоких уровнях",
+    "yourBalance": "Твой баланс:",
     "upgradeCost": "Стоимость улучшения:",
     "insufficientBalance": "Недостаточно средств. Нужно ещё ${amount}.",
     "upgrade": "Улучшить"
