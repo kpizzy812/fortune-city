@@ -103,7 +103,8 @@
     "riskIt": "Risk It!",
     "enableAutoCollect": "Enable Auto Collect",
     "autoCollectActive": "Auto Collect Active",
-    "auto": "Auto"
+    "auto": "Auto",
+    "upgrade": "Upgrade"
   },
   "riskyCollect": {
     "title": "Fortune's Gamble",

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { Clock, Zap } from 'lucide-react';
+import { Clock, Zap, ArrowUpCircle } from 'lucide-react';
 import type { Machine, MachineIncome } from '@/types';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Button } from '@/components/ui/Button';
@@ -14,6 +14,8 @@ interface MachineCardProps {
   onCollect: () => void;
   onRiskyCollect?: () => void;
   onAutoCollectClick?: () => void;
+  onUpgradeCoinBox?: () => void;
+  canUpgradeCoinBox?: boolean;
   isCollecting: boolean;
 }
 
@@ -70,6 +72,8 @@ export function MachineCard({
   onCollect,
   onRiskyCollect,
   onAutoCollectClick,
+  onUpgradeCoinBox,
+  canUpgradeCoinBox,
   isCollecting,
 }: MachineCardProps) {
   const t = useTranslations('machines');
@@ -210,7 +214,21 @@ export function MachineCard({
           </div>
         ) : (
           <div className="bg-[#1a0a2e] rounded-lg p-3 text-center border border-[#00d4ff]/20">
-            <p className="text-[10px] text-[#b0b0b0] uppercase tracking-wider mb-1">{t('fullIn')}</p>
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <p className="text-[10px] text-[#b0b0b0] uppercase tracking-wider">{t('fullIn')}</p>
+              {canUpgradeCoinBox && onUpgradeCoinBox && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUpgradeCoinBox();
+                  }}
+                  className="flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-medium text-[#ffd700] bg-[#ffd700]/10 rounded-full hover:bg-[#ffd700]/20 transition-colors"
+                >
+                  <ArrowUpCircle className="w-2.5 h-2.5" />
+                  {t('upgrade')}
+                </button>
+              )}
+            </div>
             <p className="text-lg font-bold text-[#00d4ff] font-mono">
               {income ? formatSecondsToTime(income.secondsUntilFull, t('ready')) : '--:--'}
             </p>

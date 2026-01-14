@@ -103,7 +103,8 @@
     "riskIt": "Рискнуть!",
     "enableAutoCollect": "Включить автосбор",
     "autoCollectActive": "Автосбор активен",
-    "auto": "Авто"
+    "auto": "Авто",
+    "upgrade": "Прокачать"
   },
   "riskyCollect": {
     "title": "Азартный сбор",

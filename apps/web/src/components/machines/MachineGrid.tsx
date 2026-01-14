@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Gamepad2, Sparkles } from 'lucide-react';
-import type { Machine, MachineIncome } from '@/types';
+import type { Machine, MachineIncome, CoinBoxInfo } from '@/types';
 import { MachineCard } from './MachineCard';
 import { MachineCardSkeleton } from './MachineCardSkeleton';
 import { Button } from '@/components/ui/Button';
@@ -12,9 +12,11 @@ import { Button } from '@/components/ui/Button';
 interface MachineGridProps {
   machines: Machine[];
   incomes: Record<string, MachineIncome>;
+  coinBoxInfos?: Record<string, CoinBoxInfo>;
   onCollect: (machineId: string) => void;
   onRiskyCollect?: (machineId: string) => void;
   onAutoCollectClick?: (machineId: string) => void;
+  onUpgradeCoinBox?: (machineId: string) => void;
   isCollecting: Record<string, boolean>;
   isLoading?: boolean;
 }
@@ -22,9 +24,11 @@ interface MachineGridProps {
 export function MachineGrid({
   machines,
   incomes,
+  coinBoxInfos,
   onCollect,
   onRiskyCollect,
   onAutoCollectClick,
+  onUpgradeCoinBox,
   isCollecting,
   isLoading = false,
 }: MachineGridProps) {
@@ -118,6 +122,8 @@ export function MachineGrid({
             onCollect={() => onCollect(machine.id)}
             onRiskyCollect={onRiskyCollect ? () => onRiskyCollect(machine.id) : undefined}
             onAutoCollectClick={onAutoCollectClick ? () => onAutoCollectClick(machine.id) : undefined}
+            onUpgradeCoinBox={onUpgradeCoinBox ? () => onUpgradeCoinBox(machine.id) : undefined}
+            canUpgradeCoinBox={coinBoxInfos?.[machine.id]?.canUpgrade ?? false}
             isCollecting={isCollecting[machine.id] || false}
           />
         </motion.div>
