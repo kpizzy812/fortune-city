@@ -470,6 +470,20 @@ class ApiClient {
     return this.request<AdminDashboardStats>('/admin/dashboard/stats', { token });
   }
 
+  /**
+   * Get chart data for dashboard
+   */
+  async adminGetChartData(token: string, days: number = 30): Promise<DashboardChartData> {
+    return this.request<DashboardChartData>(`/admin/dashboard/charts?days=${days}`, { token });
+  }
+
+  /**
+   * Get tier distribution for dashboard
+   */
+  async adminGetTierDistribution(token: string): Promise<TierDistribution[]> {
+    return this.request<TierDistribution[]>('/admin/dashboard/tier-distribution', { token });
+  }
+
   // ============================================
   // Admin Tiers endpoints
   // ============================================
@@ -1099,13 +1113,42 @@ export interface AdminMeResponse {
 export interface AdminDashboardStats {
   totalUsers: number;
   activeUsers: number;
+  newUsersToday: number;
+  newUsersWeek: number;
   totalMachines: number;
   activeMachines: number;
   totalDeposits: number;
   totalDepositsAmount: number;
+  depositsToday: number;
+  depositsAmountToday: number;
   totalWithdrawals: number;
   totalWithdrawalsAmount: number;
   pendingWithdrawals: number;
+  withdrawalsToday: number;
+  withdrawalsAmountToday: number;
+  totalFortuneBalance: number;
+  totalTaxCollected: number;
+}
+
+export interface ChartDataPoint {
+  date: string;
+  value: number;
+  label?: string;
+}
+
+export interface DashboardChartData {
+  usersChart: ChartDataPoint[];
+  depositsChart: ChartDataPoint[];
+  withdrawalsChart: ChartDataPoint[];
+  revenueChart: ChartDataPoint[];
+  machinesChart: ChartDataPoint[];
+}
+
+export interface TierDistribution {
+  [key: string]: string | number;
+  tier: number;
+  count: number;
+  totalValue: number;
 }
 
 // ============================================

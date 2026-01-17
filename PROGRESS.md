@@ -121,7 +121,7 @@
 
 ---
 
-## Phase 5: Финансы и аудит (IN PROGRESS)
+## Phase 5: Финансы и аудит (COMPLETED)
 
 ### 5.1 Backend
 - [x] admin-withdrawals.controller.ts - GET list, GET by id, POST approve, POST complete, POST reject
@@ -150,8 +150,14 @@
 - [x] admin-deposits.store.ts
 - [x] admin-audit.store.ts
 
-### 5.4 Pending
-- [ ] Dashboard статистика с графиками
+### 5.4 Dashboard Charts
+- [x] Расширенная статистика (today/week metrics, fortune balance, tax collected)
+- [x] Area chart: Deposits vs Withdrawals
+- [x] Bar chart: New Users per day
+- [x] Line chart: Tax Revenue
+- [x] Pie chart: Machine Tier Distribution
+- [x] Bar chart: New Machines per day
+- [x] Selectable time range (7/14/30/60/90 days)
 
 **Build Status:** API и Web собираются успешно
 
