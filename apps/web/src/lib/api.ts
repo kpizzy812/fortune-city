@@ -566,6 +566,41 @@ class ApiClient {
       body: JSON.stringify({ isPubliclyAvailable }),
     });
   }
+
+  // ============================================
+  // Admin Settings endpoints
+  // ============================================
+
+  /**
+   * Get all system settings
+   */
+  async adminGetSettings(token: string): Promise<AdminSettingsResponse> {
+    return this.request<AdminSettingsResponse>('/admin/settings', { token });
+  }
+
+  /**
+   * Update system settings
+   */
+  async adminUpdateSettings(
+    token: string,
+    data: UpdateSettingsRequest,
+  ): Promise<AdminSettingsResponse> {
+    return this.request<AdminSettingsResponse>('/admin/settings', {
+      method: 'PUT',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Reset settings to defaults
+   */
+  async adminResetSettings(token: string): Promise<AdminSettingsResponse> {
+    return this.request<AdminSettingsResponse>('/admin/settings/reset', {
+      method: 'POST',
+      token,
+    });
+  }
 }
 
 export const api = new ApiClient(API_URL);
@@ -849,4 +884,59 @@ export interface UpdateTierRequest {
   isVisible?: boolean;
   isPubliclyAvailable?: boolean;
   sortOrder?: number;
+}
+
+// ============================================
+// Admin Settings Types
+// ============================================
+
+export interface GambleLevel {
+  level: number;
+  winChance: number;
+  costPercent: number;
+}
+
+export interface CoinBoxLevel {
+  level: number;
+  capacityHours: number;
+  costPercent: number;
+}
+
+export interface AdminSettingsResponse {
+  id: string;
+  maxGlobalTier: number;
+  minDepositAmounts: Record<string, number>;
+  minWithdrawalAmount: number;
+  walletConnectFeeSol: number;
+  pawnshopCommission: number;
+  taxRatesByTier: Record<string, number>;
+  referralRates: Record<string, number>;
+  reinvestReduction: Record<string, number>;
+  auctionCommissions: Record<string, number>;
+  earlySellCommissions: Record<string, number>;
+  gambleWinMultiplier: number;
+  gambleLoseMultiplier: number;
+  gambleLevels: GambleLevel[];
+  coinBoxLevels: CoinBoxLevel[];
+  autoCollectCostPercent: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateSettingsRequest {
+  maxGlobalTier?: number;
+  minDepositAmounts?: Record<string, number>;
+  minWithdrawalAmount?: number;
+  walletConnectFeeSol?: number;
+  pawnshopCommission?: number;
+  taxRatesByTier?: Record<string, number>;
+  referralRates?: Record<string, number>;
+  reinvestReduction?: Record<string, number>;
+  auctionCommissions?: Record<string, number>;
+  earlySellCommissions?: Record<string, number>;
+  gambleWinMultiplier?: number;
+  gambleLoseMultiplier?: number;
+  gambleLevels?: GambleLevel[];
+  coinBoxLevels?: CoinBoxLevel[];
+  autoCollectCostPercent?: number;
 }

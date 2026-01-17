@@ -7,6 +7,8 @@ import { AdminDashboardController } from './admin-dashboard/admin-dashboard.cont
 import { AdminDashboardService } from './admin-dashboard/admin-dashboard.service';
 import { AdminTiersController } from './admin-tiers/admin-tiers.controller';
 import { AdminTiersService } from './admin-tiers/admin-tiers.service';
+import { AdminSettingsController } from './admin-settings/admin-settings.controller';
+import { AdminSettingsService } from './admin-settings/admin-settings.service';
 import { AdminJwtGuard } from './guards/admin-jwt.guard';
 import { PrismaModule } from '../prisma/prisma.module';
 import { MachinesModule } from '../machines/machines.module';
@@ -22,11 +24,13 @@ import { MachinesModule } from '../machines/machines.module';
     AdminAuthController,
     AdminDashboardController,
     AdminTiersController,
+    AdminSettingsController,
   ],
   providers: [
     AdminAuthService,
     AdminDashboardService,
     AdminTiersService,
+    AdminSettingsService,
     AdminJwtGuard,
   ],
   exports: [AdminAuthService, AdminJwtGuard],

@@ -68,11 +68,27 @@
 
 ---
 
-## Phase 3: Настройки экономики (PENDING)
+## Phase 3: Настройки экономики (COMPLETED)
 
-- [ ] UI для всех SystemSettings
-- [ ] JSON редактор для комплексных полей
-- [ ] Обновление сервисов для чтения из БД
+### 3.1 Backend
+- [x] admin-settings.controller.ts - GET/PUT endpoints
+- [x] admin-settings.service.ts - CRUD + аудит + reset
+- [x] dto/settings.dto.ts - валидация всех полей
+- [x] Подключение к admin.module.ts
+
+### 3.2 Frontend UI
+- [x] /admin/settings - страница настроек экономики
+- [x] Карточки по категориям (General, Deposits, Commissions, Tax, Referral, Gamble, CoinBox)
+- [x] JSON редактор для комплексных полей с валидацией
+- [x] Кнопки Save Changes и Reset to Defaults
+- [x] admin-settings.store.ts - Zustand store
+
+### 3.3 Integration
+- [x] SettingsService с кэшированием (из Phase 1)
+- [x] API методы в lib/api.ts
+- [x] Инвалидация кэша при изменениях
+
+**Build Status:** API и Web собираются успешно
 
 ---
 
