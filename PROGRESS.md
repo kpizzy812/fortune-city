@@ -92,12 +92,32 @@
 
 ---
 
-## Phase 4: Управление пользователями (PENDING)
+## Phase 4: Управление пользователями (COMPLETED)
 
-- [ ] Список с фильтрами
-- [ ] Детальный просмотр
-- [ ] Бан/анбан функционал
-- [ ] Реферальное дерево (3 уровня)
+### 4.1 Backend
+- [x] admin-users.controller.ts - GET list, GET by id, GET referral-tree, POST ban, POST unban
+- [x] admin-users.service.ts - фильтрация, пагинация, бан/анбан, реферальное дерево
+- [x] dto/user.dto.ts - UsersFilterDto, BanUserDto, response types
+- [x] Подключение к admin.module.ts
+- [x] AuditLog интеграция
+
+### 4.2 Frontend UI
+- [x] /admin/users - страница управления пользователями
+- [x] UsersTable.tsx - таблица с поиском, фильтрами, пагинацией, сортировкой
+- [x] UserDetailModal.tsx - детальный просмотр с балансами, статистикой, бан/анбан
+- [x] ReferralTree.tsx - визуализация реферального дерева (3 уровня)
+- [x] admin-users.store.ts - Zustand store
+
+### 4.3 Features
+- [x] Поиск по username, firstName, telegramId, referralCode
+- [x] Фильтр по статусу бана (All/Active/Banned)
+- [x] Сортировка по дате, балансу, тиру
+- [x] Пагинация с настраиваемым лимитом
+- [x] Детальная статистика пользователя (депозиты, выводы, машины, рефералы)
+- [x] Бан/анбан с причиной и аудит логом
+- [x] Реферальное дерево 3 уровня с contribution tracking
+
+**Build Status:** API и Web собираются успешно
 
 ---
 

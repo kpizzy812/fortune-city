@@ -601,6 +601,86 @@ class ApiClient {
       token,
     });
   }
+
+  // ============================================
+  // Admin Users endpoints
+  // ============================================
+
+  /**
+   * Get paginated list of users with filters
+   */
+  async adminGetUsers(
+    token: string,
+    filters?: AdminUsersFilter,
+  ): Promise<AdminUsersListResponse> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          params.append(key, String(value));
+        }
+      });
+    }
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request<AdminUsersListResponse>(`/admin/users${query}`, { token });
+  }
+
+  /**
+   * Get users statistics
+   */
+  async adminGetUsersStats(token: string): Promise<AdminUsersStatsResponse> {
+    return this.request<AdminUsersStatsResponse>('/admin/users/stats', { token });
+  }
+
+  /**
+   * Get detailed user information
+   */
+  async adminGetUser(token: string, userId: string): Promise<AdminUserDetail> {
+    return this.request<AdminUserDetail>(`/admin/users/${userId}`, { token });
+  }
+
+  /**
+   * Get user's referral tree (3 levels)
+   */
+  async adminGetReferralTree(
+    token: string,
+    userId: string,
+  ): Promise<ReferralTreeResponse> {
+    return this.request<ReferralTreeResponse>(
+      `/admin/users/${userId}/referral-tree`,
+      { token },
+    );
+  }
+
+  /**
+   * Ban a user
+   */
+  async adminBanUser(
+    token: string,
+    userId: string,
+    reason: string,
+  ): Promise<AdminUserDetail> {
+    return this.request<AdminUserDetail>(`/admin/users/${userId}/ban`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  /**
+   * Unban a user
+   */
+  async adminUnbanUser(
+    token: string,
+    userId: string,
+    note?: string,
+  ): Promise<AdminUserDetail> {
+    return this.request<AdminUserDetail>(`/admin/users/${userId}/unban`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ note }),
+    });
+  }
 }
 
 export const api = new ApiClient(API_URL);
@@ -939,4 +1019,111 @@ export interface UpdateSettingsRequest {
   gambleLevels?: GambleLevel[];
   coinBoxLevels?: CoinBoxLevel[];
   autoCollectCostPercent?: number;
+}
+
+// ============================================
+// Admin Users Types
+// ============================================
+
+export type UserSortField = 'createdAt' | 'fortuneBalance' | 'maxTierReached' | 'username';
+export type SortOrder = 'asc' | 'desc';
+
+export interface AdminUsersFilter {
+  search?: string;
+  isBanned?: boolean;
+  hasReferrer?: boolean;
+  minTier?: number;
+  maxTier?: number;
+  limit?: number;
+  offset?: number;
+  sortBy?: UserSortField;
+  sortOrder?: SortOrder;
+}
+
+export interface AdminUserListItem {
+  id: string;
+  telegramId: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  fortuneBalance: number;
+  referralBalance: number;
+  maxTierReached: number;
+  maxTierUnlocked: number;
+  currentTaxRate: number;
+  isBanned: boolean;
+  bannedAt: string | null;
+  referralCode: string;
+  hasReferrer: boolean;
+  referralsCount: number;
+  machinesCount: number;
+  createdAt: string;
+}
+
+export interface AdminUserDetail extends AdminUserListItem {
+  totalFreshDeposits: number;
+  totalProfitCollected: number;
+  bannedReason: string | null;
+  freeSpinsRemaining: number;
+  lastSpinAt: string | null;
+  referrer: {
+    id: string;
+    username: string | null;
+    telegramId: string;
+  } | null;
+  stats: {
+    totalDeposits: number;
+    totalDepositsAmount: number;
+    totalWithdrawals: number;
+    totalWithdrawalsAmount: number;
+    totalMachinesPurchased: number;
+    activeMachines: number;
+    expiredMachines: number;
+    totalReferralEarnings: number;
+  };
+}
+
+export interface AdminUsersListResponse {
+  users: AdminUserListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AdminUsersStatsResponse {
+  totalUsers: number;
+  activeUsers: number;
+  bannedUsers: number;
+  usersWithReferrer: number;
+  usersByTier: Record<number, number>;
+}
+
+export interface ReferralTreeNode {
+  id: string;
+  telegramId: string;
+  username: string | null;
+  firstName: string | null;
+  fortuneBalance: number;
+  maxTierReached: number;
+  isBanned: boolean;
+  level: number;
+  totalContributed: number;
+  machinesCount: number;
+  joinedAt: string;
+  children?: ReferralTreeNode[];
+}
+
+export interface ReferralTreeResponse {
+  user: {
+    id: string;
+    username: string | null;
+    referralCode: string;
+  };
+  tree: ReferralTreeNode[];
+  stats: {
+    level1Count: number;
+    level2Count: number;
+    level3Count: number;
+    totalEarned: number;
+  };
 }
