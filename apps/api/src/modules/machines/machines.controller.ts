@@ -90,7 +90,7 @@ export class MachinesController {
   }
 
   @Get('tiers/:tier')
-  getTierById(@Param('tier') tier: string): TierInfoDto | undefined {
+  getTierById(@Param('tier') tier: string): TierInfoDto | null {
     return this.machinesService.getTierById(parseInt(tier, 10));
   }
 

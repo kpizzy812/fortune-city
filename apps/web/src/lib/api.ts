@@ -441,6 +441,131 @@ class ApiClient {
   async getWithdrawalById(token: string, id: string): Promise<WithdrawalData> {
     return this.request<WithdrawalData>(`/withdrawals/${id}`, { token });
   }
+
+  // ============================================
+  // Admin endpoints
+  // ============================================
+
+  /**
+   * Admin login with username/password
+   */
+  async adminLogin(username: string, password: string): Promise<AdminAuthResponse> {
+    return this.request<AdminAuthResponse>('/admin/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    });
+  }
+
+  /**
+   * Get current admin session
+   */
+  async adminGetMe(token: string): Promise<AdminMeResponse> {
+    return this.request<AdminMeResponse>('/admin/auth/me', { token });
+  }
+
+  /**
+   * Get admin dashboard stats
+   */
+  async adminGetDashboardStats(token: string): Promise<AdminDashboardStats> {
+    return this.request<AdminDashboardStats>('/admin/dashboard/stats', { token });
+  }
+
+  // ============================================
+  // Admin Tiers endpoints
+  // ============================================
+
+  /**
+   * Get all tiers (including hidden)
+   */
+  async adminGetAllTiers(token: string): Promise<AdminTierResponse[]> {
+    return this.request<AdminTierResponse[]>('/admin/tiers', { token });
+  }
+
+  /**
+   * Get tier statistics
+   */
+  async adminGetTierStats(token: string): Promise<AdminTierStats> {
+    return this.request<AdminTierStats>('/admin/tiers/stats', { token });
+  }
+
+  /**
+   * Get a single tier by number
+   */
+  async adminGetTier(token: string, tier: number): Promise<AdminTierResponse> {
+    return this.request<AdminTierResponse>(`/admin/tiers/${tier}`, { token });
+  }
+
+  /**
+   * Create a new tier
+   */
+  async adminCreateTier(
+    token: string,
+    data: CreateTierRequest,
+  ): Promise<AdminTierResponse> {
+    return this.request<AdminTierResponse>('/admin/tiers', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Update an existing tier
+   */
+  async adminUpdateTier(
+    token: string,
+    tier: number,
+    data: UpdateTierRequest,
+  ): Promise<AdminTierResponse> {
+    return this.request<AdminTierResponse>(`/admin/tiers/${tier}`, {
+      method: 'PUT',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Delete a tier
+   */
+  async adminDeleteTier(
+    token: string,
+    tier: number,
+  ): Promise<{ success: boolean; message: string }> {
+    return this.request<{ success: boolean; message: string }>(
+      `/admin/tiers/${tier}`,
+      { method: 'DELETE', token },
+    );
+  }
+
+  /**
+   * Update tier visibility
+   */
+  async adminUpdateTierVisibility(
+    token: string,
+    tier: number,
+    isVisible: boolean,
+  ): Promise<AdminTierResponse> {
+    return this.request<AdminTierResponse>(`/admin/tiers/${tier}/visibility`, {
+      method: 'PUT',
+      token,
+      body: JSON.stringify({ isVisible }),
+    });
+  }
+
+  /**
+   * Update tier public availability
+   */
+  async adminUpdateTierAvailability(
+    token: string,
+    tier: number,
+    isPubliclyAvailable: boolean,
+  ): Promise<AdminTierResponse> {
+    return this.request<AdminTierResponse>(`/admin/tiers/${tier}/availability`, {
+      method: 'PUT',
+      token,
+      body: JSON.stringify({ isPubliclyAvailable }),
+    });
+  }
 }
 
 export const api = new ApiClient(API_URL);
@@ -643,4 +768,85 @@ export interface InstantWithdrawalData {
   requestedAmount: number;
   netAmount: number;
   usdtAmount: number;
+}
+
+// ============================================
+// Admin Types
+// ============================================
+
+export interface AdminAuthResponse {
+  accessToken: string;
+  admin: {
+    username: string;
+  };
+}
+
+export interface AdminMeResponse {
+  admin: {
+    username: string;
+  };
+}
+
+export interface AdminDashboardStats {
+  totalUsers: number;
+  activeUsers: number;
+  totalMachines: number;
+  activeMachines: number;
+  totalDeposits: number;
+  totalDepositsAmount: number;
+  totalWithdrawals: number;
+  totalWithdrawalsAmount: number;
+  pendingWithdrawals: number;
+}
+
+// ============================================
+// Admin Tiers Types
+// ============================================
+
+export interface AdminTierResponse {
+  id: string;
+  tier: number;
+  name: string;
+  emoji: string;
+  price: number;
+  lifespanDays: number;
+  yieldPercent: number;
+  imageUrl: string | null;
+  isVisible: boolean;
+  isPubliclyAvailable: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminTierStats {
+  total: number;
+  visible: number;
+  hidden: number;
+  publiclyAvailable: number;
+}
+
+export interface CreateTierRequest {
+  tier: number;
+  name: string;
+  emoji: string;
+  price: number;
+  lifespanDays: number;
+  yieldPercent: number;
+  imageUrl?: string;
+  isVisible?: boolean;
+  isPubliclyAvailable?: boolean;
+  sortOrder?: number;
+}
+
+export interface UpdateTierRequest {
+  name?: string;
+  emoji?: string;
+  price?: number;
+  lifespanDays?: number;
+  yieldPercent?: number;
+  imageUrl?: string;
+  isVisible?: boolean;
+  isPubliclyAvailable?: boolean;
+  sortOrder?: number;
 }

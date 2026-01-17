@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MachinesController } from './machines.controller';
 import { MachinesService } from './machines.service';
+import { TierCacheService } from './services/tier-cache.service';
 import { RiskyCollectService } from './services/risky-collect.service';
 import { AutoCollectService } from './services/auto-collect.service';
 import { AuctionService } from './services/auction.service';
@@ -13,6 +14,7 @@ import { EconomyModule } from '../economy/economy.module';
   imports: [PrismaModule, AuthModule, forwardRef(() => EconomyModule)],
   controllers: [MachinesController],
   providers: [
+    TierCacheService,
     MachinesService,
     RiskyCollectService,
     AutoCollectService,
@@ -20,6 +22,7 @@ import { EconomyModule } from '../economy/economy.module';
     PawnshopService,
   ],
   exports: [
+    TierCacheService,
     MachinesService,
     RiskyCollectService,
     AutoCollectService,

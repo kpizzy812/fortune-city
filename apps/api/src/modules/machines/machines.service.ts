@@ -8,13 +8,12 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { Machine, MachineStatus, Prisma } from '@prisma/client';
 import {
-  MACHINE_TIERS,
-  getTierConfigOrThrow,
   COIN_BOX_LEVELS,
   REINVEST_REDUCTION,
   calculateEarlySellCommission,
 } from '@fortune-city/shared';
 import { FundSourceService } from '../economy/services/fund-source.service';
+import { TierCacheService } from './services/tier-cache.service';
 
 export interface CreateMachineInput {
   tier: number;
@@ -34,6 +33,7 @@ export interface MachineWithTierInfo extends Machine {
 export class MachinesService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly tierCacheService: TierCacheService,
     @Inject(forwardRef(() => FundSourceService))
     private readonly fundSourceService: FundSourceService,
   ) {}
@@ -72,7 +72,7 @@ export class MachinesService {
   }
 
   async create(userId: string, input: CreateMachineInput): Promise<Machine> {
-    const tierConfig = getTierConfigOrThrow(input.tier);
+    const tierConfig = this.tierCacheService.getTierOrThrow(input.tier);
     const reinvestRound = input.reinvestRound ?? 1;
 
     // Calculate profit reduction for reinvest
@@ -402,7 +402,7 @@ export class MachinesService {
   }
 
   enrichWithTierInfo(machine: Machine): MachineWithTierInfo {
-    const tierConfig = getTierConfigOrThrow(machine.tier);
+    const tierConfig = this.tierCacheService.getTierOrThrow(machine.tier);
     return {
       ...machine,
       tierInfo: {
@@ -415,7 +415,8 @@ export class MachinesService {
   }
 
   getTiers() {
-    return MACHINE_TIERS.map((tier) => ({
+    // Get visible tiers from cache (reads from DB)
+    return this.tierCacheService.getAllTiers().map((tier) => ({
       tier: tier.tier,
       name: tier.name,
       emoji: tier.emoji,
@@ -429,8 +430,20 @@ export class MachinesService {
   }
 
   getTierById(tier: number) {
-    const tiers = this.getTiers();
-    return tiers.find((t) => t.tier === tier);
+    const tierConfig = this.tierCacheService.getTier(tier);
+    if (!tierConfig) return null;
+
+    return {
+      tier: tierConfig.tier,
+      name: tierConfig.name,
+      emoji: tierConfig.emoji,
+      imageUrl: tierConfig.imageUrl,
+      price: tierConfig.price,
+      lifespanDays: tierConfig.lifespanDays,
+      yieldPercent: tierConfig.yieldPercent,
+      profit: Math.round(tierConfig.price * (tierConfig.yieldPercent / 100) - tierConfig.price),
+      dailyRate: +(tierConfig.yieldPercent / tierConfig.lifespanDays).toFixed(2),
+    };
   }
 
   async sellMachineEarly(
