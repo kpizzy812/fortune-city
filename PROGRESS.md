@@ -163,6 +163,23 @@
 
 ---
 
+## Phase 6: Тестирование (COMPLETED)
+
+### 6.1 Unit Tests
+- [x] admin-auth.service.spec.ts - 15 тестов (login, JWT validation, timing-safe comparison)
+- [x] admin-jwt.guard.spec.ts - 12 тестов (token extraction, validation, error handling)
+- [x] admin-withdrawals.service.spec.ts - 28 тестов (approve, reject, complete, stats, filters)
+- [x] admin-deposits.service.spec.ts - 22 тестов (manual credit, retry, stats, filters)
+- [x] admin-users.service.spec.ts - 20 тестов (ban/unban, stats, filters, referral tree)
+
+### 6.2 Coverage
+- **Total:** 97 тестов, все проходят
+- Критичные операции покрыты: авторизация, финансы, безопасность
+
+**Build Status:** API и Web собираются успешно, все тесты проходят
+
+---
+
 ## Notes
 
 - Используем существующие паттерны из auth, machines, economy модулей
