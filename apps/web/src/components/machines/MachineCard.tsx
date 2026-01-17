@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Clock, Zap, ArrowUpCircle } from 'lucide-react';
@@ -78,6 +79,7 @@ export function MachineCard({
 }: MachineCardProps) {
   const t = useTranslations('machines');
   const tCommon = useTranslations('common');
+  const [isImageExpanded, setIsImageExpanded] = useState(false);
 
   const progress = calculateProgress(machine.startedAt, machine.expiresAt);
   const timeRemaining = formatTimeRemaining(machine.expiresAt, tCommon('expired'));
@@ -104,31 +106,60 @@ export function MachineCard({
       {/* Subtle gradient overlay on hover */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/[0.02] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
+      {/* Square image - hover on desktop, tap toggle on mobile */}
+      <div className="flex justify-center mb-4">
+        <motion.div
+          className={`
+            relative rounded-2xl overflow-hidden cursor-pointer aspect-square
+            bg-gradient-to-br
+            ${machine.tier <= 3 ? 'from-[#ff2d95]/30 to-[#00d4ff]/30' :
+              machine.tier <= 6 ? 'from-[#ffd700]/30 to-[#ff8c00]/30' :
+              'from-[#00ff88]/30 to-[#00d4ff]/30'}
+          `}
+          initial={false}
+          animate={{ width: isImageExpanded ? '100%' : 120 }}
+          whileHover={{ width: '100%' }}
+          onClick={() => setIsImageExpanded(!isImageExpanded)}
+          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <motion.span
+              className="text-6xl filter drop-shadow-lg"
+              animate={isImageExpanded ? { scale: 1.2 } : { scale: 1 }}
+              whileHover={{ rotate: [0, -10, 10, 0], scale: 1.2 }}
+              transition={{ duration: 0.3 }}
+            >
+              {machine.tierInfo.emoji}
+            </motion.span>
+          </div>
+          <div className="absolute top-2 right-2">
+            <span className={`
+              px-2 py-0.5 rounded-full text-[9px] font-bold
+              ${machine.tier <= 3 ? 'bg-[#ff2d95]/70 text-white' :
+                machine.tier <= 6 ? 'bg-[#ffd700]/70 text-white' :
+                'bg-[#00ff88]/70 text-white'}
+            `}>
+              T{machine.tier}
+            </span>
+          </div>
+        </motion.div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-3 relative">
-        <div className="flex items-center gap-2">
-          <motion.span
-            className="text-2xl"
-            whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
-            transition={{ duration: 0.4 }}
-          >
-            {machine.tierInfo.emoji}
-          </motion.span>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-white">{machine.tierInfo.name}</h3>
-              {machine.autoCollectEnabled && !isExpired && (
-                <motion.span
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="text-[10px] px-1.5 py-0.5 bg-[#00ff88]/20 text-[#00ff88] rounded flex items-center gap-0.5"
-                >
-                  <Zap className="w-2.5 h-2.5" />
-                  {t('auto')}
-                </motion.span>
-              )}
-            </div>
-            <p className="text-xs text-[#b0b0b0]">Tier {machine.tier}</p>
+        <div>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-white">{machine.tierInfo.name}</h3>
+            {machine.autoCollectEnabled && !isExpired && (
+              <motion.span
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="text-[10px] px-1.5 py-0.5 bg-[#00ff88]/20 text-[#00ff88] rounded flex items-center gap-0.5"
+              >
+                <Zap className="w-2.5 h-2.5" />
+                {t('auto')}
+              </motion.span>
+            )}
           </div>
         </div>
         {isExpired && (

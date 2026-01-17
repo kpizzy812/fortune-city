@@ -194,7 +194,7 @@ export default function ShopPage() {
 
   return (
     <main className="min-h-screen p-4 lg:p-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Mobile Header */}
         <header className="flex items-center justify-between mb-6 lg:hidden">
           <div>
@@ -218,10 +218,10 @@ export default function ShopPage() {
         </header>
 
         {/* Desktop Header */}
-        <header className="hidden lg:flex lg:items-center lg:justify-between mb-8">
+        <header className="hidden lg:flex lg:items-center lg:justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">{t('pageTitle')}</h1>
-            <p className="text-[#b0b0b0]">{t('pageSubtitle')}</p>
+            <h1 className="text-2xl lg:text-3xl font-bold text-[#00d4ff]">{t('pageTitle')}</h1>
+            <p className="text-sm text-[#b0b0b0]">{t('pageSubtitle')}</p>
           </div>
           <div className="bg-[#2a1a4e] rounded-xl px-6 py-3 border border-[#ffd700]/30">
             <p className="text-sm text-[#b0b0b0]">{tCommon('yourBalance')}</p>

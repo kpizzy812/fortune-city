@@ -39,6 +39,11 @@ model User {
   freeSpinsRemaining Int       @default(0) @map("free_spins_remaining")
   lastSpinAt         DateTime? @map("last_spin_at")
 
+  // Ban status (admin panel)
+  isBanned     Boolean   @default(false) @map("is_banned")
+  bannedAt     DateTime? @map("banned_at")
+  bannedReason String?   @map("banned_reason")
+
   // Relations
   machines          Machine[]
   transactions      Transaction[]
@@ -324,6 +329,30 @@ enum Chain {
   tron
 }
 
+// ============== TIER CONFIG ==============
+// Dynamic tier configuration (replaces hardcoded MACHINE_TIERS)
+
+model TierConfig {
+  id              String   @id @default(cuid())
+  tier            Int      @unique
+  name            String                          // "RUSTY LEVER"
+  emoji           String                          // "🟤"
+  price           Decimal  @db.Decimal(20, 2)     // 10
+  lifespanDays    Int      @map("lifespan_days")  // 7
+  yieldPercent    Int      @map("yield_percent")  // 135
+  imageUrl        String?  @map("image_url")
+
+  // Admin panel controls
+  isVisible           Boolean  @default(true) @map("is_visible")              // Show in shop
+  isPubliclyAvailable Boolean  @default(false) @map("is_publicly_available")  // Available without progression
+  sortOrder           Int      @default(0) @map("sort_order")                 // Display order
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("tier_configs")
+}
+
 // ============== SYSTEM SETTINGS ==============
 // Singleton table for global configuration
 
@@ -331,14 +360,67 @@ model SystemSettings {
   id              String @id @default("default")
 
   // Max tier available for purchase globally (without progression)
-  // Users can buy tiers 1..maxGlobalTier immediately
-  // After buying maxTierReached, next tier unlocks as usual
   maxGlobalTier   Int    @default(1) @map("max_global_tier")
+
+  // Minimum amounts (JSON for different currencies)
+  minDepositAmounts   Json @default("{\"SOL\":0.01,\"USDT_SOL\":1,\"FORTUNE\":10}") @map("min_deposit_amounts")
+  minWithdrawalAmount Decimal @default(5) @map("min_withdrawal_amount") @db.Decimal(20, 2)
+
+  // Fees
+  walletConnectFeeSol Decimal @default(0.003) @map("wallet_connect_fee_sol") @db.Decimal(10, 6)
+  pawnshopCommission  Decimal @default(0.10) @map("pawnshop_commission") @db.Decimal(5, 4)
+
+  // Tax rates by tier (JSON: {tierNumber: rate})
+  taxRatesByTier      Json @default("{\"1\":0.5,\"2\":0.5,\"3\":0.4,\"4\":0.4,\"5\":0.3,\"6\":0.3,\"7\":0.2,\"8\":0.2,\"9\":0.2,\"10\":0.1}") @map("tax_rates_by_tier")
+
+  // Referral rates by level (JSON: {level: rate})
+  referralRates       Json @default("{\"1\":0.05,\"2\":0.03,\"3\":0.01}") @map("referral_rates")
+
+  // Reinvest reduction by round (JSON: {round: rate})
+  reinvestReduction   Json @default("{\"1\":0,\"2\":0.05,\"3\":0.10,\"4\":0.15,\"5\":0.23,\"6\":0.33,\"7\":0.45,\"8\":0.58,\"9\":0.70,\"10\":0.80,\"11\":0.85}") @map("reinvest_reduction")
+
+  // Auction commissions by wear% (JSON: {wearPercent: commission})
+  auctionCommissions  Json @default("{\"20\":0.10,\"40\":0.20,\"60\":0.35,\"80\":0.55,\"100\":0.75}") @map("auction_commissions")
+
+  // Early sell commissions by progress% (JSON: {progressPercent: commission})
+  earlySellCommissions Json @default("{\"20\":0.20,\"40\":0.35,\"60\":0.55,\"80\":0.75,\"100\":0.90}") @map("early_sell_commissions")
+
+  // Fortune's Gamble
+  gambleWinMultiplier  Decimal @default(2.0) @map("gamble_win_multiplier") @db.Decimal(5, 2)
+  gambleLoseMultiplier Decimal @default(0.5) @map("gamble_lose_multiplier") @db.Decimal(5, 2)
+  gambleLevels         Json @default("[{\"level\":0,\"winChance\":0.1333,\"costPercent\":0},{\"level\":1,\"winChance\":0.1533,\"costPercent\":3},{\"level\":2,\"winChance\":0.1733,\"costPercent\":6},{\"level\":3,\"winChance\":0.1867,\"costPercent\":10}]") @map("gamble_levels")
+
+  // Coin Box levels
+  coinBoxLevels        Json @default("[{\"level\":1,\"capacityHours\":2,\"costPercent\":0},{\"level\":2,\"capacityHours\":6,\"costPercent\":5},{\"level\":3,\"capacityHours\":12,\"costPercent\":10},{\"level\":4,\"capacityHours\":24,\"costPercent\":20},{\"level\":5,\"capacityHours\":48,\"costPercent\":35}]") @map("coin_box_levels")
+
+  // Auto Collect cost
+  autoCollectCostPercent Int @default(15) @map("auto_collect_cost_percent")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("system_settings")
+}
+
+// ============== AUDIT LOG ==============
+// Admin panel action history
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  adminAction String   @map("admin_action")    // "user_banned", "settings_updated", "tier_created", etc
+  resource    String                           // "user", "tier", "settings", "withdrawal"
+  resourceId  String?  @map("resource_id")
+  oldValue    Json?    @map("old_value")
+  newValue    Json?    @map("new_value")
+  ipAddress   String?  @map("ip_address")
+  adminUser   String?  @map("admin_user")      // Admin username who performed action
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([adminAction])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 // ============== REFERRAL BONUSES ==============

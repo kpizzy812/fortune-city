@@ -329,7 +329,7 @@ export default function Home() {
   return (
     <main className="min-h-screen p-4 lg:p-8">
       {/* Container with max-width for desktop */}
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header - visible only on mobile (on desktop it's in sidebar) */}
         <header className="flex items-center justify-between mb-6 lg:hidden">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-[#ff2d95] to-[#00d4ff] bg-clip-text text-transparent">
@@ -370,9 +370,9 @@ export default function Home() {
         </header>
 
         {/* Desktop page title */}
-        <div className="hidden lg:block mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">{tDashboard('title')}</h2>
-          <p className="text-[#b0b0b0]">{tDashboard('subtitle')}</p>
+        <div className="hidden lg:block mb-6">
+          <h2 className="text-2xl lg:text-3xl font-bold text-[#00d4ff]">{tDashboard('title')}</h2>
+          <p className="text-sm text-[#b0b0b0]">{tDashboard('subtitle')}</p>
         </div>
 
         {/* User Stats Card - visible only on mobile (on desktop it's in sidebar) */}

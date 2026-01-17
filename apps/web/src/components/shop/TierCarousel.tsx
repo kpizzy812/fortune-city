@@ -128,14 +128,16 @@ function TierCard({
           <h3 className="font-bold text-white text-lg leading-tight truncate drop-shadow-lg">
             {tier.name}
           </h3>
-          <p className="text-2xl font-bold text-[#ffd700] drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]">
-            ${tier.price.toLocaleString()}
-          </p>
-          {isLocked && (
-            <span className="flex items-center gap-1 text-[#ff4444] text-xs font-medium">
-              <Lock className="w-3 h-3" /> {t.locked}
-            </span>
-          )}
+          <div className="flex items-center justify-between">
+            <p className="text-2xl font-bold text-[#ffd700] drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]">
+              ${tier.price.toLocaleString()}
+            </p>
+            {isLocked && (
+              <span className="flex items-center gap-1 text-[#ff4444] text-xs font-medium">
+                <Lock className="w-3 h-3" /> {t.locked}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -211,7 +213,6 @@ export function TierCarousel({
   const tShop = useTranslations('shop');
   const tSell = useTranslations('sell');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const initialScrollLeft = useRef<number>(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -224,26 +225,21 @@ export function TierCarousel({
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Left gradient appears after scrolling from initial position (threshold 50px)
-    setCanScrollLeft(container.scrollLeft > initialScrollLeft.current + 50);
+    // Left arrow appears when scrolled more than 10px from start
+    setCanScrollLeft(container.scrollLeft > 10);
     setCanScrollRight(
       container.scrollLeft < container.scrollWidth - container.clientWidth - 10
     );
 
-    // Calculate active index based on scroll from initial position
-    const scrollFromStart = container.scrollLeft - initialScrollLeft.current;
-    const newIndex = Math.max(0, Math.round(scrollFromStart / cardWidthWithGap));
+    // Calculate active index based on scroll position
+    const newIndex = Math.max(0, Math.round(container.scrollLeft / cardWidthWithGap));
     setActiveIndex(newIndex);
   };
 
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (container) {
-      // Wait for layout to settle before storing initial scroll position
-      requestAnimationFrame(() => {
-        initialScrollLeft.current = container.scrollLeft;
-        checkScroll();
-      });
+      checkScroll();
       container.addEventListener('scroll', checkScroll);
       return () => container.removeEventListener('scroll', checkScroll);
     }
@@ -262,7 +258,7 @@ export function TierCarousel({
     if (!container) return;
 
     container.scrollTo({
-      left: initialScrollLeft.current + cardWidthWithGap * index,
+      left: cardWidthWithGap * index,
       behavior: 'smooth'
     });
   };
@@ -309,7 +305,7 @@ export function TierCarousel({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
               onClick={() => scrollTo('left')}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-[#2a1a4e]/90 border border-[#00d4ff]/50 rounded-full flex items-center justify-center text-[#00d4ff] hover:bg-[#00d4ff]/20 transition shadow-lg backdrop-blur-sm"
+              className="absolute -left-5 top-1/2 -translate-y-1/2 z-50 w-10 h-10 bg-[#2a1a4e]/90 border border-[#00d4ff]/50 rounded-full flex items-center justify-center text-[#00d4ff] hover:bg-[#00d4ff]/20 transition shadow-lg backdrop-blur-sm"
             >
               <ChevronLeft className="w-5 h-5" />
             </motion.button>
@@ -323,7 +319,7 @@ export function TierCarousel({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
               onClick={() => scrollTo('right')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-[#2a1a4e]/90 border border-[#00d4ff]/50 rounded-full flex items-center justify-center text-[#00d4ff] hover:bg-[#00d4ff]/20 transition shadow-lg backdrop-blur-sm"
+              className="absolute -right-5 top-1/2 -translate-y-1/2 z-50 w-10 h-10 bg-[#2a1a4e]/90 border border-[#00d4ff]/50 rounded-full flex items-center justify-center text-[#00d4ff] hover:bg-[#00d4ff]/20 transition shadow-lg backdrop-blur-sm"
             >
               <ChevronRight className="w-5 h-5" />
             </motion.button>
