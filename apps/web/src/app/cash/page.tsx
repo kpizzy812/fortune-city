@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import {
@@ -18,7 +19,6 @@ import {
 import { toast } from 'sonner';
 import {
   Copy,
-  ArrowLeft,
   QrCode,
   Wallet,
   Clock,
@@ -49,6 +49,8 @@ const CURRENCIES: { id: DepositCurrency; label: string; icon: string }[] = [
 
 export default function CashPage() {
   const router = useRouter();
+  const t = useTranslations('cash');
+  const tCommon = useTranslations('common');
   const { user, token, refreshUser } = useAuthStore();
 
   // Deposits store
@@ -187,13 +189,13 @@ export default function CashPage() {
   // Handle deposit with wallet
   const handleWalletDeposit = useCallback(async () => {
     if (!connected || !publicKey || !token || !depositAmount) {
-      toast.error('Please connect wallet and enter amount');
+      toast.error(t('pleaseConnectWallet'));
       return;
     }
 
     const amountNum = parseFloat(depositAmount);
     if (isNaN(amountNum) || amountNum <= 0) {
-      toast.error('Invalid amount');
+      toast.error(t('invalidAmount'));
       return;
     }
 
@@ -246,12 +248,12 @@ export default function CashPage() {
       await connection.confirmTransaction(signature, 'confirmed');
       await confirmDeposit(token, depositInfo.depositId, signature);
 
-      toast.success('Deposit confirmed!');
+      toast.success(t('depositConfirmed'));
       setDepositAmount('');
       refreshUser();
     } catch (err) {
       console.error('Deposit failed:', err);
-      toast.error(err instanceof Error ? err.message : 'Deposit failed');
+      toast.error(err instanceof Error ? err.message : t('depositFailed'));
       clearPendingDeposit();
     } finally {
       setIsSending(false);
@@ -268,18 +270,19 @@ export default function CashPage() {
     confirmDeposit,
     clearPendingDeposit,
     refreshUser,
+    t,
   ]);
 
   // Handle atomic withdrawal (wallet connect)
   const handleAtomicWithdrawal = useCallback(async () => {
     if (!connected || !publicKey || !token || !signTransaction) {
-      toast.error('Please connect wallet');
+      toast.error(t('pleaseConnectWallet'));
       return;
     }
 
     const amount = parseFloat(withdrawAmount);
     if (isNaN(amount) || amount <= 0) {
-      toast.error('Invalid amount');
+      toast.error(t('invalidAmount'));
       return;
     }
 
@@ -310,12 +313,12 @@ export default function CashPage() {
       // Confirm with backend
       await confirmAtomicWithdrawal(token, prepared.withdrawalId, signature);
 
-      toast.success(`Withdrawal successful! ${prepared.usdtAmount.toFixed(2)} USDT sent`);
+      toast.success(t('withdrawalSuccessful', { amount: prepared.usdtAmount.toFixed(2) }));
       setWithdrawAmount('');
       refreshUser();
     } catch (err) {
       console.error('Withdrawal failed:', err);
-      toast.error(err instanceof Error ? err.message : 'Withdrawal failed');
+      toast.error(err instanceof Error ? err.message : t('withdrawalFailed'));
 
       // Cancel the prepared withdrawal if it exists
       if (preparedId) {
@@ -339,18 +342,19 @@ export default function CashPage() {
     confirmAtomicWithdrawal,
     cancelAtomicWithdrawal,
     refreshUser,
+    t,
   ]);
 
   // Handle instant withdrawal (manual address)
   const handleInstantWithdrawal = useCallback(async () => {
     if (!token || !withdrawAddress) {
-      toast.error('Please enter wallet address');
+      toast.error(t('pleaseEnterAddress'));
       return;
     }
 
     const amount = parseFloat(withdrawAmount);
     if (isNaN(amount) || amount <= 0) {
-      toast.error('Invalid amount');
+      toast.error(t('invalidAmount'));
       return;
     }
 
@@ -358,7 +362,7 @@ export default function CashPage() {
     try {
       new PublicKey(withdrawAddress);
     } catch {
-      toast.error('Invalid Solana wallet address');
+      toast.error(t('invalidSolanaAddress'));
       return;
     }
 
@@ -366,25 +370,25 @@ export default function CashPage() {
     try {
       const result = await createInstantWithdrawal(token, amount, withdrawAddress);
 
-      toast.success(`Withdrawal successful! ${result.usdtAmount.toFixed(2)} USDT sent`);
+      toast.success(t('withdrawalSuccessful', { amount: result.usdtAmount.toFixed(2) }));
       setWithdrawAmount('');
       setWithdrawAddress('');
       refreshUser();
     } catch (err) {
       console.error('Withdrawal failed:', err);
-      toast.error(err instanceof Error ? err.message : 'Withdrawal failed');
+      toast.error(err instanceof Error ? err.message : t('withdrawalFailed'));
     } finally {
       setIsSending(false);
     }
-  }, [token, withdrawAddress, withdrawAmount, createInstantWithdrawal, refreshUser]);
+  }, [token, withdrawAddress, withdrawAmount, createInstantWithdrawal, refreshUser, t]);
 
   // Copy address to clipboard
   const copyAddress = useCallback(() => {
     if (depositAddress?.address) {
       navigator.clipboard.writeText(depositAddress.address);
-      toast.success('Address copied!');
+      toast.success(t('addressCopied'));
     }
-  }, [depositAddress?.address]);
+  }, [depositAddress?.address, t]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -412,23 +416,10 @@ export default function CashPage() {
 
   return (
     <div className="min-h-screen pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0d0416]/95 backdrop-blur-lg border-b border-[#ff2d95]/10">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2 rounded-lg hover:bg-white/5 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-400" />
-          </button>
-          <h1 className="text-lg font-semibold">Cash</h1>
-        </div>
-      </div>
-
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Balance Card */}
         <div className="bg-gradient-to-br from-[#1a0a2e] to-[#2a1040] rounded-2xl p-6 mb-6 border border-[#ff2d95]/20">
-          <div className="text-sm text-gray-400 mb-1">Available Balance</div>
+          <div className="text-sm text-gray-400 mb-1">{t('availableBalance')}</div>
           <div className="text-3xl font-bold text-white">
             $
             {parseFloat(user.fortuneBalance).toLocaleString('en-US', {
@@ -437,7 +428,7 @@ export default function CashPage() {
             })}
           </div>
           <div className="text-xs text-gray-500 mt-2">
-            Tax Rate: {taxRatePercent}% (Tier {user.maxTierReached || 1})
+            {t('taxRate', { rate: taxRatePercent, tier: user.maxTierReached || 1 })}
           </div>
         </div>
 
@@ -452,7 +443,7 @@ export default function CashPage() {
             }`}
           >
             <ArrowDownToLine className="w-4 h-4" />
-            <span>Deposit</span>
+            <span>{t('deposit')}</span>
           </button>
           <button
             onClick={() => setMainTab('withdraw')}
@@ -463,7 +454,7 @@ export default function CashPage() {
             }`}
           >
             <ArrowUpFromLine className="w-4 h-4" />
-            <span>Withdraw</span>
+            <span>{t('withdraw')}</span>
           </button>
         </div>
 
@@ -481,7 +472,7 @@ export default function CashPage() {
                 }`}
               >
                 <Wallet className="w-4 h-4" />
-                <span>Wallet</span>
+                <span>{t('wallet')}</span>
               </button>
               <button
                 onClick={() => setDepositTab('address')}
@@ -492,7 +483,7 @@ export default function CashPage() {
                 }`}
               >
                 <QrCode className="w-4 h-4" />
-                <span>QR / Address</span>
+                <span>{t('qrAddress')}</span>
               </button>
             </div>
 
@@ -503,12 +494,12 @@ export default function CashPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                       <h3 className="font-medium text-white mb-1">
-                        Connect Wallet
+                        {t('connectWallet')}
                       </h3>
                       <p className="text-sm text-gray-400">
                         {connected
-                          ? 'Wallet connected. Select currency and amount.'
-                          : 'Connect your Solana wallet to deposit'}
+                          ? t('walletConnectedDeposit')
+                          : t('connectWalletToDeposit')}
                       </p>
                     </div>
                     <WalletMultiButton className="!bg-gradient-to-r !from-[#ff2d95] !to-[#8b5cf6] !rounded-xl !h-11 !text-sm !font-medium" />
@@ -520,7 +511,7 @@ export default function CashPage() {
                     {/* Currency Selection */}
                     <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
                       <h3 className="font-medium text-white mb-4">
-                        Select Currency
+                        {t('selectCurrency')}
                       </h3>
                       <div className="grid grid-cols-3 gap-3">
                         {CURRENCIES.map((currency) => (
@@ -556,7 +547,7 @@ export default function CashPage() {
 
                     {/* Amount Input */}
                     <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
-                      <h3 className="font-medium text-white mb-4">Amount</h3>
+                      <h3 className="font-medium text-white mb-4">{t('amount')}</h3>
                       <div className="relative">
                         <input
                           type="number"
@@ -599,10 +590,10 @@ export default function CashPage() {
                       {isDepositProcessing ? (
                         <span className="flex items-center justify-center gap-2">
                           <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Processing...
+                          {tCommon('processing')}
                         </span>
                       ) : (
-                        'Deposit'
+                        t('deposit')
                       )}
                     </button>
                   </>
@@ -616,7 +607,7 @@ export default function CashPage() {
                 {isDepositsLoading && !depositAddress ? (
                   <div className="bg-[#1a0a2e] rounded-2xl p-12 border border-[#ff2d95]/10 text-center">
                     <div className="w-8 h-8 border-2 border-[#ff2d95]/30 border-t-[#ff2d95] rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-gray-400">Loading deposit address...</p>
+                    <p className="text-gray-400">{t('loadingDepositAddress')}</p>
                   </div>
                 ) : depositAddress ? (
                   <>
@@ -633,10 +624,10 @@ export default function CashPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-white mb-2">
-                            Deposit Address
+                            {t('depositAddress')}
                           </h3>
                           <p className="text-sm text-gray-400 mb-4">
-                            Send SOL, USDT, or FORTUNE to this address
+                            {t('sendToAddress')}
                           </p>
                           <div className="bg-[#0d0416] rounded-xl p-4 mb-4">
                             <code className="text-sm text-[#ff2d95] break-all font-mono">
@@ -648,7 +639,7 @@ export default function CashPage() {
                             className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-[#2a1a4e] hover:bg-[#3a2a5e] rounded-xl text-white font-medium transition-colors"
                           >
                             <Copy className="w-4 h-4" />
-                            Copy Address
+                            {t('copyAddress')}
                           </button>
                         </div>
                       </div>
@@ -659,18 +650,18 @@ export default function CashPage() {
                         <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                         <div>
                           <h4 className="font-medium text-yellow-500 mb-2">
-                            Important
+                            {t('important')}
                           </h4>
                           <ul className="text-sm text-gray-400 space-y-1">
-                            <li>• Only send SOL, USDT (SPL), or FORTUNE tokens</li>
+                            <li>• {t('importantNotes.onlySend')}</li>
                             <li>
-                              • Minimum deposit: {depositAddress.minDeposit} SOL
+                              • {t('importantNotes.minDeposit', { amount: depositAddress.minDeposit })}
                             </li>
                             <li>
-                              • Deposits credited automatically after 1 confirmation
+                              • {t('importantNotes.autoCredit')}
                             </li>
                             <li>
-                              • Sending other tokens may result in loss of funds
+                              • {t('importantNotes.otherTokensLoss')}
                             </li>
                           </ul>
                         </div>
@@ -685,7 +676,7 @@ export default function CashPage() {
             {deposits.length > 0 && (
               <div className="mt-8">
                 <h2 className="text-lg font-semibold text-white mb-4">
-                  Recent Deposits
+                  {t('recentDeposits')}
                 </h2>
                 <div className="bg-[#1a0a2e] rounded-2xl border border-[#ff2d95]/10 overflow-hidden">
                   {deposits.slice(0, 5).map((deposit, index) => (
@@ -750,7 +741,7 @@ export default function CashPage() {
                 }`}
               >
                 <Wallet className="w-4 h-4" />
-                <span>Wallet Connect</span>
+                <span>{t('walletConnect')}</span>
               </button>
               <button
                 onClick={() => setWithdrawTab('address')}
@@ -761,7 +752,7 @@ export default function CashPage() {
                 }`}
               >
                 <Copy className="w-4 h-4" />
-                <span>Enter Address</span>
+                <span>{t('enterAddress')}</span>
               </button>
             </div>
 
@@ -772,12 +763,12 @@ export default function CashPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                       <h3 className="font-medium text-white mb-1">
-                        Connect Wallet
+                        {t('connectWallet')}
                       </h3>
                       <p className="text-sm text-gray-400">
                         {connected
-                          ? 'Wallet connected. Enter amount to withdraw.'
-                          : 'Connect your Solana wallet to receive USDT'}
+                          ? t('walletConnectedWithdraw')
+                          : t('connectWalletToReceive')}
                       </p>
                     </div>
                     <WalletMultiButton className="!bg-gradient-to-r !from-[#ff2d95] !to-[#8b5cf6] !rounded-xl !h-11 !text-sm !font-medium" />
@@ -789,7 +780,7 @@ export default function CashPage() {
                     {/* Amount Input */}
                     <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
                       <h3 className="font-medium text-white mb-4">
-                        Amount (USD)
+                        {t('amountUsd')}
                       </h3>
                       <div className="relative">
                         <input
@@ -807,8 +798,7 @@ export default function CashPage() {
                         </div>
                       </div>
                       <div className="mt-2 text-sm text-gray-500">
-                        Min: $1 • Max: $
-                        {Math.min(parseFloat(user.fortuneBalance), 10000).toFixed(2)}
+                        {t('minMax', { min: '1', max: Math.min(parseFloat(user.fortuneBalance), 10000).toFixed(2) })}
                       </div>
                     </div>
 
@@ -816,33 +806,33 @@ export default function CashPage() {
                     {preview && (
                       <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
                         <h3 className="font-medium text-white mb-4">
-                          Breakdown
+                          {t('breakdown')}
                         </h3>
                         <div className="space-y-3 text-sm">
                           <div className="flex justify-between text-gray-400">
-                            <span>From Deposits (0% tax)</span>
+                            <span>{t('fromDeposits')}</span>
                             <span className="text-white">
                               ${preview.fromFreshDeposit.toFixed(2)}
                             </span>
                           </div>
                           <div className="flex justify-between text-gray-400">
-                            <span>From Profit ({(preview.taxRate * 100).toFixed(0)}% tax)</span>
+                            <span>{t('fromProfit', { rate: (preview.taxRate * 100).toFixed(0) })}</span>
                             <span className="text-white">
                               ${preview.fromProfit.toFixed(2)}
                             </span>
                           </div>
                           <div className="flex justify-between text-red-400">
-                            <span>Tax Amount</span>
+                            <span>{t('taxAmount')}</span>
                             <span>-${preview.taxAmount.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between text-gray-400">
-                            <span>Network Fee</span>
+                            <span>{t('networkFee')}</span>
                             <span className="text-white">
                               {preview.feeSol} SOL
                             </span>
                           </div>
                           <div className="border-t border-[#2a1a4e] pt-3 flex justify-between font-semibold">
-                            <span className="text-white">You Receive</span>
+                            <span className="text-white">{t('youReceive')}</span>
                             <span className="text-green-400 text-lg">
                               {preview.usdtAmount.toFixed(2)} USDT
                             </span>
@@ -857,12 +847,10 @@ export default function CashPage() {
                         <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                         <div>
                           <h4 className="font-medium text-blue-400 mb-2">
-                            Atomic Withdrawal
+                            {t('atomicWithdrawal')}
                           </h4>
                           <p className="text-sm text-gray-400">
-                            You&apos;ll sign a transaction that sends a small SOL
-                            fee and receives USDT in one atomic operation. Fast
-                            and secure!
+                            {t('atomicDescription')}
                           </p>
                         </div>
                       </div>
@@ -882,12 +870,12 @@ export default function CashPage() {
                       {isWithdrawProcessing ? (
                         <span className="flex items-center justify-center gap-2">
                           <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Processing...
+                          {tCommon('processing')}
                         </span>
                       ) : preview ? (
-                        `Withdraw $${withdrawAmount} → ${preview.usdtAmount.toFixed(2)} USDT`
+                        t('withdrawButton', { amount: withdrawAmount, usdt: preview.usdtAmount.toFixed(2) })
                       ) : (
-                        'Enter Amount'
+                        t('enterAmount')
                       )}
                     </button>
                   </>
@@ -900,7 +888,7 @@ export default function CashPage() {
               <div className="space-y-6">
                 {/* Amount Input */}
                 <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
-                  <h3 className="font-medium text-white mb-4">Amount (USD)</h3>
+                  <h3 className="font-medium text-white mb-4">{t('amountUsd')}</h3>
                   <div className="relative">
                     <input
                       type="number"
@@ -917,51 +905,50 @@ export default function CashPage() {
                     </div>
                   </div>
                   <div className="mt-2 text-sm text-gray-500">
-                    Min: $1 • Max: $
-                    {Math.min(parseFloat(user.fortuneBalance), 10000).toFixed(2)}
+                    {t('minMax', { min: '1', max: Math.min(parseFloat(user.fortuneBalance), 10000).toFixed(2) })}
                   </div>
                 </div>
 
                 {/* Wallet Address Input */}
                 <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
                   <h3 className="font-medium text-white mb-4">
-                    USDT Address (Solana)
+                    {t('usdtAddressSolana')}
                   </h3>
                   <input
                     type="text"
                     value={withdrawAddress}
                     onChange={(e) => setWithdrawAddress(e.target.value)}
-                    placeholder="Enter Solana wallet address..."
+                    placeholder={t('enterSolanaAddress')}
                     className="w-full bg-[#0d0416] border border-[#2a1a4e] rounded-xl px-4 py-4 text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d95] transition-colors font-mono text-sm"
                   />
                   <p className="mt-2 text-xs text-gray-500">
-                    Make sure this address can receive USDT SPL tokens
+                    {t('makeAddressNote')}
                   </p>
                 </div>
 
                 {/* Tax Breakdown */}
                 {preview && (
                   <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
-                    <h3 className="font-medium text-white mb-4">Breakdown</h3>
+                    <h3 className="font-medium text-white mb-4">{t('breakdown')}</h3>
                     <div className="space-y-3 text-sm">
                       <div className="flex justify-between text-gray-400">
-                        <span>From Deposits (0% tax)</span>
+                        <span>{t('fromDeposits')}</span>
                         <span className="text-white">
                           ${preview.fromFreshDeposit.toFixed(2)}
                         </span>
                       </div>
                       <div className="flex justify-between text-gray-400">
-                        <span>From Profit ({(preview.taxRate * 100).toFixed(0)}% tax)</span>
+                        <span>{t('fromProfit', { rate: (preview.taxRate * 100).toFixed(0) })}</span>
                         <span className="text-white">
                           ${preview.fromProfit.toFixed(2)}
                         </span>
                       </div>
                       <div className="flex justify-between text-red-400">
-                        <span>Tax Amount</span>
+                        <span>{t('taxAmount')}</span>
                         <span>-${preview.taxAmount.toFixed(2)}</span>
                       </div>
                       <div className="border-t border-[#2a1a4e] pt-3 flex justify-between font-semibold">
-                        <span className="text-white">You Receive</span>
+                        <span className="text-white">{t('youReceive')}</span>
                         <span className="text-green-400 text-lg">
                           {preview.usdtAmount.toFixed(2)} USDT
                         </span>
@@ -976,11 +963,10 @@ export default function CashPage() {
                     <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
                     <div>
                       <h4 className="font-medium text-green-400 mb-2">
-                        Instant Withdrawal
+                        {t('instantWithdrawal')}
                       </h4>
                       <p className="text-sm text-gray-400">
-                        USDT will be sent directly to your address. No wallet
-                        connection required!
+                        {t('instantDescription')}
                       </p>
                     </div>
                   </div>
@@ -1001,12 +987,12 @@ export default function CashPage() {
                   {isWithdrawProcessing ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Sending...
+                      {t('sending')}
                     </span>
                   ) : preview ? (
-                    `Withdraw $${withdrawAmount} → ${preview.usdtAmount.toFixed(2)} USDT`
+                    t('withdrawButton', { amount: withdrawAmount, usdt: preview.usdtAmount.toFixed(2) })
                   ) : (
-                    'Enter Amount'
+                    t('enterAmount')
                   )}
                 </button>
               </div>
@@ -1016,7 +1002,7 @@ export default function CashPage() {
             {withdrawals.length > 0 && (
               <div className="mt-8">
                 <h2 className="text-lg font-semibold text-white mb-4">
-                  Recent Withdrawals
+                  {t('recentWithdrawals')}
                 </h2>
                 <div className="bg-[#1a0a2e] rounded-2xl border border-[#ff2d95]/10 overflow-hidden">
                   {withdrawals.slice(0, 5).map((withdrawal, index) => (
