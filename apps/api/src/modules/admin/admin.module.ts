@@ -11,6 +11,12 @@ import { AdminSettingsController } from './admin-settings/admin-settings.control
 import { AdminSettingsService } from './admin-settings/admin-settings.service';
 import { AdminUsersController } from './admin-users/admin-users.controller';
 import { AdminUsersService } from './admin-users/admin-users.service';
+import { AdminWithdrawalsController } from './admin-withdrawals/admin-withdrawals.controller';
+import { AdminWithdrawalsService } from './admin-withdrawals/admin-withdrawals.service';
+import { AdminDepositsController } from './admin-deposits/admin-deposits.controller';
+import { AdminDepositsService } from './admin-deposits/admin-deposits.service';
+import { AdminAuditController } from './admin-audit/admin-audit.controller';
+import { AdminAuditService } from './admin-audit/admin-audit.service';
 import { AdminJwtGuard } from './guards/admin-jwt.guard';
 import { PrismaModule } from '../prisma/prisma.module';
 import { MachinesModule } from '../machines/machines.module';
@@ -28,6 +34,9 @@ import { MachinesModule } from '../machines/machines.module';
     AdminTiersController,
     AdminSettingsController,
     AdminUsersController,
+    AdminWithdrawalsController,
+    AdminDepositsController,
+    AdminAuditController,
   ],
   providers: [
     AdminAuthService,
@@ -35,6 +44,9 @@ import { MachinesModule } from '../machines/machines.module';
     AdminTiersService,
     AdminSettingsService,
     AdminUsersService,
+    AdminWithdrawalsService,
+    AdminDepositsService,
+    AdminAuditService,
     AdminJwtGuard,
   ],
   exports: [AdminAuthService, AdminJwtGuard],

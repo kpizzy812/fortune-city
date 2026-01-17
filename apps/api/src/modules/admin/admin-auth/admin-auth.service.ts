@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as crypto from 'crypto';
@@ -31,7 +27,10 @@ export class AdminAuthService {
     this.jwtSecret = this.configService.getOrThrow<string>('ADMIN_JWT_SECRET');
 
     // Parse duration string to milliseconds (default 8h)
-    const expiresIn = this.configService.get<string>('ADMIN_JWT_EXPIRES_IN', '8h');
+    const expiresIn = this.configService.get<string>(
+      'ADMIN_JWT_EXPIRES_IN',
+      '8h',
+    );
     this.jwtExpiresInMs = this.parseDuration(expiresIn);
   }
 
@@ -46,11 +45,16 @@ export class AdminAuthService {
     const unit = match[2];
 
     switch (unit) {
-      case 's': return value;
-      case 'm': return value * 60;
-      case 'h': return value * 60 * 60;
-      case 'd': return value * 24 * 60 * 60;
-      default: return 8 * 60 * 60;
+      case 's':
+        return value;
+      case 'm':
+        return value * 60;
+      case 'h':
+        return value * 60 * 60;
+      case 'd':
+        return value * 24 * 60 * 60;
+      default:
+        return 8 * 60 * 60;
     }
   }
 

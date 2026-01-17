@@ -121,12 +121,39 @@
 
 ---
 
-## Phase 5: Финансы и аудит (PENDING)
+## Phase 5: Финансы и аудит (IN PROGRESS)
 
-- [ ] Управление выводами (approve/reject)
-- [ ] Управление депозитами
-- [ ] Audit log UI
+### 5.1 Backend
+- [x] admin-withdrawals.controller.ts - GET list, GET by id, POST approve, POST complete, POST reject
+- [x] admin-withdrawals.service.ts - фильтрация, статистика, approve/complete/reject workflow
+- [x] dto/withdrawal.dto.ts - WithdrawalsFilterDto, action DTOs, response types
+- [x] admin-deposits.controller.ts - GET list, GET by id, POST manual-credit, POST retry
+- [x] admin-deposits.service.ts - фильтрация, статистика, manual credit, retry processing
+- [x] dto/deposit.dto.ts - DepositsFilterDto, action DTOs, response types
+- [x] admin-audit.controller.ts - GET logs, GET stats
+- [x] admin-audit.service.ts - фильтрация, статистика по action types
+- [x] dto/audit.dto.ts - AuditFilterDto, response types
+- [x] Подключение к admin.module.ts
+
+### 5.2 Frontend UI
+- [x] /admin/withdrawals - страница управления выводами
+- [x] WithdrawalsTable.tsx - таблица с поиском, фильтрами, статистикой
+- [x] WithdrawalDetailModal.tsx - детальный просмотр, approve/complete/reject actions
+- [x] /admin/deposits - страница управления депозитами
+- [x] DepositsTable.tsx - таблица с поиском, фильтрами, статистикой
+- [x] DepositDetailModal.tsx - детальный просмотр, manual credit, retry
+- [x] /admin/audit - страница аудит лога
+- [x] AuditTable.tsx - таблица с фильтрами, статистикой по типам
+
+### 5.3 Zustand Stores
+- [x] admin-withdrawals.store.ts
+- [x] admin-deposits.store.ts
+- [x] admin-audit.store.ts
+
+### 5.4 Pending
 - [ ] Dashboard статистика с графиками
+
+**Build Status:** API и Web собираются успешно
 
 ---
 

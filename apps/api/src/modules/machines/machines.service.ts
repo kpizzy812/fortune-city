@@ -441,8 +441,12 @@ export class MachinesService {
       price: tierConfig.price,
       lifespanDays: tierConfig.lifespanDays,
       yieldPercent: tierConfig.yieldPercent,
-      profit: Math.round(tierConfig.price * (tierConfig.yieldPercent / 100) - tierConfig.price),
-      dailyRate: +(tierConfig.yieldPercent / tierConfig.lifespanDays).toFixed(2),
+      profit: Math.round(
+        tierConfig.price * (tierConfig.yieldPercent / 100) - tierConfig.price,
+      ),
+      dailyRate: +(tierConfig.yieldPercent / tierConfig.lifespanDays).toFixed(
+        2,
+      ),
     };
   }
 

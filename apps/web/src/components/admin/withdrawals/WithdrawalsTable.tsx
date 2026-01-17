@@ -7,23 +7,25 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
-  Ban,
+  Clock,
   CheckCircle,
+  XCircle,
+  Loader2,
   Eye,
   ArrowUpDown,
   Filter,
   X,
 } from 'lucide-react';
-import { useAdminUsersStore } from '@/stores/admin/admin-users.store';
-import type { AdminUserListItem, UserSortField } from '@/lib/api';
+import { useAdminWithdrawalsStore } from '@/stores/admin/admin-withdrawals.store';
+import type { AdminWithdrawalListItem, WithdrawalSortField, WithdrawalStatusFilter } from '@/lib/api';
 
-interface UsersTableProps {
-  onViewUser: (userId: string) => void;
+interface WithdrawalsTableProps {
+  onViewWithdrawal: (id: string) => void;
 }
 
-export function UsersTable({ onViewUser }: UsersTableProps) {
+export function WithdrawalsTable({ onViewWithdrawal }: WithdrawalsTableProps) {
   const {
-    users,
+    withdrawals,
     stats,
     total,
     limit,
@@ -31,87 +33,135 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
     filters,
     isLoading,
     error,
-    fetchUsers,
+    fetchWithdrawals,
     fetchStats,
     setSearch,
-    setIsBanned,
+    setStatus,
     setSortBy,
     setSortOrder,
     setPage,
     resetFilters,
     clearError,
-  } = useAdminUsersStore();
+  } = useAdminWithdrawalsStore();
 
   const [searchInput, setSearchInput] = useState(filters.search || '');
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    fetchUsers();
+    fetchWithdrawals();
     fetchStats();
-  }, [fetchUsers, fetchStats]);
+  }, [fetchWithdrawals, fetchStats]);
 
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchInput !== filters.search) {
         setSearch(searchInput);
-        fetchUsers(true);
+        fetchWithdrawals(true);
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchInput, filters.search, setSearch, fetchUsers]);
+  }, [searchInput, filters.search, setSearch, fetchWithdrawals]);
 
-  const handleSort = useCallback((field: UserSortField) => {
+  const handleSort = useCallback((field: WithdrawalSortField) => {
     if (filters.sortBy === field) {
       setSortOrder(filters.sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortBy(field);
       setSortOrder('desc');
     }
-    fetchUsers(true);
-  }, [filters.sortBy, filters.sortOrder, setSortBy, setSortOrder, fetchUsers]);
+    fetchWithdrawals(true);
+  }, [filters.sortBy, filters.sortOrder, setSortBy, setSortOrder, fetchWithdrawals]);
 
-  const handleBannedFilter = useCallback((value: string) => {
-    const isBanned = value === 'banned' ? true : value === 'active' ? false : undefined;
-    setIsBanned(isBanned);
-    fetchUsers(true);
-  }, [setIsBanned, fetchUsers]);
+  const handleStatusFilter = useCallback((value: WithdrawalStatusFilter) => {
+    setStatus(value);
+    fetchWithdrawals(true);
+  }, [setStatus, fetchWithdrawals]);
 
   const handleResetFilters = useCallback(() => {
     setSearchInput('');
     resetFilters();
-    fetchUsers(true);
-  }, [resetFilters, fetchUsers]);
+    fetchWithdrawals(true);
+  }, [resetFilters, fetchWithdrawals]);
 
   const currentPage = Math.floor(offset / limit);
   const totalPages = Math.ceil(total / limit);
 
-  const formatBalance = (balance: number) => {
-    return balance.toLocaleString('en-US', {
+  const formatAmount = (amount: number) => {
+    return amount.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('ru-RU', {
+    return new Date(dateStr).toLocaleString('ru-RU', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
-  const getUserDisplayName = (user: AdminUserListItem) => {
-    if (user.username) return `@${user.username}`;
-    if (user.firstName) {
-      return user.lastName
-        ? `${user.firstName} ${user.lastName}`
-        : user.firstName;
-    }
-    return `ID: ${user.telegramId}`;
+  const truncateAddress = (address: string) => {
+    if (address.length <= 16) return address;
+    return `${address.slice(0, 8)}...${address.slice(-8)}`;
   };
 
-  const renderSortButton = (field: UserSortField, label: string) => (
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-500/10 text-yellow-400 rounded text-xs font-medium">
+            <Clock className="w-3 h-3" />
+            Pending
+          </span>
+        );
+      case 'processing':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-xs font-medium">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Processing
+          </span>
+        );
+      case 'completed':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/10 text-green-400 rounded text-xs font-medium">
+            <CheckCircle className="w-3 h-3" />
+            Completed
+          </span>
+        );
+      case 'failed':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-400 rounded text-xs font-medium">
+            <XCircle className="w-3 h-3" />
+            Failed
+          </span>
+        );
+      case 'cancelled':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-500/10 text-slate-400 rounded text-xs font-medium">
+            <XCircle className="w-3 h-3" />
+            Cancelled
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-500/10 text-slate-400 rounded text-xs font-medium">
+            {status}
+          </span>
+        );
+    }
+  };
+
+  const getUserDisplayName = (withdrawal: AdminWithdrawalListItem) => {
+    if (withdrawal.user.username) return `@${withdrawal.user.username}`;
+    if (withdrawal.user.firstName) return withdrawal.user.firstName;
+    return `ID: ${withdrawal.user.telegramId}`;
+  };
+
+  const renderSortButton = (field: WithdrawalSortField, label: string) => (
     <button
       onClick={() => handleSort(field)}
       className="flex items-center gap-1 hover:text-white transition-colors"
@@ -123,7 +173,7 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
     </button>
   );
 
-  if (isLoading && users.length === 0) {
+  if (isLoading && withdrawals.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-amber-500" />
@@ -137,17 +187,21 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-wrap">
           {stats && (
-            <div className="flex items-center gap-3 text-sm">
+            <div className="flex items-center gap-3 text-sm flex-wrap">
               <span className="text-slate-400">
-                Total: <span className="text-white font-medium">{stats.totalUsers}</span>
+                Total: <span className="text-white font-medium">{stats.totalWithdrawals}</span>
               </span>
               <span className="text-slate-600">|</span>
               <span className="text-slate-400">
-                Active: <span className="text-green-400 font-medium">{stats.activeUsers}</span>
+                Pending: <span className="text-yellow-400 font-medium">{stats.pendingCount}</span>
               </span>
               <span className="text-slate-600">|</span>
               <span className="text-slate-400">
-                Banned: <span className="text-red-400 font-medium">{stats.bannedUsers}</span>
+                Processing: <span className="text-blue-400 font-medium">{stats.processingCount}</span>
+              </span>
+              <span className="text-slate-600">|</span>
+              <span className="text-slate-400">
+                Completed: <span className="text-green-400 font-medium">{stats.completedCount}</span>
               </span>
             </div>
           )}
@@ -171,7 +225,7 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
 
           <button
             onClick={() => {
-              fetchUsers();
+              fetchWithdrawals();
               fetchStats();
             }}
             disabled={isLoading}
@@ -199,7 +253,7 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search by username, name, telegram ID, or referral code..."
+            placeholder="Search by wallet address, tx signature, user..."
             className="
               w-full pl-10 pr-4 py-3
               bg-slate-800 border border-slate-700
@@ -224,8 +278,8 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
             <div className="flex items-center gap-2">
               <label className="text-sm text-slate-400">Status:</label>
               <select
-                value={filters.isBanned === true ? 'banned' : filters.isBanned === false ? 'active' : 'all'}
-                onChange={(e) => handleBannedFilter(e.target.value)}
+                value={filters.status || 'all'}
+                onChange={(e) => handleStatusFilter(e.target.value as WithdrawalStatusFilter)}
                 className="
                   px-3 py-1.5 bg-slate-700 border border-slate-600
                   rounded text-white text-sm
@@ -233,8 +287,11 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
                 "
               >
                 <option value="all">All</option>
-                <option value="active">Active</option>
-                <option value="banned">Banned</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             </div>
 
@@ -278,22 +335,19 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
                   User
                 </th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  {renderSortButton('fortuneBalance', 'Balance')}
+                  {renderSortButton('requestedAmount', 'Requested')}
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  {renderSortButton('maxTierReached', 'Tier')}
+                <th className="text-right px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  {renderSortButton('netAmount', 'Net')}
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Machines
-                </th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Referrals
+                <th className="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Wallet
                 </th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  {renderSortButton('createdAt', 'Joined')}
+                  {renderSortButton('createdAt', 'Date')}
                 </th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Actions
@@ -301,83 +355,64 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700">
-              {users.length === 0 ? (
+              {withdrawals.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
-                    No users found
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
+                    No withdrawals found
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                withdrawals.map((withdrawal) => (
                   <tr
-                    key={user.id}
-                    className={`
-                      hover:bg-slate-800/50 transition-colors cursor-pointer
-                      ${user.isBanned ? 'opacity-60' : ''}
-                    `}
-                    onClick={() => onViewUser(user.id)}
+                    key={withdrawal.id}
+                    className="hover:bg-slate-800/50 transition-colors cursor-pointer"
+                    onClick={() => onViewWithdrawal(withdrawal.id)}
                   >
                     <td className="px-4 py-4">
                       <div className="flex flex-col">
                         <span className="text-white font-medium">
-                          {getUserDisplayName(user)}
+                          {getUserDisplayName(withdrawal)}
                         </span>
                         <span className="text-xs text-slate-500">
-                          {user.referralCode}
+                          {withdrawal.method}
                         </span>
                       </div>
                     </td>
                     <td className="px-4 py-4 text-right">
                       <span className="text-amber-400 font-medium">
-                        ${formatBalance(user.fortuneBalance)}
+                        ${formatAmount(withdrawal.requestedAmount)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <div className="flex flex-col items-end">
+                        <span className="text-green-400 font-medium">
+                          ${formatAmount(withdrawal.netAmount)}
+                        </span>
+                        {withdrawal.taxAmount > 0 && (
+                          <span className="text-xs text-slate-500">
+                            Tax: ${formatAmount(withdrawal.taxAmount)}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-slate-300 font-mono text-sm">
+                        {truncateAddress(withdrawal.walletAddress)}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-center">
-                      <span className="
-                        inline-flex items-center justify-center
-                        w-8 h-8 rounded-full
-                        bg-slate-700 text-white font-medium
-                      ">
-                        {user.maxTierReached}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <span className="text-slate-300">{user.machinesCount}</span>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <span className="text-slate-300">{user.referralsCount}</span>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      {user.isBanned ? (
-                        <span className="
-                          inline-flex items-center gap-1 px-2 py-1
-                          bg-red-500/10 text-red-400
-                          rounded text-xs font-medium
-                        ">
-                          <Ban className="w-3 h-3" />
-                          Banned
-                        </span>
-                      ) : (
-                        <span className="
-                          inline-flex items-center gap-1 px-2 py-1
-                          bg-green-500/10 text-green-400
-                          rounded text-xs font-medium
-                        ">
-                          <CheckCircle className="w-3 h-3" />
-                          Active
-                        </span>
-                      )}
+                      {getStatusBadge(withdrawal.status)}
                     </td>
                     <td className="px-4 py-4 text-center">
                       <span className="text-slate-400 text-sm">
-                        {formatDate(user.createdAt)}
+                        {formatDate(withdrawal.createdAt)}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-right">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onViewUser(user.id);
+                          onViewWithdrawal(withdrawal.id);
                         }}
                         className="
                           p-2 rounded-lg
@@ -402,14 +437,14 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-slate-400">
-            Showing {offset + 1}-{Math.min(offset + limit, total)} of {total} users
+            Showing {offset + 1}-{Math.min(offset + limit, total)} of {total} withdrawals
           </p>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
                 setPage(currentPage - 1);
-                fetchUsers();
+                fetchWithdrawals();
               }}
               disabled={currentPage === 0 || isLoading}
               className="
@@ -431,7 +466,7 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
             <button
               onClick={() => {
                 setPage(currentPage + 1);
-                fetchUsers();
+                fetchWithdrawals();
               }}
               disabled={currentPage >= totalPages - 1 || isLoading}
               className="

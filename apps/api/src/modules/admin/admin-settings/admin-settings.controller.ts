@@ -10,10 +10,7 @@ import {
 } from '@nestjs/common';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminSettingsService } from './admin-settings.service';
-import {
-  UpdateAllSettingsDto,
-  SettingsResponse,
-} from './dto/settings.dto';
+import { UpdateAllSettingsDto, SettingsResponse } from './dto/settings.dto';
 
 @Controller('admin/settings')
 @UseGuards(AdminJwtGuard)

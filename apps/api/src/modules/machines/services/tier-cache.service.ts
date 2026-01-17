@@ -35,7 +35,9 @@ export class TierCacheService implements OnModuleInit {
   async onModuleInit() {
     await this.loadTiersFromDB();
     this.isInitialized = true;
-    this.logger.log(`TierCacheService initialized with ${this.tiersCache.size} tiers`);
+    this.logger.log(
+      `TierCacheService initialized with ${this.tiersCache.size} tiers`,
+    );
   }
 
   /**
@@ -121,7 +123,9 @@ export class TierCacheService implements OnModuleInit {
    */
   getAllTiers(includeHidden = false): TierConfigData[] {
     if (!this.isInitialized) {
-      this.logger.warn('TierCacheService not initialized, returning empty array');
+      this.logger.warn(
+        'TierCacheService not initialized, returning empty array',
+      );
       return [];
     }
 

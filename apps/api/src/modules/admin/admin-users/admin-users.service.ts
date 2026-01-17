@@ -55,11 +55,17 @@ export class AdminUsersService {
     }
 
     if (minTier !== undefined) {
-      where.maxTierReached = { ...where.maxTierReached as object, gte: minTier };
+      where.maxTierReached = {
+        ...(where.maxTierReached as object),
+        gte: minTier,
+      };
     }
 
     if (maxTier !== undefined) {
-      where.maxTierReached = { ...where.maxTierReached as object, lte: maxTier };
+      where.maxTierReached = {
+        ...(where.maxTierReached as object),
+        lte: maxTier,
+      };
     }
 
     // Build orderBy
@@ -129,10 +135,7 @@ export class AdminUsersService {
   /**
    * Ban a user
    */
-  async banUser(
-    userId: string,
-    reason: string,
-  ): Promise<UserDetailResponse> {
+  async banUser(userId: string, reason: string): Promise<UserDetailResponse> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -166,7 +169,13 @@ export class AdminUsersService {
     });
 
     // Log action
-    await this.logAction('user_banned', 'user', userId, { isBanned: false }, { isBanned: true, reason });
+    await this.logAction(
+      'user_banned',
+      'user',
+      userId,
+      { isBanned: false },
+      { isBanned: true, reason },
+    );
 
     const stats = await this.getUserStats(userId);
     return this.formatUserDetail(updated, stats);
@@ -209,7 +218,13 @@ export class AdminUsersService {
     });
 
     // Log action
-    await this.logAction('user_unbanned', 'user', userId, { isBanned: true }, { isBanned: false, note });
+    await this.logAction(
+      'user_unbanned',
+      'user',
+      userId,
+      { isBanned: true },
+      { isBanned: false, note },
+    );
 
     const stats = await this.getUserStats(userId);
     return this.formatUserDetail(updated, stats);

@@ -7,23 +7,24 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
-  Ban,
+  Clock,
   CheckCircle,
+  XCircle,
   Eye,
   ArrowUpDown,
   Filter,
   X,
 } from 'lucide-react';
-import { useAdminUsersStore } from '@/stores/admin/admin-users.store';
-import type { AdminUserListItem, UserSortField } from '@/lib/api';
+import { useAdminDepositsStore } from '@/stores/admin/admin-deposits.store';
+import type { AdminDepositListItem, DepositSortField, DepositStatusFilter } from '@/lib/api';
 
-interface UsersTableProps {
-  onViewUser: (userId: string) => void;
+interface DepositsTableProps {
+  onViewDeposit: (id: string) => void;
 }
 
-export function UsersTable({ onViewUser }: UsersTableProps) {
+export function DepositsTable({ onViewDeposit }: DepositsTableProps) {
   const {
-    users,
+    deposits,
     stats,
     total,
     limit,
@@ -31,87 +32,147 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
     filters,
     isLoading,
     error,
-    fetchUsers,
+    fetchDeposits,
     fetchStats,
     setSearch,
-    setIsBanned,
+    setStatus,
+    setCurrency,
     setSortBy,
     setSortOrder,
     setPage,
     resetFilters,
     clearError,
-  } = useAdminUsersStore();
+  } = useAdminDepositsStore();
 
   const [searchInput, setSearchInput] = useState(filters.search || '');
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    fetchUsers();
+    fetchDeposits();
     fetchStats();
-  }, [fetchUsers, fetchStats]);
+  }, [fetchDeposits, fetchStats]);
 
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchInput !== filters.search) {
         setSearch(searchInput);
-        fetchUsers(true);
+        fetchDeposits(true);
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchInput, filters.search, setSearch, fetchUsers]);
+  }, [searchInput, filters.search, setSearch, fetchDeposits]);
 
-  const handleSort = useCallback((field: UserSortField) => {
+  const handleSort = useCallback((field: DepositSortField) => {
     if (filters.sortBy === field) {
       setSortOrder(filters.sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortBy(field);
       setSortOrder('desc');
     }
-    fetchUsers(true);
-  }, [filters.sortBy, filters.sortOrder, setSortBy, setSortOrder, fetchUsers]);
+    fetchDeposits(true);
+  }, [filters.sortBy, filters.sortOrder, setSortBy, setSortOrder, fetchDeposits]);
 
-  const handleBannedFilter = useCallback((value: string) => {
-    const isBanned = value === 'banned' ? true : value === 'active' ? false : undefined;
-    setIsBanned(isBanned);
-    fetchUsers(true);
-  }, [setIsBanned, fetchUsers]);
+  const handleStatusFilter = useCallback((value: DepositStatusFilter) => {
+    setStatus(value);
+    fetchDeposits(true);
+  }, [setStatus, fetchDeposits]);
+
+  const handleCurrencyFilter = useCallback((value: string) => {
+    setCurrency(value || undefined);
+    fetchDeposits(true);
+  }, [setCurrency, fetchDeposits]);
 
   const handleResetFilters = useCallback(() => {
     setSearchInput('');
     resetFilters();
-    fetchUsers(true);
-  }, [resetFilters, fetchUsers]);
+    fetchDeposits(true);
+  }, [resetFilters, fetchDeposits]);
 
   const currentPage = Math.floor(offset / limit);
   const totalPages = Math.ceil(total / limit);
 
-  const formatBalance = (balance: number) => {
-    return balance.toLocaleString('en-US', {
+  const formatAmount = (amount: number) => {
+    return amount.toLocaleString('en-US', {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      maximumFractionDigits: 8,
     });
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('ru-RU', {
+    return new Date(dateStr).toLocaleString('ru-RU', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
-  const getUserDisplayName = (user: AdminUserListItem) => {
-    if (user.username) return `@${user.username}`;
-    if (user.firstName) {
-      return user.lastName
-        ? `${user.firstName} ${user.lastName}`
-        : user.firstName;
-    }
-    return `ID: ${user.telegramId}`;
+  const truncateSignature = (sig: string) => {
+    if (sig.length <= 16) return sig;
+    return `${sig.slice(0, 8)}...${sig.slice(-8)}`;
   };
 
-  const renderSortButton = (field: UserSortField, label: string) => (
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-500/10 text-yellow-400 rounded text-xs font-medium">
+            <Clock className="w-3 h-3" />
+            Pending
+          </span>
+        );
+      case 'confirmed':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/10 text-blue-400 rounded text-xs font-medium">
+            <CheckCircle className="w-3 h-3" />
+            Confirmed
+          </span>
+        );
+      case 'credited':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/10 text-green-400 rounded text-xs font-medium">
+            <CheckCircle className="w-3 h-3" />
+            Credited
+          </span>
+        );
+      case 'failed':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-500/10 text-red-400 rounded text-xs font-medium">
+            <XCircle className="w-3 h-3" />
+            Failed
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-500/10 text-slate-400 rounded text-xs font-medium">
+            {status}
+          </span>
+        );
+    }
+  };
+
+  const getCurrencyLabel = (currency: string) => {
+    switch (currency) {
+      case 'SOL':
+        return <span className="text-purple-400">SOL</span>;
+      case 'USDT_SOL':
+        return <span className="text-green-400">USDT</span>;
+      case 'FORTUNE':
+        return <span className="text-amber-400">FORTUNE</span>;
+      default:
+        return <span className="text-slate-400">{currency}</span>;
+    }
+  };
+
+  const getUserDisplayName = (deposit: AdminDepositListItem) => {
+    if (deposit.user.username) return `@${deposit.user.username}`;
+    if (deposit.user.firstName) return deposit.user.firstName;
+    return `ID: ${deposit.user.telegramId}`;
+  };
+
+  const renderSortButton = (field: DepositSortField, label: string) => (
     <button
       onClick={() => handleSort(field)}
       className="flex items-center gap-1 hover:text-white transition-colors"
@@ -123,7 +184,7 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
     </button>
   );
 
-  if (isLoading && users.length === 0) {
+  if (isLoading && deposits.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-amber-500" />
@@ -137,17 +198,21 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-wrap">
           {stats && (
-            <div className="flex items-center gap-3 text-sm">
+            <div className="flex items-center gap-3 text-sm flex-wrap">
               <span className="text-slate-400">
-                Total: <span className="text-white font-medium">{stats.totalUsers}</span>
+                Total: <span className="text-white font-medium">{stats.totalDeposits}</span>
               </span>
               <span className="text-slate-600">|</span>
               <span className="text-slate-400">
-                Active: <span className="text-green-400 font-medium">{stats.activeUsers}</span>
+                Pending: <span className="text-yellow-400 font-medium">{stats.pendingCount}</span>
               </span>
               <span className="text-slate-600">|</span>
               <span className="text-slate-400">
-                Banned: <span className="text-red-400 font-medium">{stats.bannedUsers}</span>
+                Credited: <span className="text-green-400 font-medium">{stats.creditedCount}</span>
+              </span>
+              <span className="text-slate-600">|</span>
+              <span className="text-slate-400">
+                Total USD: <span className="text-amber-400 font-medium">${formatAmount(stats.totalAmountUsd)}</span>
               </span>
             </div>
           )}
@@ -171,7 +236,7 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
 
           <button
             onClick={() => {
-              fetchUsers();
+              fetchDeposits();
               fetchStats();
             }}
             disabled={isLoading}
@@ -199,7 +264,7 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search by username, name, telegram ID, or referral code..."
+            placeholder="Search by tx signature, memo, user..."
             className="
               w-full pl-10 pr-4 py-3
               bg-slate-800 border border-slate-700
@@ -224,8 +289,8 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
             <div className="flex items-center gap-2">
               <label className="text-sm text-slate-400">Status:</label>
               <select
-                value={filters.isBanned === true ? 'banned' : filters.isBanned === false ? 'active' : 'all'}
-                onChange={(e) => handleBannedFilter(e.target.value)}
+                value={filters.status || 'all'}
+                onChange={(e) => handleStatusFilter(e.target.value as DepositStatusFilter)}
                 className="
                   px-3 py-1.5 bg-slate-700 border border-slate-600
                   rounded text-white text-sm
@@ -233,8 +298,28 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
                 "
               >
                 <option value="all">All</option>
-                <option value="active">Active</option>
-                <option value="banned">Banned</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="credited">Credited</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-slate-400">Currency:</label>
+              <select
+                value={filters.currency || ''}
+                onChange={(e) => handleCurrencyFilter(e.target.value)}
+                className="
+                  px-3 py-1.5 bg-slate-700 border border-slate-600
+                  rounded text-white text-sm
+                  focus:outline-none focus:border-amber-500
+                "
+              >
+                <option value="">All</option>
+                <option value="SOL">SOL</option>
+                <option value="USDT_SOL">USDT</option>
+                <option value="FORTUNE">FORTUNE</option>
               </select>
             </div>
 
@@ -277,23 +362,23 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
                 <th className="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
                   User
                 </th>
+                <th className="text-center px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Currency
+                </th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  {renderSortButton('fortuneBalance', 'Balance')}
+                  {renderSortButton('amount', 'Amount')}
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  {renderSortButton('maxTierReached', 'Tier')}
+                <th className="text-right px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  {renderSortButton('amountUsd', 'USD')}
                 </th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Machines
-                </th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  Referrals
+                <th className="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  TX Signature
                 </th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
-                  {renderSortButton('createdAt', 'Joined')}
+                  {renderSortButton('createdAt', 'Date')}
                 </th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Actions
@@ -301,83 +386,60 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700">
-              {users.length === 0 ? (
+              {deposits.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
-                    No users found
+                    No deposits found
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                deposits.map((deposit) => (
                   <tr
-                    key={user.id}
-                    className={`
-                      hover:bg-slate-800/50 transition-colors cursor-pointer
-                      ${user.isBanned ? 'opacity-60' : ''}
-                    `}
-                    onClick={() => onViewUser(user.id)}
+                    key={deposit.id}
+                    className="hover:bg-slate-800/50 transition-colors cursor-pointer"
+                    onClick={() => onViewDeposit(deposit.id)}
                   >
                     <td className="px-4 py-4">
                       <div className="flex flex-col">
                         <span className="text-white font-medium">
-                          {getUserDisplayName(user)}
+                          {getUserDisplayName(deposit)}
                         </span>
                         <span className="text-xs text-slate-500">
-                          {user.referralCode}
+                          {deposit.method}
                         </span>
                       </div>
                     </td>
+                    <td className="px-4 py-4 text-center">
+                      {getCurrencyLabel(deposit.currency)}
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <span className="text-white font-medium">
+                        {formatAmount(deposit.amount)}
+                      </span>
+                    </td>
                     <td className="px-4 py-4 text-right">
                       <span className="text-amber-400 font-medium">
-                        ${formatBalance(user.fortuneBalance)}
+                        ${formatAmount(deposit.amountUsd)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-slate-300 font-mono text-sm">
+                        {truncateSignature(deposit.txSignature)}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-center">
-                      <span className="
-                        inline-flex items-center justify-center
-                        w-8 h-8 rounded-full
-                        bg-slate-700 text-white font-medium
-                      ">
-                        {user.maxTierReached}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <span className="text-slate-300">{user.machinesCount}</span>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <span className="text-slate-300">{user.referralsCount}</span>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      {user.isBanned ? (
-                        <span className="
-                          inline-flex items-center gap-1 px-2 py-1
-                          bg-red-500/10 text-red-400
-                          rounded text-xs font-medium
-                        ">
-                          <Ban className="w-3 h-3" />
-                          Banned
-                        </span>
-                      ) : (
-                        <span className="
-                          inline-flex items-center gap-1 px-2 py-1
-                          bg-green-500/10 text-green-400
-                          rounded text-xs font-medium
-                        ">
-                          <CheckCircle className="w-3 h-3" />
-                          Active
-                        </span>
-                      )}
+                      {getStatusBadge(deposit.status)}
                     </td>
                     <td className="px-4 py-4 text-center">
                       <span className="text-slate-400 text-sm">
-                        {formatDate(user.createdAt)}
+                        {formatDate(deposit.createdAt)}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-right">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onViewUser(user.id);
+                          onViewDeposit(deposit.id);
                         }}
                         className="
                           p-2 rounded-lg
@@ -402,14 +464,14 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-slate-400">
-            Showing {offset + 1}-{Math.min(offset + limit, total)} of {total} users
+            Showing {offset + 1}-{Math.min(offset + limit, total)} of {total} deposits
           </p>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
                 setPage(currentPage - 1);
-                fetchUsers();
+                fetchDeposits();
               }}
               disabled={currentPage === 0 || isLoading}
               className="
@@ -431,7 +493,7 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
             <button
               onClick={() => {
                 setPage(currentPage + 1);
-                fetchUsers();
+                fetchDeposits();
               }}
               disabled={currentPage >= totalPages - 1 || isLoading}
               className="

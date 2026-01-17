@@ -5,11 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TierCacheService } from '../../machines/services/tier-cache.service';
-import {
-  CreateTierDto,
-  UpdateTierDto,
-  TierResponse,
-} from './dto/tier.dto';
+import { CreateTierDto, UpdateTierDto, TierResponse } from './dto/tier.dto';
 import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
@@ -103,8 +99,12 @@ export class AdminTiersService {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.emoji !== undefined && { emoji: dto.emoji }),
         ...(dto.price !== undefined && { price: dto.price }),
-        ...(dto.lifespanDays !== undefined && { lifespanDays: dto.lifespanDays }),
-        ...(dto.yieldPercent !== undefined && { yieldPercent: dto.yieldPercent }),
+        ...(dto.lifespanDays !== undefined && {
+          lifespanDays: dto.lifespanDays,
+        }),
+        ...(dto.yieldPercent !== undefined && {
+          yieldPercent: dto.yieldPercent,
+        }),
         ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
         ...(dto.isVisible !== undefined && { isVisible: dto.isVisible }),
         ...(dto.isPubliclyAvailable !== undefined && {
@@ -132,7 +132,9 @@ export class AdminTiersService {
   /**
    * Delete a tier (soft delete by hiding, or hard delete if no machines use it)
    */
-  async deleteTier(tierNumber: number): Promise<{ success: boolean; message: string }> {
+  async deleteTier(
+    tierNumber: number,
+  ): Promise<{ success: boolean; message: string }> {
     const existing = await this.prisma.tierConfig.findUnique({
       where: { tier: tierNumber },
     });
@@ -175,7 +177,13 @@ export class AdminTiersService {
       where: { tier: tierNumber },
     });
 
-    await this.logAction('tier_deleted', 'tier', String(tierNumber), existing, null);
+    await this.logAction(
+      'tier_deleted',
+      'tier',
+      String(tierNumber),
+      existing,
+      null,
+    );
 
     // Invalidate cache immediately
     await this.tierCacheService.invalidateCache();

@@ -7,7 +7,6 @@ import {
   CheckCircle,
   User,
   Wallet,
-  Calendar,
   Link2,
   AlertTriangle,
   Network,

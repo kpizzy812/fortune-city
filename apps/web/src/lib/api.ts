@@ -681,6 +681,200 @@ class ApiClient {
       body: JSON.stringify({ note }),
     });
   }
+
+  // ============================================
+  // Admin Withdrawals endpoints
+  // ============================================
+
+  /**
+   * Get paginated list of withdrawals with filters
+   */
+  async adminGetWithdrawals(
+    token: string,
+    filters?: AdminWithdrawalsFilter,
+  ): Promise<AdminWithdrawalsListResponse> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          params.append(key, String(value));
+        }
+      });
+    }
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request<AdminWithdrawalsListResponse>(`/admin/withdrawals${query}`, { token });
+  }
+
+  /**
+   * Get withdrawals statistics
+   */
+  async adminGetWithdrawalsStats(token: string): Promise<AdminWithdrawalsStatsResponse> {
+    return this.request<AdminWithdrawalsStatsResponse>('/admin/withdrawals/stats', { token });
+  }
+
+  /**
+   * Get detailed withdrawal information
+   */
+  async adminGetWithdrawal(token: string, id: string): Promise<AdminWithdrawalDetail> {
+    return this.request<AdminWithdrawalDetail>(`/admin/withdrawals/${id}`, { token });
+  }
+
+  /**
+   * Approve a pending withdrawal
+   */
+  async adminApproveWithdrawal(
+    token: string,
+    id: string,
+    note?: string,
+  ): Promise<AdminWithdrawalDetail> {
+    return this.request<AdminWithdrawalDetail>(`/admin/withdrawals/${id}/approve`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ note }),
+    });
+  }
+
+  /**
+   * Complete a withdrawal with tx signature
+   */
+  async adminCompleteWithdrawal(
+    token: string,
+    id: string,
+    txSignature: string,
+    note?: string,
+  ): Promise<AdminWithdrawalDetail> {
+    return this.request<AdminWithdrawalDetail>(`/admin/withdrawals/${id}/complete`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ txSignature, note }),
+    });
+  }
+
+  /**
+   * Reject a withdrawal
+   */
+  async adminRejectWithdrawal(
+    token: string,
+    id: string,
+    reason: string,
+  ): Promise<AdminWithdrawalDetail> {
+    return this.request<AdminWithdrawalDetail>(`/admin/withdrawals/${id}/reject`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  // ============================================
+  // Admin Deposits endpoints
+  // ============================================
+
+  /**
+   * Get paginated list of deposits with filters
+   */
+  async adminGetDeposits(
+    token: string,
+    filters?: AdminDepositsFilter,
+  ): Promise<AdminDepositsListResponse> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          params.append(key, String(value));
+        }
+      });
+    }
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request<AdminDepositsListResponse>(`/admin/deposits${query}`, { token });
+  }
+
+  /**
+   * Get deposits statistics
+   */
+  async adminGetDepositsStats(token: string): Promise<AdminDepositsStatsResponse> {
+    return this.request<AdminDepositsStatsResponse>('/admin/deposits/stats', { token });
+  }
+
+  /**
+   * Get detailed deposit information
+   */
+  async adminGetDeposit(token: string, id: string): Promise<AdminDepositDetail> {
+    return this.request<AdminDepositDetail>(`/admin/deposits/${id}`, { token });
+  }
+
+  /**
+   * Manually credit a failed deposit
+   */
+  async adminCreditDeposit(
+    token: string,
+    id: string,
+    reason: string,
+  ): Promise<AdminDepositDetail> {
+    return this.request<AdminDepositDetail>(`/admin/deposits/${id}/credit`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  /**
+   * Retry a failed deposit
+   */
+  async adminRetryDeposit(
+    token: string,
+    id: string,
+    note?: string,
+  ): Promise<AdminDepositDetail> {
+    return this.request<AdminDepositDetail>(`/admin/deposits/${id}/retry`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ note }),
+    });
+  }
+
+  // ============================================
+  // Admin Audit endpoints
+  // ============================================
+
+  /**
+   * Get paginated list of audit logs
+   */
+  async adminGetAuditLogs(
+    token: string,
+    filters?: AdminAuditFilter,
+  ): Promise<AdminAuditListResponse> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          params.append(key, String(value));
+        }
+      });
+    }
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request<AdminAuditListResponse>(`/admin/audit${query}`, { token });
+  }
+
+  /**
+   * Get audit statistics
+   */
+  async adminGetAuditStats(token: string): Promise<AdminAuditStatsResponse> {
+    return this.request<AdminAuditStatsResponse>('/admin/audit/stats', { token });
+  }
+
+  /**
+   * Get audit history for a specific resource
+   */
+  async adminGetResourceHistory(
+    token: string,
+    resource: string,
+    resourceId: string,
+  ): Promise<AdminAuditLogItem[]> {
+    return this.request<AdminAuditLogItem[]>(
+      `/admin/audit/resource/${resource}/${resourceId}`,
+      { token },
+    );
+  }
 }
 
 export const api = new ApiClient(API_URL);
@@ -1126,4 +1320,199 @@ export interface ReferralTreeResponse {
     level3Count: number;
     totalEarned: number;
   };
+}
+
+// ============================================
+// Admin Withdrawals Types
+// ============================================
+
+export type WithdrawalSortField = 'createdAt' | 'requestedAmount' | 'netAmount';
+export type WithdrawalStatusFilter = 'all' | 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+
+export interface AdminWithdrawalsFilter {
+  search?: string;
+  status?: WithdrawalStatusFilter;
+  chain?: string;
+  method?: string;
+  limit?: number;
+  offset?: number;
+  sortBy?: WithdrawalSortField;
+  sortOrder?: SortOrder;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface AdminWithdrawalUserInfo {
+  id: string;
+  telegramId: string;
+  username: string | null;
+  firstName: string | null;
+}
+
+export interface AdminWithdrawalListItem {
+  id: string;
+  user: AdminWithdrawalUserInfo;
+  method: string;
+  chain: string;
+  currency: string;
+  walletAddress: string;
+  requestedAmount: number;
+  fromFreshDeposit: number;
+  fromProfit: number;
+  taxAmount: number;
+  taxRate: number;
+  netAmount: number;
+  usdtAmount: number;
+  feeSolAmount: number | null;
+  txSignature: string | null;
+  status: string;
+  errorMessage: string | null;
+  processedAt: string | null;
+  createdAt: string;
+}
+
+export interface AdminWithdrawalDetail extends AdminWithdrawalListItem {
+  user: AdminWithdrawalUserInfo & {
+    fortuneBalance: number;
+    maxTierReached: number;
+    isBanned: boolean;
+  };
+}
+
+export interface AdminWithdrawalsListResponse {
+  withdrawals: AdminWithdrawalListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AdminWithdrawalsStatsResponse {
+  totalWithdrawals: number;
+  pendingCount: number;
+  processingCount: number;
+  completedCount: number;
+  failedCount: number;
+  cancelledCount: number;
+  totalRequestedAmount: number;
+  totalNetAmount: number;
+  totalTaxCollected: number;
+  todayCount: number;
+  todayAmount: number;
+}
+
+// ============================================
+// Admin Deposits Types
+// ============================================
+
+export type DepositSortField = 'createdAt' | 'amount' | 'amountUsd';
+export type DepositStatusFilter = 'all' | 'pending' | 'confirmed' | 'credited' | 'failed';
+
+export interface AdminDepositsFilter {
+  search?: string;
+  status?: DepositStatusFilter;
+  chain?: string;
+  currency?: string;
+  method?: string;
+  limit?: number;
+  offset?: number;
+  sortBy?: DepositSortField;
+  sortOrder?: SortOrder;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface AdminDepositUserInfo {
+  id: string;
+  telegramId: string;
+  username: string | null;
+  firstName: string | null;
+}
+
+export interface AdminDepositListItem {
+  id: string;
+  user: AdminDepositUserInfo;
+  method: string;
+  chain: string;
+  currency: string;
+  txSignature: string;
+  amount: number;
+  amountUsd: number;
+  rateToUsd: number | null;
+  memo: string | null;
+  status: string;
+  slot: string | null;
+  confirmedAt: string | null;
+  creditedAt: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+}
+
+export interface AdminDepositDetail extends AdminDepositListItem {
+  user: AdminDepositUserInfo & {
+    fortuneBalance: number;
+    maxTierReached: number;
+    isBanned: boolean;
+  };
+}
+
+export interface AdminDepositsListResponse {
+  deposits: AdminDepositListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AdminDepositsStatsResponse {
+  totalDeposits: number;
+  pendingCount: number;
+  confirmedCount: number;
+  creditedCount: number;
+  failedCount: number;
+  totalAmountUsd: number;
+  todayCount: number;
+  todayAmountUsd: number;
+  byCurrency: Record<string, { count: number; amount: number }>;
+}
+
+// ============================================
+// Admin Audit Types
+// ============================================
+
+export interface AdminAuditFilter {
+  action?: string;
+  resource?: string;
+  resourceId?: string;
+  adminUser?: string;
+  limit?: number;
+  offset?: number;
+  sortOrder?: SortOrder;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface AdminAuditLogItem {
+  id: string;
+  adminAction: string;
+  resource: string;
+  resourceId: string | null;
+  oldValue: unknown;
+  newValue: unknown;
+  ipAddress: string | null;
+  adminUser: string | null;
+  createdAt: string;
+}
+
+export interface AdminAuditListResponse {
+  logs: AdminAuditLogItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AdminAuditStatsResponse {
+  totalLogs: number;
+  todayCount: number;
+  byAction: Record<string, number>;
+  byResource: Record<string, number>;
+  recentActions: AdminAuditLogItem[];
 }

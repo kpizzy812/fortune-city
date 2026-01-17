@@ -5,7 +5,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { AdminAuthService, AdminJwtPayload } from '../admin-auth/admin-auth.service';
+import {
+  AdminAuthService,
+  AdminJwtPayload,
+} from '../admin-auth/admin-auth.service';
 
 // Расширяем Request для типизации adminUser
 declare module 'express' {
