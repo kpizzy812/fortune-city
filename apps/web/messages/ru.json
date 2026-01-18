@@ -57,7 +57,11 @@
     "sendLink": "Отправить ссылку",
     "checkEmailForLink": "Проверьте почту и перейдите по ссылке для привязки",
     "userId": "ID пользователя",
-    "referralCode": "Реферальный код"
+    "referralCode": "Реферальный код",
+    "emailSent": "Ссылка отправлена!",
+    "emailSentMessage": "Проверьте почту и перейдите по ссылке",
+    "emailPlaceholder": "you@example.com",
+    "send": "Отправить"
   },
   "auth": {
     "signInWithTelegram": "Войдите через Telegram, чтобы начать играть",

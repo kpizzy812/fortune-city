@@ -57,7 +57,11 @@
     "sendLink": "Send Link",
     "checkEmailForLink": "Check your email and click the link to complete linking",
     "userId": "User ID",
-    "referralCode": "Referral Code"
+    "referralCode": "Referral Code",
+    "emailSent": "Link sent!",
+    "emailSentMessage": "Check your email and click the link",
+    "emailPlaceholder": "you@example.com",
+    "send": "Send"
   },
   "auth": {
     "signInWithTelegram": "Sign in with Telegram to start playing",

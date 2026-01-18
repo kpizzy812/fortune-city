@@ -30,6 +30,10 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const [linkingTelegram, setLinkingTelegram] = useState(false);
   const [linkingWallet, setLinkingWallet] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
+  const [linkingEmail, setLinkingEmail] = useState(false);
 
   const hasTelegram = !!user?.telegramId;
   const hasEmail = !!user?.email;
@@ -84,6 +88,24 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       }
     } finally {
       setLinkingWallet(false);
+    }
+  };
+
+  // Handle email linking
+  const handleSendEmailLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailInput.trim()) return;
+
+    setLinkingEmail(true);
+    try {
+      await sendLinkEmailMagicLink(emailInput.trim());
+      setEmailSent(true);
+      toast.success(t('emailSent'));
+    } catch (error) {
+      toast.error(t('linkError'));
+      console.error('Send email link error:', error);
+    } finally {
+      setLinkingEmail(false);
     }
   };
 
@@ -199,17 +221,50 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 </div>
                 {hasEmail ? (
                   <Check className="w-5 h-5 text-[#00ff88]" />
-                ) : (
+                ) : !showEmailForm ? (
                   <Button
                     variant="ghost"
                     size="sm"
-                    disabled
-                    className="text-xs opacity-50"
+                    onClick={() => setShowEmailForm(true)}
+                    className="text-xs"
                   >
                     {t('linkAccount')}
                   </Button>
-                )}
+                ) : null}
               </div>
+
+              {/* Email Form */}
+              {!hasEmail && showEmailForm && (
+                <div className="mt-3 pt-3 border-t border-white/10">
+                  {emailSent ? (
+                    <div className="text-center py-2">
+                      <Check className="w-8 h-8 text-[#00ff88] mx-auto mb-2" />
+                      <p className="text-sm text-[#00ff88]">{t('emailSentMessage')}</p>
+                      <p className="text-xs text-[#b0b0b0] mt-1">{emailInput}</p>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSendEmailLink} className="flex gap-2">
+                      <input
+                        type="email"
+                        value={emailInput}
+                        onChange={(e) => setEmailInput(e.target.value)}
+                        placeholder={t('emailPlaceholder')}
+                        className="flex-1 px-3 py-2 bg-[#0a0014] border border-white/10 rounded-lg text-sm text-white placeholder:text-[#b0b0b0] focus:outline-none focus:border-[#ff2d95]"
+                        required
+                      />
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="sm"
+                        loading={linkingEmail}
+                        className="text-xs"
+                      >
+                        {t('send')}
+                      </Button>
+                    </form>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Wallet */}
