@@ -214,18 +214,17 @@ export const useAuthStore = create<AuthState>()(
         const { token } = get();
         if (!token) throw new Error('Not authenticated');
 
-        set({ isLoading: true, error: null });
+        set({ error: null });
         try {
           const response = await api.linkTelegram(token, data);
           set({
             token: response.accessToken,
             user: response.user,
-            isLoading: false,
           });
         } catch (error) {
           const message =
             error instanceof Error ? error.message : 'Failed to link Telegram';
-          set({ error: message, isLoading: false });
+          set({ error: message });
           throw error;
         }
       },
@@ -235,26 +234,27 @@ export const useAuthStore = create<AuthState>()(
         if (!token) throw new Error('Not authenticated');
         if (!supabaseSession) throw new Error('No Supabase session');
 
-        set({ isLoading: true, error: null });
+        set({ error: null });
         try {
           const response = await api.linkEmail(token, supabaseSession.access_token);
           set({
             token: response.accessToken,
             user: response.user,
-            isLoading: false,
           });
         } catch (error) {
           const message =
             error instanceof Error ? error.message : 'Failed to link email';
-          set({ error: message, isLoading: false });
+          set({ error: message });
           throw error;
         }
       },
 
       // ============ Web3/Wallet Auth ============
+      // Note: These methods don't set global isLoading - components handle their own loading state
+      // This prevents the page from showing a loading spinner while user interacts with wallet
 
       signInWithWeb3: async () => {
-        set({ isLoading: true, error: null });
+        set({ error: null });
         try {
           // Sign in with Solana wallet via Supabase
           const { data, error } = await supabase.auth.signInWithWeb3({
@@ -278,12 +278,11 @@ export const useAuthStore = create<AuthState>()(
           set({
             token: response.accessToken,
             user: response.user,
-            isLoading: false,
           });
         } catch (error) {
           const message =
             error instanceof Error ? error.message : 'Failed to sign in with wallet';
-          set({ error: message, isLoading: false });
+          set({ error: message });
           throw error;
         }
       },
@@ -292,7 +291,7 @@ export const useAuthStore = create<AuthState>()(
         const { token } = get();
         if (!token) throw new Error('Not authenticated');
 
-        set({ isLoading: true, error: null });
+        set({ error: null });
         try {
           // Sign in with Solana wallet via Supabase
           const { data, error } = await supabase.auth.signInWithWeb3({
@@ -311,12 +310,11 @@ export const useAuthStore = create<AuthState>()(
           set({
             token: response.accessToken,
             user: response.user,
-            isLoading: false,
           });
         } catch (error) {
           const message =
             error instanceof Error ? error.message : 'Failed to link wallet';
-          set({ error: message, isLoading: false });
+          set({ error: message });
           throw error;
         }
       },
