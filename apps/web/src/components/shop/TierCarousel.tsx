@@ -40,7 +40,6 @@ interface TierCardTranslations {
   dailyReturn: (params: { rate: string }) => string;
   reachTierFirst: (params: { tier: number }) => string;
   needMore: (params: { amount: string }) => string;
-  topUpAndBuy: (params: { amount: string }) => string;
   purchasing: string;
   buyMachine: string;
   sellMachine: string;
@@ -221,7 +220,7 @@ function TierCard({
           </Button>
         ) : !isAffordable && canAfford ? (
           <Button variant="gold" size="sm" fullWidth onClick={onTopUpAndBuy}>
-            {t.topUpAndBuy({ amount: formatCompactNumber(canAfford.shortfall) })}
+            {t.buyMachine}
           </Button>
         ) : (
           <Button
@@ -330,7 +329,6 @@ export function TierCarousel({
     dailyReturn: (params) => tShop('dailyReturn', params),
     reachTierFirst: (params) => tShop('reachTierFirst', params),
     needMore: (params) => tShop('needMore', params),
-    topUpAndBuy: (params) => tShop('topUpAndBuy', params),
     purchasing: tShop('purchasing'),
     buyMachine: tShop('buyMachine'),
     sellMachine: tSell('sellMachine'),
