@@ -405,7 +405,7 @@ export class AdminWithdrawalsService {
     createdAt: Date;
     user: {
       id: string;
-      telegramId: string;
+      telegramId: string | null;
       username: string | null;
       firstName: string | null;
     };
@@ -461,7 +461,7 @@ export class AdminWithdrawalsService {
     createdAt: Date;
     user: {
       id: string;
-      telegramId: string;
+      telegramId: string | null;
       username: string | null;
       firstName: string | null;
       fortuneBalance: Prisma.Decimal;

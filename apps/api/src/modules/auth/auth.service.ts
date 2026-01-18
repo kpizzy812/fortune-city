@@ -158,7 +158,7 @@ export class AuthService {
     // Создать JWT
     const payload: JwtPayload = {
       sub: user.id,
-      telegramId: user.telegramId,
+      telegramId: user.telegramId ?? undefined,
       username: user.username ?? undefined,
     };
 
@@ -345,7 +345,7 @@ export class AuthService {
 
     const payload: JwtPayload = {
       sub: user.id,
-      telegramId: user.telegramId,
+      telegramId: user.telegramId ?? undefined,
       username: user.username ?? undefined,
     };
 

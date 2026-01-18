@@ -3,12 +3,11 @@
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
-import { getReferralCode } from '@/lib/referral';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { handleSupabaseCallback, isLoading, error } = useAuthStore();
+  const { handleSupabaseCallback, error } = useAuthStore();
 
   useEffect(() => {
     // Сохраняем referral code если есть в URL

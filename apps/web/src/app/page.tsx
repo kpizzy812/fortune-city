@@ -7,6 +7,7 @@ import { useMachinesStore } from '@/stores/machines.store';
 import { useFortuneRateStore } from '@/stores/fortune-rate.store';
 import { useTelegramWebApp } from '@/providers/TelegramProvider';
 import { TelegramLoginButton } from '@/components/auth/TelegramLoginButton';
+import { EmailLoginForm } from '@/components/auth/EmailLoginForm';
 import { MachineGrid } from '@/components/machines/MachineGrid';
 import { RiskyCollectModal } from '@/components/machines/RiskyCollectModal';
 import { GambleResultAnimation } from '@/components/machines/GambleResultAnimation';
@@ -230,42 +231,73 @@ export default function Home() {
   // Show login page if not authenticated
   if (!user) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-8">
-        <div className="text-center max-w-md">
+      <main className="flex min-h-screen flex-col items-center justify-center p-6 lg:p-8">
+        <div className="w-full max-w-md">
           {/* Logo */}
-          <div className="mb-8">
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-[#ff2d95] to-[#00d4ff] bg-clip-text text-transparent">
+          <div className="text-center mb-10">
+            <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-[#ff2d95] to-[#00d4ff] bg-clip-text text-transparent mb-3">
               {tBrand('name')}
             </h1>
-            <p className="text-[#ffd700] mt-2 text-lg italic">
+            <p className="text-[#ffd700] text-lg lg:text-xl italic">
               {tBrand('tagline')}
             </p>
           </div>
 
           {/* Description */}
-          <p className="text-[#b0b0b0] mb-8">
+          <p className="text-[#b0b0b0] text-center mb-10 leading-relaxed">
             {tBrand('description')}
           </p>
 
-          {/* Login */}
+          {/* Auth Section */}
           {isTelegramApp ? (
-            <p className="text-[#00d4ff]">{tAuth('authenticating')}</p>
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#00d4ff] border-t-transparent mx-auto mb-4" />
+              <p className="text-[#00d4ff] text-lg">{tAuth('authenticating')}</p>
+            </div>
           ) : (
-            <div className="flex flex-col items-center gap-4">
-              <p className="text-[#b0b0b0] text-sm mb-2">
-                {tAuth('signInWithTelegram')}
-              </p>
-              <TelegramLoginButton
-                botName={TELEGRAM_BOT_NAME}
-                onSuccess={() => console.log('Login success')}
-                onError={(err) => console.error('Login error:', err)}
-              />
+            <div className="space-y-6">
+              {/* Email Login Form */}
+              <div className="bg-[#2a1a4e] rounded-xl p-6 border border-[#00d4ff]/30">
+                <h2 className="text-white text-lg font-semibold mb-4 text-center">
+                  {tAuth('signInWithEmail')}
+                </h2>
+                <EmailLoginForm
+                  onSuccess={() => console.log('Email login success')}
+                  onError={(err) => console.error('Email login error:', err)}
+                />
+              </div>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#b0b0b0]/20"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-[#1a0a2e] text-[#b0b0b0]">
+                    {tAuth('or')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Telegram Login */}
+              <div className="bg-[#2a1a4e] rounded-xl p-6 border border-[#ff2d95]/30">
+                <h2 className="text-white text-lg font-semibold mb-4 text-center">
+                  {tAuth('signInWithTelegram')}
+                </h2>
+                <div className="flex justify-center">
+                  <TelegramLoginButton
+                    botName={TELEGRAM_BOT_NAME}
+                    onSuccess={() => console.log('Telegram login success')}
+                    onError={(err) => console.error('Telegram login error:', err)}
+                  />
+                </div>
+              </div>
 
               {/* Dev Login - only in development */}
               {process.env.NODE_ENV === 'development' && (
                 <button
                   onClick={devLogin}
-                  className="mt-4 px-6 py-2 bg-[#2a1a4e] border border-[#ff2d95]/50 text-[#ff2d95] rounded-lg hover:bg-[#ff2d95]/10 transition text-sm"
+                  className="w-full px-6 py-2 bg-[#2a1a4e] border border-[#ff2d95]/50 text-[#ff2d95] rounded-lg hover:bg-[#ff2d95]/10 transition text-sm"
                 >
                   {tAuth('devLogin')}
                 </button>

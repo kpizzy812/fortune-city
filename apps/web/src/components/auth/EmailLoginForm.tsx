@@ -33,10 +33,11 @@ export function EmailLoginForm({ onSuccess, onError }: EmailLoginFormProps) {
       <div className="text-center p-6 bg-[#2a1a4e] rounded-xl border border-[#00d4ff]/30">
         <div className="text-4xl mb-4">✉️</div>
         <h3 className="text-xl font-bold text-white mb-2">{t('checkEmail')}</h3>
-        <p className="text-[#b0b0b0]">
-          {t('magicLinkSent', { email: <span className="text-[#00d4ff]">{email}</span> })}
+        <p className="text-[#b0b0b0] mb-1">
+          {t('magicLinkSent')}
         </p>
-        <p className="text-sm text-[#b0b0b0] mt-2">{t('clickToSignIn')}</p>
+        <p className="text-[#00d4ff] font-medium">{email}</p>
+        <p className="text-sm text-[#b0b0b0] mt-3">{t('clickToSignIn')}</p>
         <button
           onClick={() => setIsSent(false)}
           className="mt-4 text-sm text-[#ff2d95] hover:underline transition"

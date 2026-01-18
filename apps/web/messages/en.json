@@ -47,7 +47,7 @@
     "sendMagicLink": "Send Magic Link",
     "sending": "Sending...",
     "checkEmail": "Check your email",
-    "magicLinkSent": "We sent a magic link to {email}",
+    "magicLinkSent": "We sent a magic link to:",
     "clickToSignIn": "Click the link in the email to sign in",
     "useDifferentEmail": "Use a different email"
   },

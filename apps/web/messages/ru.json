@@ -47,7 +47,7 @@
     "sendMagicLink": "Отправить ссылку",
     "sending": "Отправка...",
     "checkEmail": "Проверьте почту",
-    "magicLinkSent": "Мы отправили ссылку на {email}",
+    "magicLinkSent": "Мы отправили ссылку на:",
     "clickToSignIn": "Нажмите на ссылку в письме для входа",
     "useDifferentEmail": "Использовать другой email"
   },

@@ -439,7 +439,7 @@ export class AdminUsersService {
 
   private formatUserListItem(user: {
     id: string;
-    telegramId: string;
+    telegramId: string | null;
     username: string | null;
     firstName: string | null;
     lastName: string | null;
@@ -482,7 +482,7 @@ export class AdminUsersService {
   private formatUserDetail(
     user: {
       id: string;
-      telegramId: string;
+      telegramId: string | null;
       username: string | null;
       firstName: string | null;
       lastName: string | null;
@@ -504,7 +504,7 @@ export class AdminUsersService {
       referredBy: {
         id: string;
         username: string | null;
-        telegramId: string;
+        telegramId: string | null;
       } | null;
       _count: {
         referrals: number;

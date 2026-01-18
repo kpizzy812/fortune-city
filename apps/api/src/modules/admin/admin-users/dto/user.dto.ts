@@ -102,7 +102,7 @@ export class UnbanUserDto {
 
 export interface UserListItemResponse {
   id: string;
-  telegramId: string;
+  telegramId: string | null;
   username: string | null;
   firstName: string | null;
   lastName: string | null;
@@ -129,7 +129,7 @@ export interface UserDetailResponse extends UserListItemResponse {
   referrer: {
     id: string;
     username: string | null;
-    telegramId: string;
+    telegramId: string | null;
   } | null;
   stats: {
     totalDeposits: number;
@@ -164,7 +164,7 @@ export interface UsersStatsResponse {
 
 export interface ReferralTreeNode {
   id: string;
-  telegramId: string;
+  telegramId: string | null;
   username: string | null;
   firstName: string | null;
   fortuneBalance: number;

@@ -118,7 +118,7 @@ export class ProcessWithdrawalDto {
 
 export interface WithdrawalUserInfo {
   id: string;
-  telegramId: string;
+  telegramId: string | null;
   username: string | null;
   firstName: string | null;
 }

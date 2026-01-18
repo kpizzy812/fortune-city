@@ -94,6 +94,11 @@ export class WheelNotificationService {
 
     // Send to all users (with rate limiting to avoid Telegram limits)
     for (const user of users) {
+      // Skip users without Telegram ID (email-only users)
+      if (!user.telegramId) {
+        continue;
+      }
+
       try {
         await this.sendTelegramMessageWithKeyboard(
           user.telegramId,
