@@ -5,7 +5,6 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useUIStore } from '@/stores/ui.store';
 import { BottomNavigation } from './BottomNavigation';
 import { SidebarNavigation } from './SidebarNavigation';
-import { MobileHeader } from './MobileHeader';
 
 interface AuthenticatedLayoutProps {
   children: ReactNode;
@@ -24,9 +23,6 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     <>
       {/* Sidebar for desktop (lg+) */}
       <SidebarNavigation />
-
-      {/* Mobile header (hidden on lg+) */}
-      <MobileHeader />
 
       {/* Main content area with dynamic margin */}
       <div

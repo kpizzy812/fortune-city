@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { Send, Wallet, Mail, Check, Copy, ExternalLink } from 'lucide-react';
+import { Send, Wallet, Mail, Check, Copy, ExternalLink, LogOut } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/auth.store';
@@ -25,7 +25,8 @@ interface ProfileModalProps {
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
-  const { user, linkTelegram, linkWeb3, isLoading, refreshUser } = useAuthStore();
+  const { user, linkTelegram, linkWeb3, clearAuth, isLoading, refreshUser } = useAuthStore();
+  const tNav = useTranslations('nav');
   const [linkingTelegram, setLinkingTelegram] = useState(false);
   const [linkingWallet, setLinkingWallet] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -256,6 +257,18 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             </div>
           </div>
         </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={() => {
+            clearAuth();
+            onClose();
+          }}
+          className="w-full flex items-center justify-center gap-2 py-3 text-[#ff4444] hover:bg-[#ff4444]/10 rounded-lg transition-colors"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>{tNav('logout')}</span>
+        </button>
       </div>
     </Modal>
   );

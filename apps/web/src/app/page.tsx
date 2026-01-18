@@ -16,6 +16,8 @@ import { AutoCollectModal } from '@/components/machines/AutoCollectModal';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { useInterval } from '@/hooks/useInterval';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
+import { ProfileModal } from '@/components/profile/ProfileModal';
+import { formatUserDisplayName, getUserInitial } from '@/lib/utils';
 import type { GambleInfo, AutoCollectInfo } from '@/types';
 
 const TELEGRAM_BOT_NAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || 'FortuneCityBot';
@@ -61,10 +63,16 @@ export default function Home() {
   const [isRiskyModalOpen, setIsRiskyModalOpen] = useState(false);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
   const [isAutoCollectModalOpen, setIsAutoCollectModalOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null);
   const [currentGambleInfo, setCurrentGambleInfo] = useState<GambleInfo | null>(null);
   const [currentAutoCollectInfo, setCurrentAutoCollectInfo] = useState<AutoCollectInfo | null>(null);
   const [isPurchasingAutoCollect, setIsPurchasingAutoCollect] = useState(false);
+
+  // User display
+  const displayName = user ? formatUserDisplayName(user) : '';
+  const userInitial = user ? getUserInitial(user) : '?';
+  const tProfile = useTranslations('profile');
 
   // Track if initial fetch was done
   const hasFetchedMachines = useRef(false);
@@ -346,22 +354,11 @@ export default function Home() {
             </div>
             <LanguageSwitcher />
             <button
-              onClick={clearAuth}
-              className="p-2 text-[#b0b0b0] hover:text-white transition"
-              title={t('nav.logout')}
+              onClick={() => setIsProfileOpen(true)}
+              className="w-9 h-9 rounded-full bg-gradient-to-br from-[#ff2d95] to-[#00d4ff] flex items-center justify-center text-sm font-bold hover:shadow-[0_0_15px_rgba(255,45,149,0.5)] transition-shadow"
+              title={tProfile('title')}
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
+              {userInitial}
             </button>
           </div>
         </header>
@@ -375,17 +372,24 @@ export default function Home() {
         {/* User Stats Card - visible only on mobile (on desktop it's in sidebar) */}
         <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#ff2d95]/30 mb-6 lg:hidden">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#ff2d95] to-[#00d4ff] flex items-center justify-center text-xl font-bold">
-              {user.firstName?.[0] || user.username?.[0] || '?'}
-            </div>
-            <div>
+            <button
+              onClick={() => setIsProfileOpen(true)}
+              className="w-12 h-12 rounded-full bg-gradient-to-br from-[#ff2d95] to-[#00d4ff] flex items-center justify-center text-xl font-bold hover:shadow-[0_0_15px_rgba(255,45,149,0.5)] transition-shadow"
+              title={tProfile('title')}
+            >
+              {userInitial}
+            </button>
+            <button
+              onClick={() => setIsProfileOpen(true)}
+              className="text-left hover:opacity-80 transition-opacity"
+            >
               <h2 className="font-semibold text-white">
-                {user.firstName} {user.lastName}
+                {displayName}
               </h2>
               {user.username && (
                 <p className="text-sm text-[#00d4ff]">@{user.username}</p>
               )}
-            </div>
+            </button>
           </div>
 
           {/* Stats Grid */}
@@ -493,6 +497,9 @@ export default function Home() {
             />
           </>
         )}
+
+        {/* Profile Modal */}
+        <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
       </div>
     </main>
   );
