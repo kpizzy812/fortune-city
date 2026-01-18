@@ -23,8 +23,6 @@ import {
   CollectCoinsResponseDto,
   TierInfoDto,
   SellMachineEarlyResponseDto,
-  UpgradeCoinBoxResponseDto,
-  CoinBoxInfoResponseDto,
 } from './dto/machine.dto';
 import {
   RiskyCollectResponseDto,
@@ -273,39 +271,7 @@ export class MachinesController {
     };
   }
 
-  // ===== Coin Box Upgrade Endpoints =====
-
-  @UseGuards(JwtAuthGuard)
-  @Get(':id/coinbox-info')
-  async getCoinBoxInfo(
-    @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
-  ): Promise<CoinBoxInfoResponseDto> {
-    return this.machinesService.getCoinBoxInfo(id, req.user.sub);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post(':id/upgrade-coinbox')
-  async upgradeCoinBox(
-    @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
-  ): Promise<UpgradeCoinBoxResponseDto> {
-    const result = await this.machinesService.upgradeCoinBox(id, req.user.sub);
-
-    return {
-      machine: this.toResponseDto(
-        this.machinesService.enrichWithTierInfo(result.machine),
-      ),
-      cost: result.cost,
-      newLevel: result.newLevel,
-      newCapacity: result.newCapacity,
-      user: {
-        fortuneBalance: result.user.fortuneBalance.toString(),
-      },
-    };
-  }
-
-  // ===== Auto Collect Endpoints =====
+  // ===== Collector (Auto Collect) Endpoints =====
 
   @UseGuards(JwtAuthGuard)
   @Get(':id/auto-collect-info')

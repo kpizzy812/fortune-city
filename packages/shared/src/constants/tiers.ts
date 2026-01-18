@@ -134,14 +134,19 @@ export const REINVEST_REDUCTION: Record<number, number> = {
   11: 0.85,  // -85% (cap)
 };
 
-// Coin box levels (cost is percentage of machine price)
+// Coin box - fixed capacity for all machines (no upgrades)
+export const COIN_BOX_CAPACITY_HOURS = 12;
+
+// Coin Box upgrade levels
 export const COIN_BOX_LEVELS = [
-  { level: 1, capacityHours: 2, costPercent: 0 },    // Free
-  { level: 2, capacityHours: 6, costPercent: 5 },    // 5% of machine price
-  { level: 3, capacityHours: 12, costPercent: 10 },  // 10%
-  { level: 4, capacityHours: 24, costPercent: 20 },  // 20%
-  { level: 5, capacityHours: 48, costPercent: 35 },  // 35%
+  { level: 1, capacityHours: 2, costPercent: 0 },
+  { level: 2, capacityHours: 6, costPercent: 5 },
+  { level: 3, capacityHours: 12, costPercent: 10 },
+  { level: 4, capacityHours: 24, costPercent: 20 },
+  { level: 5, capacityHours: 48, costPercent: 35 },
 ] as const;
+
+export type CoinBoxLevel = (typeof COIN_BOX_LEVELS)[number];
 
 // Fortune's Gamble Levels (Risky Collect feature)
 // Win 2x or Lose (get 0.5x) when collecting from full coin box
@@ -155,9 +160,10 @@ export const FORTUNE_GAMBLE_LEVELS = [
 export const GAMBLE_WIN_MULTIPLIER = 2.0;
 export const GAMBLE_LOSE_MULTIPLIER = 0.5;
 
-// Auto Collect module (автосбор при заполнении Coin Box)
-// Цена: 15% от цены машины, сгорает вместе с машиной
-export const AUTO_COLLECT_COST_PERCENT = 15;
+// Collector (Auto Collect) - автосбор при заполнении Coin Box
+// Механика: $5 за найм + 5% от каждого сбора (зарплата)
+export const COLLECTOR_HIRE_COST = 5; // Fixed $5 hire cost
+export const COLLECTOR_SALARY_PERCENT = 5; // 5% of each collection
 
 export type FortuneGambleLevel = (typeof FORTUNE_GAMBLE_LEVELS)[number];
 

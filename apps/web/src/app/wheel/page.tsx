@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWheelStore } from '@/stores/wheel.store';
+import { useWheelSocket } from '@/hooks/useWheelSocket';
 import {
   FortuneWheel,
   JackpotDisplay,
@@ -42,6 +43,9 @@ export default function WheelPage() {
   const [isWheelSpinning, setIsWheelSpinning] = useState(false);
 
   const hasFetched = useRef(false);
+
+  // Connect to WebSocket for realtime jackpot updates
+  useWheelSocket(user?.id);
 
   // Fetch wheel state on mount
   useEffect(() => {

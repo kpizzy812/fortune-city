@@ -37,7 +37,7 @@ export interface WheelStateDto {
   jackpotPool: number;
   jackpotCap: number;
   lastWinner: {
-    odlqпользователя: string | null;
+    userId: string | null;
     amount: number | null;
     wonAt: string | null;
   } | null;

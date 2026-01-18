@@ -6,7 +6,10 @@ export class AutoCollectInfoResponseDto {
   enabled: boolean;
 
   @IsNotEmpty()
-  cost: number;
+  hireCost: number; // Fixed $5 hire cost
+
+  @IsNotEmpty()
+  salaryPercent: number; // 5% of each collection
 
   purchasedAt: Date | null;
 

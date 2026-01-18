@@ -6,7 +6,12 @@ export type TransactionType =
   | 'machine_early_sell'
   | 'referral_bonus'
   | 'wheel_prize'
-  | 'upgrade_purchase';
+  | 'upgrade_purchase'
+  | 'collector_hire'
+  | 'collector_salary'
+  | 'machine_auction_list'
+  | 'machine_auction_cancel'
+  | 'machine_auction_sale';
 
 export type TransactionStatus = 'pending' | 'completed' | 'failed' | 'cancelled';
 

@@ -300,15 +300,67 @@
 - [x] Анимация изменения джекпота
 - [x] Анимированный переключатель мультиплера
 
-### 8.4 WebSocket события
-- [ ] jackpot:won — кто-то выиграл джекпот (глобальное уведомление)
-- [ ] jackpot:updated — пул обновился
+### 8.4 WebSocket и уведомления (COMPLETED)
+- [x] WheelGateway (socket.io):
+  - jackpot:won — кто-то выиграл джекпот (глобальное уведомление)
+  - jackpot:updated — пул обновился
+- [x] WheelNotificationService (Telegram):
+  - Уведомление в канал при джекпоте
+  - Личное сообщение победителю (если есть telegramId)
+- [x] useWheelSocket.tsx — хук для подключения к WebSocket
+  - Тосты с кнопкой "Spin Now!" при джекпоте другого игрока
+  - Обновление jackpotPool в store в реальном времени
+- [x] Локализация уведомлений (EN/RU)
 
 ### 8.5 Тесты
 - [ ] wheel.service.spec.ts
 - [ ] Тесты на распределение шансов (статистический тест)
 - [ ] Тесты на джекпот механику
 - [ ] Edge cases (недостаточно средств, лимиты)
+
+**Build Status:** API и Web собираются успешно
+
+---
+
+## Phase 9: Упрощение Coin Box и Collector (COMPLETED)
+
+### Изменения в дизайне
+Переработана экономика хранилища и автосбора:
+- **Coin Box**: Убраны уровни апгрейда, фиксированная ёмкость 12 часов для всех машин
+- **Auto Collect → Collector**: Переименовано в "Инкассатор" с новой ценовой моделью
+
+### 9.1 Backend
+- [x] packages/shared: COIN_BOX_CAPACITY_HOURS = 12 (вместо COIN_BOX_LEVELS)
+- [x] packages/shared: COLLECTOR_HIRE_COST = 5, COLLECTOR_SALARY_PERCENT = 5
+- [x] MachinesService: create() использует фикс 12ч, удалены getCoinBoxInfo/upgradeCoinBox
+- [x] MachinesController: удалены endpoints coinbox-info и upgrade-coinbox
+- [x] AutoCollectService: новая модель hireCost + salaryPercent
+- [x] Prisma: добавлены транзакции collector_hire и collector_salary
+- [x] DTO: обновлены AutoCollectInfo типы
+
+### 9.2 Frontend
+- [x] Удалён CoinBoxUpgradeModal.tsx
+- [x] MachineCard: убрана кнопка апгрейда coin box
+- [x] MachineGrid: убраны пропсы coinBoxInfos и onUpgradeCoinBox
+- [x] page.tsx: очистка от CoinBox-логики
+- [x] AutoCollectModal: полностью переписан с новым лором "Нанять инкассатора"
+- [x] stores/machines.store.ts: удалены coinBoxInfos, upgradeCoinBox, fetchCoinBoxInfo
+- [x] types/index.ts: обновлены типы AutoCollectInfo
+
+### 9.3 Локализация
+- [x] Добавлена секция "collector" в ru.json и en.json
+- [x] Обновлены ключи machines.hireCollector, machines.collectorActive
+- [x] Полные переводы для модалки инкассатора
+
+### Ценовая модель инкассатора
+| Параметр | Значение |
+|----------|----------|
+| Плата за найм | $5 (единоразово) |
+| Зарплата | 5% от каждого сбора |
+| Срок контракта | До окончания цикла машины |
+
+### Лор
+Инкассатор — надёжный работник казино, который автоматически собирает вашу прибыль. Работает круглосуточно, но берёт скромную комиссию с каждого сбора.
 
 **Build Status:** API и Web собираются успешно
 

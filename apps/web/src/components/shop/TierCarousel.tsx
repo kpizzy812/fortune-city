@@ -75,11 +75,13 @@ function TierCard({
   const baseProfit = tier.price * (tier.yieldPercent / 100 - 1);
   const dailyRate = (tier.yieldPercent - 100) / tier.lifespanDays;
 
-  // Reinvest penalty info
+  // Reinvest penalty info - показываем только когда нет активной машины
   const reductionRate = canAfford?.nextProfitReduction ?? 0;
   const hasReinvestPenalty = reductionRate > 0;
   const isUpgrade = canAfford?.isUpgrade ?? false;
-  const actualProfit = hasReinvestPenalty ? baseProfit * (1 - reductionRate / 100) : baseProfit;
+  // Показываем penalty только когда машина не активна (можно купить)
+  const showPenalty = hasReinvestPenalty && !hasActiveMachine;
+  const actualProfit = showPenalty ? baseProfit * (1 - reductionRate / 100) : baseProfit;
 
   return (
     <motion.div
@@ -165,14 +167,20 @@ function TierCard({
           </div>
           <div className="bg-[#1a0a2e]/80 backdrop-blur rounded-lg p-2 text-center border border-white/5 relative">
             <p className="text-[9px] text-[#b0b0b0] uppercase tracking-wider">{t.profit}</p>
-            <p className={`text-sm font-bold ${hasReinvestPenalty ? 'text-[#ffaa00]' : 'text-[#ffd700]'}`}>
-              ${formatCompactNumber(actualProfit)}
-              {hasReinvestPenalty && (
-                <span className="text-[8px] text-[#ff6666] ml-0.5">-{reductionRate.toFixed(0)}%</span>
+            <div className={`text-sm font-bold ${showPenalty ? 'text-[#ffaa00]' : 'text-[#ffd700]'} flex items-center justify-center gap-0.5`}>
+              <span>${formatCompactNumber(actualProfit)}</span>
+              {showPenalty && (
+                <Tooltip
+                  content={t.reinvestPenaltyTooltip}
+                  position="top"
+                  showIcon={false}
+                >
+                  <span className="text-[8px] text-[#ff6666] cursor-help">-{reductionRate.toFixed(0)}%</span>
+                </Tooltip>
               )}
-            </p>
-            {/* Reinvest penalty or upgrade indicator */}
-            {!isLocked && !hasActiveMachine && (hasReinvestPenalty || isUpgrade) && (
+            </div>
+            {/* Reinvest penalty or upgrade indicator - только когда можно купить */}
+            {!isLocked && !hasActiveMachine && (showPenalty || isUpgrade) && (
               <Tooltip
                 content={isUpgrade ? t.reinvestNewTierTooltip : t.reinvestPenaltyTooltip}
                 position="left"

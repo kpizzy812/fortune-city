@@ -11,11 +11,10 @@ import { MachineGrid } from '@/components/machines/MachineGrid';
 import { RiskyCollectModal } from '@/components/machines/RiskyCollectModal';
 import { GambleResultAnimation } from '@/components/machines/GambleResultAnimation';
 import { AutoCollectModal } from '@/components/machines/AutoCollectModal';
-import { CoinBoxUpgradeModal } from '@/components/machines/CoinBoxUpgradeModal';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { useInterval } from '@/hooks/useInterval';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
-import type { GambleInfo, AutoCollectInfo, CoinBoxInfo } from '@/types';
+import type { GambleInfo, AutoCollectInfo } from '@/types';
 
 const TELEGRAM_BOT_NAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || 'FortuneCityBot';
 
@@ -43,7 +42,6 @@ export default function Home() {
     lastGambleResult,
     gambleInfos,
     autoCollectInfos,
-    coinBoxInfos,
     error: machinesError,
     fetchMachines,
     fetchAllIncomes,
@@ -52,8 +50,6 @@ export default function Home() {
     fetchGambleInfo,
     purchaseAutoCollect,
     fetchAutoCollectInfo,
-    fetchCoinBoxInfo,
-    upgradeCoinBox,
     interpolateAllIncomes,
     clearError,
     clearLastGambleResult,
@@ -63,13 +59,10 @@ export default function Home() {
   const [isRiskyModalOpen, setIsRiskyModalOpen] = useState(false);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
   const [isAutoCollectModalOpen, setIsAutoCollectModalOpen] = useState(false);
-  const [isCoinBoxModalOpen, setIsCoinBoxModalOpen] = useState(false);
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null);
   const [currentGambleInfo, setCurrentGambleInfo] = useState<GambleInfo | null>(null);
   const [currentAutoCollectInfo, setCurrentAutoCollectInfo] = useState<AutoCollectInfo | null>(null);
-  const [currentCoinBoxInfo, setCurrentCoinBoxInfo] = useState<CoinBoxInfo | null>(null);
   const [isPurchasingAutoCollect, setIsPurchasingAutoCollect] = useState(false);
-  const [isUpgradingCoinBox, setIsUpgradingCoinBox] = useState(false);
 
   // Track if initial fetch was done
   const hasFetchedMachines = useRef(false);
@@ -88,10 +81,8 @@ export default function Home() {
     if (token && machines.length > 0 && !hasFetchedIncomes.current) {
       hasFetchedIncomes.current = true;
       fetchAllIncomes(token);
-      // Also fetch coin box info for all machines
-      machines.forEach((m) => fetchCoinBoxInfo(token, m.id));
     }
-  }, [token, machines.length, fetchAllIncomes, fetchCoinBoxInfo, machines]);
+  }, [token, machines.length, fetchAllIncomes]);
 
   // Fetch fortune rate on mount and periodically
   useEffect(() => {
@@ -177,13 +168,13 @@ export default function Home() {
       if (!token) return;
       setSelectedMachineId(machineId);
 
-      // Fetch auto collect info
-      await fetchAutoCollectInfo(token, machineId);
-      setCurrentAutoCollectInfo(autoCollectInfos[machineId] || null);
+      // Fetch auto collect info and use returned value
+      const info = await fetchAutoCollectInfo(token, machineId);
+      setCurrentAutoCollectInfo(info);
 
       setIsAutoCollectModalOpen(true);
     },
-    [token, fetchAutoCollectInfo, autoCollectInfos]
+    [token, fetchAutoCollectInfo]
   );
 
   // Confirm Auto Collect purchase
@@ -196,55 +187,16 @@ export default function Home() {
         await purchaseAutoCollect(token, selectedMachineId);
         // Refresh user balance
         refreshUser();
-        // Update auto collect info
-        await fetchAutoCollectInfo(token, selectedMachineId);
-        setCurrentAutoCollectInfo(autoCollectInfos[selectedMachineId] || null);
+        // Update auto collect info and use returned value
+        const info = await fetchAutoCollectInfo(token, selectedMachineId);
+        setCurrentAutoCollectInfo(info);
       } catch {
         // Error is handled in store
       } finally {
         setIsPurchasingAutoCollect(false);
       }
     },
-    [token, selectedMachineId, purchaseAutoCollect, refreshUser, fetchAutoCollectInfo, autoCollectInfos]
-  );
-
-  // Handle Coin Box Upgrade (open modal)
-  const handleUpgradeCoinBoxClick = useCallback(
-    async (machineId: string) => {
-      if (!token) return;
-      setSelectedMachineId(machineId);
-
-      // Fetch coin box info
-      await fetchCoinBoxInfo(token, machineId);
-      setCurrentCoinBoxInfo(coinBoxInfos[machineId] || null);
-
-      setIsCoinBoxModalOpen(true);
-    },
-    [token, fetchCoinBoxInfo, coinBoxInfos]
-  );
-
-  // Confirm Coin Box Upgrade
-  const handleConfirmCoinBoxUpgrade = useCallback(
-    async () => {
-      if (!token || !selectedMachineId) return;
-
-      setIsUpgradingCoinBox(true);
-      try {
-        await upgradeCoinBox(token, selectedMachineId);
-        // Refresh user balance
-        refreshUser();
-        // Update coin box info
-        await fetchCoinBoxInfo(token, selectedMachineId);
-        setCurrentCoinBoxInfo(coinBoxInfos[selectedMachineId] || null);
-        // Close modal after successful upgrade
-        setIsCoinBoxModalOpen(false);
-      } catch {
-        // Error is handled in store
-      } finally {
-        setIsUpgradingCoinBox(false);
-      }
-    },
-    [token, selectedMachineId, upgradeCoinBox, refreshUser, fetchCoinBoxInfo, coinBoxInfos]
+    [token, selectedMachineId, purchaseAutoCollect, refreshUser, fetchAutoCollectInfo]
   );
 
   // Show loading state
@@ -462,11 +414,9 @@ export default function Home() {
           <MachineGrid
             machines={machines}
             incomes={incomes}
-            coinBoxInfos={coinBoxInfos}
             onCollect={handleCollect}
             onRiskyCollect={handleRiskyCollect}
             onAutoCollectClick={handleAutoCollectClick}
-            onUpgradeCoinBox={handleUpgradeCoinBoxClick}
             isCollecting={isCollecting}
             isLoading={isLoadingMachines}
           />
@@ -495,14 +445,6 @@ export default function Home() {
               autoCollectInfo={currentAutoCollectInfo}
               userBalance={parseFloat(user?.fortuneBalance || '0')}
               isLoading={isPurchasingAutoCollect}
-            />
-            <CoinBoxUpgradeModal
-              isOpen={isCoinBoxModalOpen}
-              onClose={() => setIsCoinBoxModalOpen(false)}
-              onConfirm={handleConfirmCoinBoxUpgrade}
-              coinBoxInfo={currentCoinBoxInfo}
-              userBalance={parseFloat(user?.fortuneBalance || '0')}
-              isLoading={isUpgradingCoinBox}
             />
           </>
         )}

@@ -11,8 +11,6 @@ import type {
   RiskyCollectResult,
   GambleInfo,
   UpgradeGambleResult,
-  CoinBoxInfo,
-  UpgradeCoinBoxResult,
   AutoCollectInfo,
   PurchaseAutoCollectResult,
 } from '@/types';
@@ -25,7 +23,6 @@ interface MachinesState {
   affordability: Record<number, CanAffordResponse>;
   lastGambleResult: RiskyCollectResult | null;
   gambleInfos: Record<string, GambleInfo>;
-  coinBoxInfos: Record<string, CoinBoxInfo>;
   autoCollectInfos: Record<string, AutoCollectInfo>;
 
   // Loading states
@@ -49,10 +46,8 @@ interface MachinesState {
   riskyCollect: (token: string, machineId: string) => Promise<RiskyCollectResult>;
   upgradeGamble: (token: string, machineId: string) => Promise<UpgradeGambleResult>;
   fetchGambleInfo: (token: string, machineId: string) => Promise<void>;
-  upgradeCoinBox: (token: string, machineId: string) => Promise<UpgradeCoinBoxResult>;
-  fetchCoinBoxInfo: (token: string, machineId: string) => Promise<void>;
   purchaseAutoCollect: (token: string, machineId: string) => Promise<PurchaseAutoCollectResult>;
-  fetchAutoCollectInfo: (token: string, machineId: string) => Promise<void>;
+  fetchAutoCollectInfo: (token: string, machineId: string) => Promise<AutoCollectInfo | null>;
 
   // Real-time income interpolation
   interpolateIncome: (machineId: string) => void;
@@ -72,7 +67,6 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
   affordability: {},
   lastGambleResult: null,
   gambleInfos: {},
-  coinBoxInfos: {},
   autoCollectInfos: {},
   isLoadingMachines: false,
   isLoadingTiers: false,
@@ -264,44 +258,6 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
     }
   },
 
-  upgradeCoinBox: async (token, machineId) => {
-    try {
-      const result = await api.upgradeCoinBox(token, machineId);
-      // Update machine in list
-      set((state) => ({
-        machines: state.machines.map((m) =>
-          m.id === machineId ? result.machine : m
-        ),
-        // Invalidate coin box info cache for this machine
-        coinBoxInfos: {
-          ...state.coinBoxInfos,
-          [machineId]: {
-            currentLevel: result.newLevel,
-            currentCapacityHours: 0, // Will be refreshed
-            canUpgrade: true,
-            nextLevel: null,
-            nextCapacityHours: null,
-            upgradeCost: null,
-          },
-        },
-      }));
-      return result;
-    } catch (e) {
-      throw e;
-    }
-  },
-
-  fetchCoinBoxInfo: async (token, machineId) => {
-    try {
-      const info = await api.getCoinBoxInfo(token, machineId);
-      set((state) => ({
-        coinBoxInfos: { ...state.coinBoxInfos, [machineId]: info },
-      }));
-    } catch {
-      // Silent fail
-    }
-  },
-
   purchaseAutoCollect: async (token, machineId) => {
     try {
       const result = await api.purchaseAutoCollect(token, machineId);
@@ -315,7 +271,8 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
           ...state.autoCollectInfos,
           [machineId]: {
             enabled: true,
-            cost: result.cost,
+            hireCost: result.cost,
+            salaryPercent: 5, // Fixed 5%
             purchasedAt: new Date().toISOString(),
             canPurchase: false,
             alreadyPurchased: true,
@@ -334,8 +291,10 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
       set((state) => ({
         autoCollectInfos: { ...state.autoCollectInfos, [machineId]: info },
       }));
+      return info;
     } catch {
       // Silent fail
+      return null;
     }
   },
 
@@ -390,7 +349,6 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
       affordability: {},
       lastGambleResult: null,
       gambleInfos: {},
-      coinBoxInfos: {},
       autoCollectInfos: {},
       isLoadingMachines: false,
       isLoadingTiers: false,

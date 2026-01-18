@@ -2,11 +2,15 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { Machine, User } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MachinesService } from '../machines.service';
-import { AUTO_COLLECT_COST_PERCENT } from '@fortune-city/shared';
+import {
+  COLLECTOR_HIRE_COST,
+  COLLECTOR_SALARY_PERCENT,
+} from '@fortune-city/shared';
 
 export interface AutoCollectInfo {
   enabled: boolean;
-  cost: number;
+  hireCost: number; // Fixed $5 hire cost
+  salaryPercent: number; // 5% of each collection
   purchasedAt: Date | null;
   canPurchase: boolean;
   alreadyPurchased: boolean;
@@ -33,7 +37,8 @@ export class AutoCollectService {
   ) {}
 
   /**
-   * Получить информацию о модуле Auto Collect для машины
+   * Получить информацию о модуле Collector (Auto Collect) для машины
+   * Механика: $5 найм + 5% от каждого сбора
    */
   async getAutoCollectInfo(
     machineId: string,
@@ -45,12 +50,10 @@ export class AutoCollectService {
       throw new BadRequestException('Machine does not belong to user');
     }
 
-    const cost =
-      Number(machine.purchasePrice) * (AUTO_COLLECT_COST_PERCENT / 100);
-
     return {
       enabled: machine.autoCollectEnabled,
-      cost,
+      hireCost: COLLECTOR_HIRE_COST,
+      salaryPercent: COLLECTOR_SALARY_PERCENT,
       purchasedAt: machine.autoCollectPurchasedAt,
       canPurchase: machine.status === 'active' && !machine.autoCollectEnabled,
       alreadyPurchased: machine.autoCollectEnabled,
@@ -58,9 +61,10 @@ export class AutoCollectService {
   }
 
   /**
-   * Купить модуль Auto Collect для машины
-   * Цена: 15% от цены покупки машины
-   * Модуль сгорает вместе с машиной при окончании цикла
+   * Нанять инкассатора (Collector) для машины
+   * Цена: $5 фиксированная плата за найм
+   * Зарплата: 5% от каждого автосбора
+   * Инкассатор "увольняется" когда машина изнашивается
    */
   async purchaseAutoCollect(
     machineId: string,
@@ -73,16 +77,15 @@ export class AutoCollectService {
     }
 
     if (machine.status !== 'active') {
-      throw new BadRequestException('Cannot purchase for expired machine');
+      throw new BadRequestException('Cannot hire collector for expired machine');
     }
 
     if (machine.autoCollectEnabled) {
-      throw new BadRequestException('Auto Collect already purchased');
+      throw new BadRequestException('Collector already hired');
     }
 
-    // Вычисляем стоимость: 15% от цены покупки машины
-    const cost =
-      Number(machine.purchasePrice) * (AUTO_COLLECT_COST_PERCENT / 100);
+    // Фиксированная стоимость найма: $5
+    const cost = COLLECTOR_HIRE_COST;
 
     // Получаем пользователя и проверяем баланс
     const user = await this.prisma.user.findUnique({
@@ -95,13 +98,13 @@ export class AutoCollectService {
 
     if (Number(user.fortuneBalance) < cost) {
       throw new BadRequestException(
-        `Insufficient balance. Need ${cost} $FORTUNE, have ${Number(user.fortuneBalance)}`,
+        `Insufficient balance. Need $${cost}, have $${Number(user.fortuneBalance).toFixed(2)}`,
       );
     }
 
     // Атомарная транзакция
     const result = await this.prisma.$transaction(async (tx) => {
-      // 1. Списываем стоимость с баланса
+      // 1. Списываем стоимость найма с баланса
       const updatedUser = await tx.user.update({
         where: { id: userId },
         data: {
@@ -111,7 +114,7 @@ export class AutoCollectService {
         },
       });
 
-      // 2. Активируем Auto Collect на машине
+      // 2. Активируем инкассатора на машине
       const updatedMachine = await tx.machine.update({
         where: { id: machineId },
         data: {
@@ -120,12 +123,12 @@ export class AutoCollectService {
         },
       });
 
-      // 3. Создаем транзакцию покупки
+      // 3. Создаем транзакцию найма
       await tx.transaction.create({
         data: {
           userId,
           machineId,
-          type: 'upgrade_purchase',
+          type: 'collector_hire',
           amount: cost,
           currency: 'FORTUNE',
           netAmount: cost,
@@ -168,8 +171,9 @@ export class AutoCollectService {
   }
 
   /**
-   * Выполнить автосбор для машины
+   * Выполнить автосбор для машины с зарплатой инкассатора
    * Вызывается крон-джобом для всех машин с включенным autoCollect
+   * Списывает 5% от собранной суммы как зарплату инкассатора
    */
   async executeAutoCollect(
     machineId: string,
@@ -194,9 +198,42 @@ export class AutoCollectService {
         machine.userId,
       );
 
+      const collected = Number(result.collected);
+
+      // Списываем зарплату инкассатора (5% от сбора)
+      const salary = collected * (COLLECTOR_SALARY_PERCENT / 100);
+
+      if (salary > 0) {
+        await this.prisma.$transaction(async (tx) => {
+          // Списываем зарплату с баланса пользователя
+          await tx.user.update({
+            where: { id: machine.userId },
+            data: {
+              fortuneBalance: {
+                decrement: salary,
+              },
+            },
+          });
+
+          // Создаем транзакцию зарплаты
+          await tx.transaction.create({
+            data: {
+              userId: machine.userId,
+              machineId,
+              type: 'collector_salary',
+              amount: salary,
+              currency: 'FORTUNE',
+              netAmount: salary,
+              status: 'completed',
+            },
+          });
+        });
+      }
+
+      // Возвращаем чистую сумму (после вычета зарплаты)
       return {
         machineId,
-        amountCollected: Number(result.collected),
+        amountCollected: collected - salary,
         success: true,
       };
     } catch (error) {

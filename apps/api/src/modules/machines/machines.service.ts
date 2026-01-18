@@ -8,7 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { Machine, MachineStatus, Prisma } from '@prisma/client';
 import {
-  COIN_BOX_LEVELS,
+  COIN_BOX_CAPACITY_HOURS,
   REINVEST_REDUCTION,
   calculateEarlySellCommission,
 } from '@fortune-city/shared';
@@ -94,10 +94,9 @@ export class MachinesService {
     const lifespanSeconds = tierConfig.lifespanDays * 24 * 60 * 60;
     const ratePerSecond = actualTotalYield.div(lifespanSeconds);
 
-    // Get initial coin box capacity (level 1)
-    const coinBoxConfig = COIN_BOX_LEVELS[0];
+    // Fixed coin box capacity (12 hours for all machines)
     const coinBoxCapacity = ratePerSecond.mul(
-      coinBoxConfig.capacityHours * 60 * 60,
+      COIN_BOX_CAPACITY_HOURS * 60 * 60,
     );
 
     const now = new Date();
@@ -564,155 +563,4 @@ export class MachinesService {
     };
   }
 
-  /**
-   * Получить информацию о текущем уровне Coin Box и следующем апгрейде
-   */
-  async getCoinBoxInfo(
-    machineId: string,
-    userId: string,
-  ): Promise<{
-    currentLevel: number;
-    currentCapacityHours: number;
-    canUpgrade: boolean;
-    nextLevel: number | null;
-    nextCapacityHours: number | null;
-    upgradeCost: number | null;
-  }> {
-    const machine = await this.findByIdOrThrow(machineId);
-
-    if (machine.userId !== userId) {
-      throw new BadRequestException('Machine does not belong to user');
-    }
-
-    const currentLevel = machine.coinBoxLevel;
-    const currentConfig = COIN_BOX_LEVELS[currentLevel - 1]; // 0-indexed
-
-    const nextLevel = currentLevel + 1;
-    const canUpgrade = nextLevel <= COIN_BOX_LEVELS.length;
-    const nextConfig = canUpgrade ? COIN_BOX_LEVELS[nextLevel - 1] : null;
-
-    const upgradeCost = nextConfig
-      ? Number(machine.purchasePrice) * (Number(nextConfig.costPercent) / 100)
-      : null;
-
-    return {
-      currentLevel,
-      currentCapacityHours: currentConfig.capacityHours,
-      canUpgrade,
-      nextLevel: canUpgrade ? nextLevel : null,
-      nextCapacityHours: nextConfig ? nextConfig.capacityHours : null,
-      upgradeCost,
-    };
-  }
-
-  /**
-   * Апгрейд уровня Coin Box (увеличение capacity)
-   */
-  async upgradeCoinBox(
-    machineId: string,
-    userId: string,
-  ): Promise<{
-    machine: Machine;
-    cost: number;
-    newLevel: number;
-    newCapacity: number;
-    user: { id: string; fortuneBalance: Prisma.Decimal };
-  }> {
-    const machine = await this.findByIdOrThrow(machineId);
-
-    if (machine.userId !== userId) {
-      throw new BadRequestException('Machine does not belong to user');
-    }
-
-    if (machine.status !== 'active') {
-      throw new BadRequestException('Cannot upgrade expired machine');
-    }
-
-    const currentLevel = machine.coinBoxLevel;
-    const nextLevel = currentLevel + 1;
-
-    // Проверяем, что не достигли максимума (5 уровней)
-    if (nextLevel > COIN_BOX_LEVELS.length) {
-      throw new BadRequestException(
-        `Maximum Coin Box level reached (${COIN_BOX_LEVELS.length})`,
-      );
-    }
-
-    const nextLevelConfig = COIN_BOX_LEVELS[nextLevel - 1]; // Array is 0-indexed
-    if (!nextLevelConfig) {
-      throw new BadRequestException('Invalid coin box level');
-    }
-
-    // Стоимость = процент от цены покупки машины
-    const upgradeCost =
-      Number(machine.purchasePrice) *
-      (Number(nextLevelConfig.costPercent) / 100);
-
-    // Получаем пользователя и проверяем баланс
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-
-    if (Number(user.fortuneBalance) < upgradeCost) {
-      throw new BadRequestException(
-        `Insufficient balance. Need ${upgradeCost} $FORTUNE, have ${Number(user.fortuneBalance)}`,
-      );
-    }
-
-    // Рассчитываем новую capacity
-    const newCapacity =
-      Number(machine.ratePerSecond) * (nextLevelConfig.capacityHours * 60 * 60);
-
-    // Атомарная транзакция
-    const result = await this.prisma.$transaction(async (tx) => {
-      // 1. Списываем стоимость с баланса
-      const updatedUser = await tx.user.update({
-        where: { id: userId },
-        data: {
-          fortuneBalance: {
-            decrement: upgradeCost,
-          },
-        },
-      });
-
-      // 2. Апгрейдим машину (уровень и capacity)
-      const updatedMachine = await tx.machine.update({
-        where: { id: machineId },
-        data: {
-          coinBoxLevel: nextLevel,
-          coinBoxCapacity: newCapacity,
-        },
-      });
-
-      // 3. Создаем транзакцию апгрейда
-      await tx.transaction.create({
-        data: {
-          userId,
-          machineId,
-          type: 'upgrade_purchase',
-          amount: upgradeCost,
-          currency: 'FORTUNE',
-          netAmount: upgradeCost,
-          status: 'completed',
-        },
-      });
-
-      return { machine: updatedMachine, user: updatedUser };
-    });
-
-    return {
-      machine: result.machine,
-      cost: upgradeCost,
-      newLevel: nextLevel,
-      newCapacity,
-      user: {
-        id: result.user.id,
-        fortuneBalance: result.user.fortuneBalance,
-      },
-    };
-  }
 }

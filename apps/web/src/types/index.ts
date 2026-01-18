@@ -108,35 +108,13 @@ export interface UpgradeGambleResult {
 }
 
 // ============================================
-// Coin Box Upgrade Types
-// ============================================
-
-export interface CoinBoxInfo {
-  currentLevel: number;
-  currentCapacityHours: number;
-  canUpgrade: boolean;
-  nextLevel: number | null;
-  nextCapacityHours: number | null;
-  upgradeCost: number | null;
-}
-
-export interface UpgradeCoinBoxResult {
-  machine: Machine;
-  cost: number;
-  newLevel: number;
-  newCapacity: number;
-  user: {
-    fortuneBalance: string;
-  };
-}
-
-// ============================================
-// Auto Collect Types
+// Collector (Auto Collect) Types
 // ============================================
 
 export interface AutoCollectInfo {
   enabled: boolean;
-  cost: number;
+  hireCost: number; // Fixed $5 hire cost
+  salaryPercent: number; // 5% of each collection
   purchasedAt: string | null;
   canPurchase: boolean;
   alreadyPurchased: boolean;

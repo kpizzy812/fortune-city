@@ -15,6 +15,8 @@ import {
   WheelSectorDto,
   SpinHistoryDto,
 } from './dto/spin.dto';
+import { WheelGateway } from './wheel.gateway';
+import { WheelNotificationService } from './wheel-notification.service';
 
 interface WheelSector {
   sector: string;
@@ -31,6 +33,8 @@ export class WheelService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
+    private readonly wheelGateway: WheelGateway,
+    private readonly notificationService: WheelNotificationService,
   ) {}
 
   async onModuleInit() {
@@ -217,6 +221,40 @@ export class WheelService implements OnModuleInit {
       `User ${userId} spun ${multiplier}x: bet=$${totalBet}, payout=$${totalPayout}, net=$${netResult}${jackpotWon ? `, JACKPOT $${jackpotAmount}` : ''}`,
     );
 
+    // Send notifications for jackpot win
+    if (jackpotWon) {
+      // WebSocket broadcast to all connected clients
+      this.wheelGateway.emitJackpotWon({
+        winnerId: userId,
+        winnerName: user.username || user.firstName,
+        amount: jackpotAmount,
+        newPool: Number(updatedJackpot.currentPool),
+        timestamp: new Date().toISOString(),
+      });
+
+      // Telegram notification to winner (if they have telegramId)
+      if (user.telegramId) {
+        this.notificationService.notifyUserJackpotWin(
+          user.telegramId,
+          jackpotAmount,
+        );
+
+        // Also notify channel about the win
+        this.notificationService.notifyJackpotWinner({
+          winnerId: userId,
+          winnerName: user.username || user.firstName,
+          winnerTelegramId: user.telegramId,
+          amount: jackpotAmount,
+        });
+      }
+    } else {
+      // Just update jackpot pool for all clients
+      this.wheelGateway.emitJackpotUpdated({
+        currentPool: Number(updatedJackpot.currentPool),
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     return {
       success: true,
       spinId: spin.id,
@@ -291,7 +329,7 @@ export class WheelService implements OnModuleInit {
       jackpotCap: Number(settings.wheelJackpotCap),
       lastWinner: jackpot?.lastWinnerId
         ? {
-            odlqпользователя: jackpot.lastWinnerId,
+            userId: jackpot.lastWinnerId,
             amount: jackpot.lastWonAmount
               ? Number(jackpot.lastWonAmount)
               : null,
