@@ -5,29 +5,23 @@ import { io, Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/stores/auth.store';
+import { useDepositEventsStore, type DepositCreditedEvent } from '@/stores/deposit-events.store';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-export interface DepositCreditedEvent {
-  depositId: string;
-  userId: string;
-  amount: number;
-  currency: string;
-  amountUsd: number;
-  newBalance: number;
-  timestamp: string;
-}
+// Re-export type for convenience
+export type { DepositCreditedEvent } from '@/stores/deposit-events.store';
 
-interface UseDepositsSocketOptions {
-  onDepositCredited?: (data: DepositCreditedEvent) => void;
-  showToast?: boolean;
-}
-
-export function useDepositsSocket(options: UseDepositsSocketOptions = {}) {
-  const { onDepositCredited, showToast = true } = options;
+/**
+ * Global WebSocket connection for deposit notifications.
+ * Should only be used ONCE in the app (in AuthenticatedLayout).
+ * Other components should use useOnDepositCredited hook to listen for events.
+ */
+export function useDepositsSocket() {
   const socketRef = useRef<Socket | null>(null);
   const t = useTranslations('cash');
   const { user, refreshUser } = useAuthStore();
+  const emitEvent = useDepositEventsStore((s) => s.emitEvent);
 
   const handleDepositCredited = useCallback(
     (data: DepositCreditedEvent) => {
@@ -36,29 +30,27 @@ export function useDepositsSocket(options: UseDepositsSocketOptions = {}) {
       // Refresh user balance
       refreshUser();
 
-      // Call custom callback
-      onDepositCredited?.(data);
+      // Emit to store for other components to react
+      emitEvent(data);
 
       // Show toast notification
-      if (showToast) {
-        const currencyLabel = data.currency === 'USDT_SOL' ? 'USDT' : data.currency;
-        toast.success(
-          <div className="flex flex-col gap-1">
-            <div className="font-bold text-[#00ff88]">
-              {t('depositSuccess')}
-            </div>
-            <div className="text-sm">
-              +${data.amountUsd.toFixed(2)} ({data.amount.toFixed(4)} {currencyLabel})
-            </div>
-          </div>,
-          {
-            duration: 5000,
-            icon: '💰',
-          }
-        );
-      }
+      const currencyLabel = data.currency === 'USDT_SOL' ? 'USDT' : data.currency;
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <div className="font-bold text-[#00ff88]">
+            {t('depositSuccess')}
+          </div>
+          <div className="text-sm">
+            +${data.amountUsd.toFixed(2)} ({data.amount.toFixed(4)} {currencyLabel})
+          </div>
+        </div>,
+        {
+          duration: 5000,
+          icon: '💰',
+        }
+      );
     },
-    [onDepositCredited, showToast, refreshUser, t]
+    [refreshUser, emitEvent, t]
   );
 
   useEffect(() => {
@@ -89,7 +81,6 @@ export function useDepositsSocket(options: UseDepositsSocketOptions = {}) {
         socket.emit('unsubscribe', user.id);
       }
       socket.off('deposit:credited', handleDepositCredited);
-      // Only disconnect if socket was actually connected (avoids warning in React Strict Mode)
       if (socket.connected) {
         socket.disconnect();
       } else {
@@ -100,4 +91,17 @@ export function useDepositsSocket(options: UseDepositsSocketOptions = {}) {
   }, [user?.id, handleDepositCredited]);
 
   return socketRef.current;
+}
+
+/**
+ * Hook to subscribe to deposit events.
+ * Use this in components that need to react to deposits (e.g., TopUpAndBuyModal).
+ */
+export function useOnDepositCredited(callback: (event: DepositCreditedEvent) => void) {
+  const subscribe = useDepositEventsStore((s) => s.subscribe);
+
+  useEffect(() => {
+    const unsubscribe = subscribe(callback);
+    return unsubscribe;
+  }, [subscribe, callback]);
 }

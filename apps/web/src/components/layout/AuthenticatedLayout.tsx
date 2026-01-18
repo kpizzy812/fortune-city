@@ -3,6 +3,8 @@
 import { ReactNode } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useUIStore } from '@/stores/ui.store';
+import { useDepositsSocket } from '@/hooks/useDepositsSocket';
+import { useWheelSocket } from '@/hooks/useWheelSocket';
 import { BottomNavigation } from './BottomNavigation';
 import { SidebarNavigation } from './SidebarNavigation';
 
@@ -13,6 +15,10 @@ interface AuthenticatedLayoutProps {
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { user } = useAuthStore();
   const { sidebarCollapsed } = useUIStore();
+
+  // Global WebSocket listeners for real-time notifications
+  useDepositsSocket();
+  useWheelSocket(user?.id);
 
   // Show navigation only for authenticated users
   if (!user) {

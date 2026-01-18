@@ -22,7 +22,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useDepositsStore } from '@/stores/deposits.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useDepositsSocket, type DepositCreditedEvent } from '@/hooks/useDepositsSocket';
+import { useOnDepositCredited, type DepositCreditedEvent } from '@/hooks/useDepositsSocket';
 import type { DepositCurrency } from '@/lib/api';
 
 // Token mints (mainnet)
@@ -98,11 +98,8 @@ export function TopUpAndBuyModal({
     }
   }, [isOpen, tier, onSuccess, onClose, t]);
 
-  // Subscribe to deposit events (don't show toast, we handle it ourselves)
-  useDepositsSocket({
-    onDepositCredited: handleDepositCredited,
-    showToast: false
-  });
+  // Subscribe to deposit events (toast is shown globally, we just react in UI)
+  useOnDepositCredited(handleDepositCredited);
 
   // Reset deposit received when modal closes
   useEffect(() => {
