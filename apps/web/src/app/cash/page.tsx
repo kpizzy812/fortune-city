@@ -31,6 +31,7 @@ import {
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepositsStore } from '@/stores/deposits.store';
 import { useWithdrawalsStore } from '@/stores/withdrawals.store';
+import { useOnDepositCredited } from '@/hooks/useDepositsSocket';
 import type { DepositCurrency } from '@/lib/api';
 
 // Token mints (mainnet)
@@ -128,6 +129,16 @@ export default function CashPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  // Real-time deposit updates
+  useOnDepositCredited(
+    useCallback(() => {
+      // Refresh deposits list when new deposit is credited
+      if (token) {
+        fetchDeposits(token);
+      }
+    }, [token, fetchDeposits])
+  );
 
   // Auto-connect wallet if user has web3Address
   useEffect(() => {
