@@ -16,8 +16,11 @@ export default function AuthCallbackPage() {
       localStorage.setItem('fortune-city-referral-code', ref);
     }
 
+    // Получаем action параметр (link-email для привязки email)
+    const action = searchParams.get('action') || undefined;
+
     // Обрабатываем callback
-    handleSupabaseCallback()
+    handleSupabaseCallback(action)
       .then(() => {
         router.replace('/');
       })

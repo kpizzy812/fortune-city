@@ -24,7 +24,8 @@ interface AuthState {
 
   // Email/Supabase Auth
   sendMagicLink: (email: string) => Promise<void>;
-  handleSupabaseCallback: () => Promise<void>;
+  sendLinkEmailMagicLink: (email: string) => Promise<void>;
+  handleSupabaseCallback: (action?: string) => Promise<void>;
   linkTelegram: (data: TelegramLoginWidgetData) => Promise<void>;
   linkEmail: () => Promise<void>;
 
@@ -120,8 +121,10 @@ export const useAuthStore = create<AuthState>()(
 
       // ============ Email/Supabase Auth ============
 
+      // Note: These methods don't set global isLoading to avoid unmounting the form component
+      // The form components handle their own loading state locally
       sendMagicLink: async (email: string) => {
-        set({ isLoading: true, error: null });
+        set({ error: null });
         try {
           const referralCode = getReferralCode() ?? undefined;
 
@@ -133,17 +136,34 @@ export const useAuthStore = create<AuthState>()(
           });
 
           if (error) throw error;
-
-          set({ isLoading: false });
         } catch (error) {
           const message =
             error instanceof Error ? error.message : 'Failed to send magic link';
-          set({ error: message, isLoading: false });
+          set({ error: message });
           throw error;
         }
       },
 
-      handleSupabaseCallback: async () => {
+      sendLinkEmailMagicLink: async (email: string) => {
+        set({ error: null });
+        try {
+          const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback?action=link-email`,
+            },
+          });
+
+          if (error) throw error;
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : 'Failed to send magic link';
+          set({ error: message });
+          throw error;
+        }
+      },
+
+      handleSupabaseCallback: async (action?: string) => {
         set({ isLoading: true, error: null });
         try {
           const {
@@ -156,7 +176,20 @@ export const useAuthStore = create<AuthState>()(
 
           set({ supabaseSession: session });
 
-          // Авторизуемся на нашем бэкенде
+          const { token } = get();
+
+          // Если action=link-email и юзер уже залогинен - привязываем email
+          if (action === 'link-email' && token) {
+            const response = await api.linkEmail(token, session.access_token);
+            set({
+              token: response.accessToken,
+              user: response.user,
+              isLoading: false,
+            });
+            return;
+          }
+
+          // Иначе - обычная авторизация
           const referralCode = getReferralCode() ?? undefined;
           const response = await api.authWithSupabase(
             session.access_token,

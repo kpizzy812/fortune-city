@@ -25,7 +25,7 @@ interface ProfileModalProps {
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
-  const { user, linkTelegram, linkWeb3, clearAuth, isLoading, refreshUser } = useAuthStore();
+  const { user, linkTelegram, linkWeb3, sendLinkEmailMagicLink, clearAuth, isLoading, refreshUser } = useAuthStore();
   const tNav = useTranslations('nav');
   const [linkingTelegram, setLinkingTelegram] = useState(false);
   const [linkingWallet, setLinkingWallet] = useState(false);
