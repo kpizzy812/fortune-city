@@ -40,7 +40,16 @@
     "signInWithTelegram": "Войдите через Telegram, чтобы начать играть",
     "authenticating": "Авторизация через Telegram...",
     "devLogin": "Dev вход (Тестовый юзер)",
-    "authError": "Ошибка авторизации"
+    "authError": "Ошибка авторизации",
+    "signInWithEmail": "Войти через email",
+    "or": "или",
+    "emailPlaceholder": "you@example.com",
+    "sendMagicLink": "Отправить ссылку",
+    "sending": "Отправка...",
+    "checkEmail": "Проверьте почту",
+    "magicLinkSent": "Мы отправили ссылку на {email}",
+    "clickToSignIn": "Нажмите на ссылку в письме для входа",
+    "useDifferentEmail": "Использовать другой email"
   },
   "brand": {
     "name": "FORTUNE CITY",

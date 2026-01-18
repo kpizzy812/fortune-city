@@ -2,14 +2,17 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { Session } from '@supabase/supabase-js';
 import { api, UserData, TelegramLoginWidgetData } from '@/lib/api';
 import { getReferralCode, clearReferralCode } from '@/lib/referral';
+import { supabase } from '@/lib/supabase';
 
 interface AuthState {
   token: string | null;
   user: UserData | null;
   isLoading: boolean;
   error: string | null;
+  supabaseSession: Session | null;
 
   // Actions
   setAuth: (token: string, user: UserData) => void;
@@ -18,6 +21,12 @@ interface AuthState {
   authWithLoginWidget: (data: TelegramLoginWidgetData) => Promise<void>;
   devLogin: () => Promise<void>;
   refreshUser: () => Promise<void>;
+
+  // Email/Supabase Auth
+  sendMagicLink: (email: string) => Promise<void>;
+  handleSupabaseCallback: () => Promise<void>;
+  linkTelegram: (data: TelegramLoginWidgetData) => Promise<void>;
+  linkEmail: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -27,13 +36,15 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isLoading: false,
       error: null,
+      supabaseSession: null,
 
       setAuth: (token, user) => {
         set({ token, user, error: null });
       },
 
       clearAuth: () => {
-        set({ token: null, user: null, error: null });
+        supabase.auth.signOut(); // Выходим из Supabase
+        set({ token: null, user: null, supabaseSession: null, error: null });
       },
 
       authWithInitData: async (initData) => {
@@ -100,6 +111,106 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           // Token expired or invalid
           set({ token: null, user: null });
+        }
+      },
+
+      // ============ Email/Supabase Auth ============
+
+      sendMagicLink: async (email: string) => {
+        set({ isLoading: true, error: null });
+        try {
+          const referralCode = getReferralCode() ?? undefined;
+
+          const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback${referralCode ? `?ref=${referralCode}` : ''}`,
+            },
+          });
+
+          if (error) throw error;
+
+          set({ isLoading: false });
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : 'Failed to send magic link';
+          set({ error: message, isLoading: false });
+          throw error;
+        }
+      },
+
+      handleSupabaseCallback: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          const {
+            data: { session },
+            error,
+          } = await supabase.auth.getSession();
+
+          if (error) throw error;
+          if (!session) throw new Error('No session found');
+
+          set({ supabaseSession: session });
+
+          // Авторизуемся на нашем бэкенде
+          const referralCode = getReferralCode() ?? undefined;
+          const response = await api.authWithSupabase(
+            session.access_token,
+            referralCode,
+          );
+
+          clearReferralCode();
+          set({
+            token: response.accessToken,
+            user: response.user,
+            isLoading: false,
+          });
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : 'Auth callback failed';
+          set({ error: message, isLoading: false });
+          throw error;
+        }
+      },
+
+      linkTelegram: async (data: TelegramLoginWidgetData) => {
+        const { token } = get();
+        if (!token) throw new Error('Not authenticated');
+
+        set({ isLoading: true, error: null });
+        try {
+          const response = await api.linkTelegram(token, data);
+          set({
+            token: response.accessToken,
+            user: response.user,
+            isLoading: false,
+          });
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : 'Failed to link Telegram';
+          set({ error: message, isLoading: false });
+          throw error;
+        }
+      },
+
+      linkEmail: async () => {
+        const { token, supabaseSession } = get();
+        if (!token) throw new Error('Not authenticated');
+        if (!supabaseSession) throw new Error('No Supabase session');
+
+        set({ isLoading: true, error: null });
+        try {
+          const response = await api.linkEmail(token, supabaseSession.access_token);
+          set({
+            token: response.accessToken,
+            user: response.user,
+            isLoading: false,
+          });
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : 'Failed to link email';
+          set({ error: message, isLoading: false });
+          throw error;
         }
       },
     }),

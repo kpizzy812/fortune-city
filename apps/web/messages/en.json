@@ -40,7 +40,16 @@
     "signInWithTelegram": "Sign in with Telegram to start playing",
     "authenticating": "Authenticating with Telegram...",
     "devLogin": "Dev Login (Test User)",
-    "authError": "Auth Error"
+    "authError": "Auth Error",
+    "signInWithEmail": "Sign in with email",
+    "or": "or",
+    "emailPlaceholder": "you@example.com",
+    "sendMagicLink": "Send Magic Link",
+    "sending": "Sending...",
+    "checkEmail": "Check your email",
+    "magicLinkSent": "We sent a magic link to {email}",
+    "clickToSignIn": "Click the link in the email to sign in",
+    "useDifferentEmail": "Use a different email"
   },
   "brand": {
     "name": "FORTUNE CITY",
