@@ -352,12 +352,18 @@ export class AuthService {
     const supabasePayload =
       await this.supabaseAuthService.verifyToken(supabaseToken);
 
-    // Web3 identity в Supabase содержит wallet address
-    const walletAddress = supabasePayload.sub;
+    // Web3 wallet address находится в user_metadata, не в sub
+    const walletAddress =
+      this.supabaseAuthService.getWalletAddress(supabasePayload);
 
     if (!walletAddress) {
+      this.logger.error(
+        `Wallet address not found. Payload sub: ${supabasePayload.sub}`,
+      );
       throw new UnauthorizedException('Wallet address not found in token');
     }
+
+    this.logger.log(`Web3 auth with wallet: ${walletAddress}`);
 
     const { user } = await this.usersService.findOrCreateFromWeb3(
       walletAddress,
@@ -391,11 +397,18 @@ export class AuthService {
     const supabasePayload =
       await this.supabaseAuthService.verifyToken(supabaseToken);
 
-    const walletAddress = supabasePayload.sub;
+    // Web3 wallet address находится в user_metadata, не в sub
+    const walletAddress =
+      this.supabaseAuthService.getWalletAddress(supabasePayload);
 
     if (!walletAddress) {
+      this.logger.error(
+        `Wallet address not found for linking. Payload sub: ${supabasePayload.sub}`,
+      );
       throw new UnauthorizedException('Wallet address not found in token');
     }
+
+    this.logger.log(`Linking Web3 wallet ${walletAddress} to user ${userId}`);
 
     const user = await this.usersService.linkWeb3ToUser(userId, walletAddress);
 

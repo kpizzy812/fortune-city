@@ -24,7 +24,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { icon: Home, labelKey: 'hall', href: '/' },
   { icon: ShoppingCart, labelKey: 'shop', href: '/shop' },
-  { icon: FerrisWheel, labelKey: 'wheel', href: '/wheel', isComingSoon: true },
+  { icon: FerrisWheel, labelKey: 'wheel', href: '/wheel' },
   { icon: Users, labelKey: 'refs', href: '/refs' },
   { icon: Wallet, labelKey: 'cash', href: '/cash' },
 ];

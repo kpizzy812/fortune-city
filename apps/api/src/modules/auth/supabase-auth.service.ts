@@ -9,8 +9,23 @@ export interface SupabaseJwtPayload extends JWTPayload {
   phone?: string;
   aud: string;
   role: string;
-  app_metadata?: Record<string, unknown>;
-  user_metadata?: Record<string, unknown>;
+  app_metadata?: {
+    provider?: string;
+    providers?: string[];
+    [key: string]: unknown;
+  };
+  user_metadata?: {
+    // Web3 wallet address (Solana/Ethereum public key)
+    wallet_address?: string;
+    address?: string;
+    [key: string]: unknown;
+  };
+  // AMR contains authentication method details including wallet address
+  amr?: Array<{
+    method: string;
+    timestamp: number;
+    provider?: string;
+  }>;
 }
 
 @Injectable()
@@ -57,5 +72,38 @@ export class SupabaseAuthService {
    */
   isEmailVerified(payload: SupabaseJwtPayload): boolean {
     return payload.email_verified === true;
+  }
+
+  /**
+   * Извлекает адрес кошелька из Supabase JWT payload
+   * Для Web3 auth адрес находится в user_metadata
+   * @param payload - Payload от Supabase JWT
+   * @returns Wallet address или null
+   */
+  getWalletAddress(payload: SupabaseJwtPayload): string | null {
+    // Log full payload for debugging (remove in production)
+    this.logger.debug(
+      `Supabase JWT payload: ${JSON.stringify(payload, null, 2)}`,
+    );
+
+    // Try different possible locations for wallet address
+    const userMetadata = payload.user_metadata;
+
+    if (userMetadata) {
+      // Check common field names
+      if (userMetadata.wallet_address) {
+        return userMetadata.wallet_address;
+      }
+      if (userMetadata.address) {
+        return userMetadata.address;
+      }
+      // Supabase Web3 stores it as 'wallet_address' in user_metadata
+      // but may also be in identity data
+    }
+
+    this.logger.warn(
+      `Wallet address not found in JWT payload. user_metadata: ${JSON.stringify(userMetadata)}`,
+    );
+    return null;
   }
 }
