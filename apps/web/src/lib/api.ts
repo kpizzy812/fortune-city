@@ -85,6 +85,29 @@ class ApiClient {
     });
   }
 
+  async authWithSupabase(accessToken: string, referralCode?: string) {
+    return this.request<AuthResponse>('/auth/supabase', {
+      method: 'POST',
+      body: JSON.stringify({ accessToken, referralCode }),
+    });
+  }
+
+  async linkTelegram(token: string, data: TelegramLoginWidgetData) {
+    return this.request<AuthResponse>('/auth/link-telegram', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  async linkEmail(token: string, supabaseAccessToken: string) {
+    return this.request<AuthResponse>('/auth/link-email', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ accessToken: supabaseAccessToken }),
+    });
+  }
+
   // ============================================
   // Tiers endpoints
   // ============================================
@@ -929,7 +952,8 @@ export const api = new ApiClient(API_URL);
 
 export interface UserData {
   id: string;
-  telegramId: string;
+  telegramId: string | null; // Nullable для email auth
+  email: string | null; // Новое поле
   username: string | null;
   firstName: string | null;
   lastName: string | null;
