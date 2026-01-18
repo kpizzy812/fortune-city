@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useTranslations } from 'next-intl';
 
@@ -14,8 +14,18 @@ export function SolanaLoginButton({
   onError,
 }: SolanaLoginButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isSolanaAvailable, setIsSolanaAvailable] = useState(false);
   const { signInWithWeb3, isLoading } = useAuthStore();
   const t = useTranslations('auth');
+
+  // Проверяем доступность Solana wallet после монтирования на клиенте
+  useEffect(() => {
+    setIsMounted(true);
+    setIsSolanaAvailable(
+      typeof window !== 'undefined' && window.solana !== undefined,
+    );
+  }, []);
 
   const handleConnect = async () => {
     // Проверяем наличие Solana wallet
@@ -42,9 +52,19 @@ export function SolanaLoginButton({
     }
   };
 
-  // Проверяем доступность Solana wallet
-  const isSolanaAvailable =
-    typeof window !== 'undefined' && window.solana !== undefined;
+  // Показываем placeholder пока компонент не смонтирован (для SSR)
+  if (!isMounted) {
+    return (
+      <button
+        disabled
+        className="w-full py-3 bg-gradient-to-r from-[#9945FF] to-[#14F195]
+                   text-white font-bold rounded-lg opacity-50 cursor-not-allowed
+                   flex items-center justify-center gap-2"
+      >
+        {t('connectWallet')}
+      </button>
+    );
+  }
 
   if (!isSolanaAvailable) {
     return (

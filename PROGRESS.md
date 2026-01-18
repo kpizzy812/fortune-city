@@ -366,6 +366,77 @@
 
 ---
 
+## Phase 10: Web3 Authentication (Solana Wallet) (COMPLETED)
+
+**Started:** 2026-01-18
+**Концепция:** Авторизация через Solana кошельки (Phantom, Backpack, etc.) как третий метод входа наряду с Telegram и Email
+
+### Архитектура
+```
+Frontend → window.solana.connect() → Supabase Web3 Auth → Backend JWT
+```
+
+### 10.1 Backend (COMPLETED)
+- [x] Prisma schema: добавлено поле `web3Address String? @unique`
+- [x] UsersService:
+  - findByWeb3Address(address)
+  - createUserWithWeb3(web3Address, referrerCode?)
+  - findOrCreateFromWeb3()
+  - linkWeb3ToUser(userId, web3Address)
+- [x] AuthService:
+  - authWithWeb3Token(supabaseToken, referralCode?) — вход через кошелёк
+  - linkWeb3(userId, supabaseToken) — привязка кошелька к аккаунту
+  - formatUserResponse() — добавлено поле web3Address
+- [x] AuthController:
+  - POST /auth/web3 — авторизация через Web3
+  - POST /auth/link-web3 — привязка кошелька к текущему аккаунту
+  - GET /auth/me — возвращает web3Address
+- [x] DTO: обновлён AuthResponseDto с web3Address
+
+### 10.2 Frontend (COMPLETED)
+- [x] types/window.d.ts — TypeScript типы для Solana Wallet API (window.solana)
+- [x] SolanaLoginButton.tsx — компонент входа с:
+  - Проверка наличия кошелька
+  - Подключение через window.solana.connect()
+  - Аутентификация через Supabase Web3
+  - Инструкция по установке кошелька если не найден
+- [x] auth.store.ts:
+  - signInWithWeb3() — вход через Solana кошелёк
+  - linkWeb3() — привязка кошелька
+- [x] lib/api.ts:
+  - authWithWeb3(accessToken, referralCode?)
+  - linkWeb3(token, supabaseAccessToken)
+  - UserData interface обновлён
+- [x] page.tsx — добавлен SolanaLoginButton на страницу входа
+- [x] cash/page.tsx — авто-коннект кошелька с onlyIfTrusted: true
+  - Автоматически подключается если user?.web3Address существует
+  - Без popup если кошелёк ранее одобрял приложение
+
+### 10.3 Локализация (COMPLETED)
+- [x] en.json и ru.json: секция "auth"
+  - signInWithWallet, connectWallet, connecting
+  - walletNotFound, installWallet
+
+### 10.4 Environment Variables (COMPLETED)
+- [x] Унифицированы .env файлы — единый корневой .env для всех сервисов
+- [x] Созданы symlinks: apps/api/.env → ../../.env, apps/web/.env → ../../.env
+- [x] Добавлены Supabase переменные в корневой .env:
+  - SUPABASE_URL, SUPABASE_ANON_KEY (для бэкенда)
+  - NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY (для фронтенда)
+- [x] Создан .env.example в корне с шаблоном всех переменных
+- [x] Backups: apps/api/.env.backup, apps/web/.env.backup
+
+### Особенности
+- **Multi-provider auth**: Telegram, Email, Solana Wallet — все методы равноправны
+- **Account linking**: Можно привязать несколько методов входа к одному аккаунту
+- **Referral compatibility**: Реферальная система работает и с Web3 входом
+- **Auto-connect UX**: Тихое переподключение кошелька на странице cash без popup
+- **Security**: Supabase валидирует подписи EIP-4361, backend выдаёт собственный JWT
+
+**Build Status:** API и Web собираются успешно
+
+---
+
 ## Notes
 
 - Используем существующие паттерны из auth, machines, economy модулей
