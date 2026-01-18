@@ -49,13 +49,27 @@ export class TelegramLoginWidgetDto {
 }
 
 /**
+ * DTO для авторизации через Supabase (email magic link)
+ */
+export class SupabaseAuthDto {
+  @IsString()
+  @IsNotEmpty()
+  accessToken: string; // Supabase access token
+
+  @IsString()
+  @IsOptional()
+  referralCode?: string;
+}
+
+/**
  * Ответ после успешной авторизации
  */
 export class AuthResponseDto {
   accessToken: string;
   user: {
     id: string;
-    telegramId: string;
+    telegramId: string | null; // Nullable теперь
+    email: string | null; // Новое поле
     username: string | null;
     firstName: string | null;
     lastName: string | null;

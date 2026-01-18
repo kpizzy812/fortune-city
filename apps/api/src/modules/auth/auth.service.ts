@@ -8,16 +8,18 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { validate, parse } from '@tma.js/init-data-node';
 import * as crypto from 'crypto';
-import { UsersService, TelegramUserData } from '../users/users.service';
+import { UsersService, TelegramUserData, EmailUserData } from '../users/users.service';
 import {
   TelegramLoginWidgetDto,
   AuthResponseDto,
 } from './dto/telegram-auth.dto';
 import { User } from '@prisma/client';
+import { SupabaseAuthService } from './supabase-auth.service';
 
 export interface JwtPayload {
   sub: string; // user.id
-  telegramId: string;
+  telegramId?: string; // Теперь опциональный
+  email?: string; // Новое поле
   username?: string;
 }
 
@@ -31,6 +33,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
+    private readonly supabaseAuthService: SupabaseAuthService,
   ) {
     this.botToken = this.configService.getOrThrow<string>('TELEGRAM_BOT_TOKEN');
     this.jwtExpiresIn = this.configService.get<string>('JWT_EXPIRES_IN', '7d');
@@ -198,6 +201,7 @@ export class AuthService {
     return {
       id: user.id,
       telegramId: user.telegramId,
+      email: user.email,
       username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -206,6 +210,126 @@ export class AuthService {
       maxTierReached: user.maxTierReached,
       currentTaxRate: user.currentTaxRate.toString(),
       referralCode: user.referralCode,
+    };
+  }
+
+  // ============ Email/Supabase Auth ============
+
+  /**
+   * Авторизация через Supabase (email/magic link)
+   */
+  async authWithSupabaseToken(
+    supabaseToken: string,
+    referralCode?: string,
+  ): Promise<AuthResponseDto> {
+    // Валидируем Supabase JWT
+    const supabasePayload =
+      await this.supabaseAuthService.verifyToken(supabaseToken);
+
+    if (!supabasePayload.email) {
+      throw new UnauthorizedException('Email not found in token');
+    }
+
+    const emailUser: EmailUserData = {
+      supabaseId: supabasePayload.sub,
+      email: supabasePayload.email,
+      emailVerified: supabasePayload.email_verified ?? false,
+    };
+
+    const { user } = await this.usersService.findOrCreateFromEmail(
+      emailUser,
+      referralCode,
+    );
+
+    // Создаем собственный JWT
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email ?? undefined,
+      telegramId: user.telegramId ?? undefined,
+      username: user.username ?? undefined,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: this.formatUserResponse(user),
+    };
+  }
+
+  /**
+   * Привязка Telegram к текущему пользователю
+   */
+  async linkTelegram(
+    userId: string,
+    telegramData: TelegramLoginWidgetDto,
+  ): Promise<AuthResponseDto> {
+    // Проверяем hash
+    const isValid = this.verifyLoginWidgetHash(telegramData);
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid Telegram hash');
+    }
+
+    const telegramUser: TelegramUserData = {
+      id: telegramData.id,
+      username: telegramData.username,
+      first_name: telegramData.first_name,
+      last_name: telegramData.last_name,
+    };
+
+    const user = await this.usersService.linkTelegramToUser(
+      userId,
+      telegramUser,
+    );
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email ?? undefined,
+      telegramId: user.telegramId ?? undefined,
+      username: user.username ?? undefined,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: this.formatUserResponse(user),
+    };
+  }
+
+  /**
+   * Привязка Email к текущему пользователю
+   */
+  async linkEmail(
+    userId: string,
+    supabaseToken: string,
+  ): Promise<AuthResponseDto> {
+    // Валидируем Supabase токен
+    const supabasePayload =
+      await this.supabaseAuthService.verifyToken(supabaseToken);
+
+    if (!supabasePayload.email) {
+      throw new UnauthorizedException('Email not found in token');
+    }
+
+    const user = await this.usersService.linkEmailToUser(
+      userId,
+      supabasePayload.email,
+      supabasePayload.sub,
+    );
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email ?? undefined,
+      telegramId: user.telegramId ?? undefined,
+      username: user.username ?? undefined,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: this.formatUserResponse(user),
     };
   }
 

@@ -11,10 +11,18 @@ datasource db {
 
 model User {
   id          String   @id @default(cuid())
-  telegramId  String   @unique @map("telegram_id")
+
+  // Auth providers (at least one required)
+  telegramId  String?  @unique @map("telegram_id")
+  email       String?  @unique
+  supabaseId  String?  @unique @map("supabase_id")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+
+  // Profile (can come from any provider)
   username    String?
   firstName   String?  @map("first_name")
   lastName    String?  @map("last_name")
+  avatarUrl   String?  @map("avatar_url")
 
   // Balance (only $FORTUNE, USDT converts on deposit/withdrawal)
   fortuneBalance  Decimal @default(0) @map("fortune_balance") @db.Decimal(20, 8)

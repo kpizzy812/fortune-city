@@ -26,7 +26,8 @@ export function AutoCollectModal({
   const t = useTranslations('collector');
   const tCommon = useTranslations('common');
 
-  if (!autoCollectInfo) return null;
+  // Handle null or incomplete data
+  if (!autoCollectInfo || autoCollectInfo.hireCost === undefined) return null;
 
   const canAfford = userBalance >= autoCollectInfo.hireCost;
   const alreadyPurchased = autoCollectInfo.alreadyPurchased;

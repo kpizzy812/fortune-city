@@ -16,14 +16,17 @@ import {
   TelegramInitDataDto,
   TelegramLoginWidgetDto,
   AuthResponseDto,
+  SupabaseAuthDto,
 } from './dto/telegram-auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { SupabaseAuthService } from './supabase-auth.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly supabaseAuthService: SupabaseAuthService,
   ) {}
 
   /**
@@ -63,6 +66,7 @@ export class AuthController {
     return {
       id: user.id,
       telegramId: user.telegramId,
+      email: user.email,
       username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -72,6 +76,51 @@ export class AuthController {
       currentTaxRate: user.currentTaxRate.toString(),
       referralCode: user.referralCode,
     };
+  }
+
+  /**
+   * POST /auth/supabase
+   * Авторизация через Supabase (email magic link)
+   */
+  @Post('supabase')
+  @HttpCode(HttpStatus.OK)
+  async authWithSupabase(
+    @Body() dto: SupabaseAuthDto,
+  ): Promise<AuthResponseDto> {
+    return this.authService.authWithSupabaseToken(
+      dto.accessToken,
+      dto.referralCode,
+    );
+  }
+
+  /**
+   * POST /auth/link-telegram
+   * Привязка Telegram к текущему аккаунту
+   */
+  @Post('link-telegram')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async linkTelegram(
+    @Req() req: Request,
+    @Body() dto: TelegramLoginWidgetDto,
+  ): Promise<AuthResponseDto> {
+    const payload = req.user as JwtPayload;
+    return this.authService.linkTelegram(payload.sub, dto);
+  }
+
+  /**
+   * POST /auth/link-email
+   * Привязка Email к текущему аккаунту (через Supabase token)
+   */
+  @Post('link-email')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async linkEmail(
+    @Req() req: Request,
+    @Body() dto: SupabaseAuthDto,
+  ): Promise<AuthResponseDto> {
+    const payload = req.user as JwtPayload;
+    return this.authService.linkEmail(payload.sub, dto.accessToken);
   }
 
   /**

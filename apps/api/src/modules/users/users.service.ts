@@ -10,6 +10,12 @@ export interface TelegramUserData {
   last_name?: string;
 }
 
+export interface EmailUserData {
+  supabaseId: string;
+  email: string;
+  emailVerified: boolean;
+}
+
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
@@ -109,6 +115,142 @@ export class UsersService {
       data: {
         maxTierReached: tier,
         currentTaxRate: taxRates[tier] ?? 0.5,
+      },
+    });
+  }
+
+  // ============ Email Auth Methods ============
+
+  async findByEmail(email: string): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: { email },
+    });
+  }
+
+  async findBySupabaseId(supabaseId: string): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: { supabaseId },
+    });
+  }
+
+  async createFromEmail(
+    emailUser: EmailUserData,
+    referrerCode?: string,
+  ): Promise<User> {
+    const referralCode = nanoid(8);
+
+    // Find referrer by their code (if provided)
+    let referrerId: string | undefined;
+    if (referrerCode) {
+      const referrer = await this.prisma.user.findUnique({
+        where: { referralCode: referrerCode },
+        select: { id: true },
+      });
+      if (referrer) {
+        referrerId = referrer.id;
+      }
+    }
+
+    return this.prisma.user.create({
+      data: {
+        supabaseId: emailUser.supabaseId,
+        email: emailUser.email,
+        emailVerifiedAt: emailUser.emailVerified ? new Date() : null,
+        referralCode,
+        referredById: referrerId,
+      },
+    });
+  }
+
+  async findOrCreateFromEmail(
+    emailUser: EmailUserData,
+    referrerCode?: string,
+  ): Promise<{ user: User; isNewUser: boolean }> {
+    // Сначала ищем по supabaseId
+    let user = await this.findBySupabaseId(emailUser.supabaseId);
+    let isNewUser = false;
+
+    if (!user) {
+      // Проверяем, не привязан ли email к существующему аккаунту
+      user = await this.findByEmail(emailUser.email);
+
+      if (user) {
+        // Email уже есть, обновляем supabaseId (связывание аккаунта)
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            supabaseId: emailUser.supabaseId,
+            emailVerifiedAt: emailUser.emailVerified
+              ? new Date()
+              : user.emailVerifiedAt,
+          },
+        });
+      } else {
+        // Создаем нового пользователя
+        user = await this.createFromEmail(emailUser, referrerCode);
+        isNewUser = true;
+      }
+    } else {
+      // Обновляем emailVerifiedAt если нужно
+      if (emailUser.emailVerified && !user.emailVerifiedAt) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { emailVerifiedAt: new Date() },
+        });
+      }
+    }
+
+    return { user, isNewUser };
+  }
+
+  /**
+   * Привязывает Telegram аккаунт к существующему пользователю
+   */
+  async linkTelegramToUser(
+    userId: string,
+    telegramUser: TelegramUserData,
+  ): Promise<User> {
+    const telegramId = String(telegramUser.id);
+
+    // Проверяем, не привязан ли уже этот telegramId
+    const existingTgUser = await this.findByTelegramId(telegramId);
+    if (existingTgUser && existingTgUser.id !== userId) {
+      throw new Error(
+        'This Telegram account is already linked to another user',
+      );
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        telegramId,
+        username: telegramUser.username || undefined,
+        firstName: telegramUser.first_name || undefined,
+        lastName: telegramUser.last_name || undefined,
+      },
+    });
+  }
+
+  /**
+   * Привязывает Email к существующему пользователю
+   */
+  async linkEmailToUser(
+    userId: string,
+    email: string,
+    supabaseId: string,
+  ): Promise<User> {
+    // Проверяем, не привязан ли уже этот email
+    const existingEmailUser = await this.findByEmail(email);
+    if (existingEmailUser && existingEmailUser.id !== userId) {
+      throw new Error('This email is already linked to another user');
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        email,
+        supabaseId,
+        emailVerifiedAt: new Date(),
       },
     });
   }

@@ -232,21 +232,20 @@ export class WheelService implements OnModuleInit {
         timestamp: new Date().toISOString(),
       });
 
-      // Telegram notification to winner (if they have telegramId)
+      // Telegram: personal message to winner (if they have telegramId)
       if (user.telegramId) {
-        this.notificationService.notifyUserJackpotWin(
+        this.notificationService.notifyWinnerPersonally(
           user.telegramId,
           jackpotAmount,
         );
-
-        // Also notify channel about the win
-        this.notificationService.notifyJackpotWinner({
-          winnerId: userId,
-          winnerName: user.username || user.firstName,
-          winnerTelegramId: user.telegramId,
-          amount: jackpotAmount,
-        });
       }
+
+      // Telegram: broadcast to all users with telegramId (except winner)
+      this.notificationService.broadcastJackpotWin({
+        winnerId: userId,
+        winnerName: user.username || user.firstName,
+        amount: jackpotAmount,
+      });
     } else {
       // Just update jackpot pool for all clients
       this.wheelGateway.emitJackpotUpdated({

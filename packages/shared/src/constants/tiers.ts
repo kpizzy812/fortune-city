@@ -119,19 +119,15 @@ export const TAX_RATES_BY_TIER: Record<number, number> = {
   10: 0.1,  // 10%
 };
 
-// Reinvest profit reduction
+// Reinvest profit reduction - агрессивная шкала для мотивации апгрейда
 export const REINVEST_REDUCTION: Record<number, number> = {
-  1: 0,      // 0%
-  2: 0.05,   // -5%
-  3: 0.10,   // -10%
-  4: 0.15,   // -15%
-  5: 0.23,   // -23%
-  6: 0.33,   // -33%
-  7: 0.45,   // -45%
-  8: 0.58,   // -58%
-  9: 0.70,   // -70%
-  10: 0.80,  // -80%
-  11: 0.85,  // -85% (cap)
+  1: 0,      // 0% - первая покупка тира
+  2: 0.35,   // -35% - первый повтор
+  3: 0.50,   // -50%
+  4: 0.60,   // -60%
+  5: 0.70,   // -70%
+  6: 0.80,   // -80%
+  7: 0.90,   // -90% (cap)
 };
 
 // Coin box - fixed capacity for all machines (no upgrades)
