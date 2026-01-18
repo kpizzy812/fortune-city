@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -10,6 +11,8 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useUIStore } from '@/stores/ui.store';
 import { useFortuneRateStore } from '@/stores/fortune-rate.store';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { ProfileModal } from '@/components/profile/ProfileModal';
+import { formatUserDisplayName, getUserInitial } from '@/lib/utils';
 
 interface NavItem {
   icon: LucideIcon;
@@ -34,6 +37,11 @@ export function SidebarNavigation() {
   const t = useTranslations('nav');
   const tBrand = useTranslations('brand');
   const tCommon = useTranslations('common');
+  const tProfile = useTranslations('profile');
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const displayName = user ? formatUserDisplayName(user) : '';
+  const userInitial = user ? getUserInitial(user) : '?';
 
   const handleComingSoon = (e: React.MouseEvent, labelKey: string) => {
     e.preventDefault();
@@ -96,25 +104,30 @@ export function SidebarNavigation() {
       {user && (
         <div className={`border-b border-[#ff2d95]/10 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
           <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
-            <div
+            <button
+              onClick={() => setIsProfileOpen(true)}
               className={`
                 rounded-full bg-gradient-to-br from-[#ff2d95] to-[#00d4ff]
                 flex items-center justify-center font-bold shrink-0
+                hover:shadow-[0_0_15px_rgba(255,45,149,0.5)] transition-shadow cursor-pointer
                 ${sidebarCollapsed ? 'w-12 h-12 text-sm' : 'w-10 h-10 text-sm'}
               `}
-              title={sidebarCollapsed ? `${user.firstName} ${user.lastName}` : undefined}
+              title={sidebarCollapsed ? `${displayName} — ${tProfile('title')}` : tProfile('title')}
             >
-              {user.firstName?.[0] || user.username?.[0] || '?'}
-            </div>
+              {userInitial}
+            </button>
             {!sidebarCollapsed && (
-              <div className="overflow-hidden">
+              <button
+                onClick={() => setIsProfileOpen(true)}
+                className="overflow-hidden text-left hover:opacity-80 transition-opacity"
+              >
                 <p className="font-medium text-white text-sm truncate">
-                  {user.firstName} {user.lastName}
+                  {displayName}
                 </p>
                 {user.username && (
                   <p className="text-xs text-[#00d4ff] truncate">@{user.username}</p>
                 )}
-              </div>
+              </button>
             )}
           </div>
           {!sidebarCollapsed && (
@@ -232,6 +245,9 @@ export function SidebarNavigation() {
           </button>
         </div>
       </div>
+
+      {/* Profile Modal */}
+      <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
     </aside>
   );
 }
