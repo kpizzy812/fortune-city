@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMachinesStore } from '@/stores/machines.store';
 import { useFortuneRateStore } from '@/stores/fortune-rate.store';
@@ -14,6 +15,12 @@ import { usePurchaseIntentStore } from '@/stores/purchase-intent.store';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { api } from '@/lib/api';
 import type { TierInfo, Machine, SaleOptions } from '@/types';
+
+// Dynamic import SolanaWalletProvider to avoid SSR issues
+const SolanaWalletProvider = dynamic(
+  () => import('@/providers/SolanaWalletProvider').then((mod) => mod.SolanaWalletProvider),
+  { ssr: false }
+);
 
 export default function ShopPage() {
   const router = useRouter();
@@ -335,14 +342,18 @@ export default function ShopPage() {
           onSellPawnshop={handleSellPawnshop}
         />
 
-        {/* Top Up and Buy Modal */}
-        <TopUpAndBuyModal
-          isOpen={isTopUpModalOpen}
-          onClose={clearPendingPurchase}
-          tier={pendingTierInfo}
-          shortfall={shortfallAmount ?? 0}
-          onSuccess={handleTopUpSuccess}
-        />
+        {/* Top Up and Buy Modal - wrapped in SolanaWalletProvider for wallet access */}
+        {isTopUpModalOpen && (
+          <SolanaWalletProvider>
+            <TopUpAndBuyModal
+              isOpen={isTopUpModalOpen}
+              onClose={clearPendingPurchase}
+              tier={pendingTierInfo}
+              shortfall={shortfallAmount ?? 0}
+              onSuccess={handleTopUpSuccess}
+            />
+          </SolanaWalletProvider>
+        )}
       </div>
     </main>
   );
