@@ -129,6 +129,27 @@ export default function CashPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  // Auto-connect wallet if user has web3Address
+  useEffect(() => {
+    const autoConnectWallet = async () => {
+      // Only auto-connect if:
+      // 1. User has a web3Address (previously connected via Web3 auth)
+      // 2. Wallet is not already connected
+      // 3. Solana wallet is available
+      if (user?.web3Address && !connected && typeof window !== 'undefined' && window.solana) {
+        try {
+          // Silent connect - won't show popup if previously approved
+          await window.solana.connect({ onlyIfTrusted: true });
+        } catch (error) {
+          // Silent connect failed - user needs to manually connect
+          console.log('Auto-connect skipped - user needs to manually approve');
+        }
+      }
+    };
+
+    autoConnectWallet();
+  }, [user?.web3Address, connected]);
+
   // Save wallet connection when connected
   useEffect(() => {
     if (connected && walletAddress && token) {
