@@ -145,11 +145,23 @@ function TierCard({
             <p className="text-2xl font-bold text-[#ffd700] drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]">
               ${tier.price.toLocaleString()}
             </p>
-            {isLocked && (
+            {isLocked ? (
               <span className="flex items-center gap-1 text-[#ff4444] text-xs font-medium">
                 <Lock className="w-3 h-3" /> {t.locked}
               </span>
-            )}
+            ) : !hasActiveMachine && isUpgrade ? (
+              <Tooltip content={t.reinvestNewTierTooltip} position="top" showIcon={false}>
+                <span className="flex items-center gap-1 text-[#00ff88] text-xs font-medium cursor-help">
+                  <TrendingUp className="w-3 h-3" /> {t.reinvestNewTier}
+                </span>
+              </Tooltip>
+            ) : !hasActiveMachine && showPenalty ? (
+              <Tooltip content={t.reinvestPenaltyTooltip} position="top" showIcon={false}>
+                <span className="flex items-center gap-1 text-[#ffaa00] text-xs font-medium cursor-help">
+                  <TrendingDown className="w-3 h-3" /> {t.reinvestRepeatBadge({ round: canAfford?.nextReinvestRound ?? 2 })}
+                </span>
+              </Tooltip>
+            ) : null}
           </div>
         </div>
       </div>
@@ -165,7 +177,7 @@ function TierCard({
             <p className="text-[9px] text-[#b0b0b0] uppercase tracking-wider">{t.yield}</p>
             <p className="text-sm font-bold text-[#00ff88]">{tier.yieldPercent}%</p>
           </div>
-          <div className="bg-[#1a0a2e]/80 backdrop-blur rounded-lg p-2 text-center border border-white/5 relative">
+          <div className="bg-[#1a0a2e]/80 backdrop-blur rounded-lg p-2 text-center border border-white/5">
             <p className="text-[9px] text-[#b0b0b0] uppercase tracking-wider">{t.profit}</p>
             <div className={`text-sm font-bold ${showPenalty ? 'text-[#ffaa00]' : 'text-[#ffd700]'} flex items-center justify-center gap-0.5`}>
               <span>${formatCompactNumber(actualProfit)}</span>
@@ -179,33 +191,6 @@ function TierCard({
                 </Tooltip>
               )}
             </div>
-            {/* Reinvest penalty or upgrade indicator - только когда можно купить */}
-            {!isLocked && !hasActiveMachine && (showPenalty || isUpgrade) && (
-              <Tooltip
-                content={isUpgrade ? t.reinvestNewTierTooltip : t.reinvestPenaltyTooltip}
-                position="left"
-                showIcon={false}
-              >
-                <div className={`
-                  absolute -top-1.5 -right-1.5 px-1 py-0.5 rounded text-[7px] font-bold cursor-help
-                  ${isUpgrade
-                    ? 'bg-[#00ff88]/20 text-[#00ff88] border border-[#00ff88]/30'
-                    : 'bg-[#ffaa00]/20 text-[#ffaa00] border border-[#ffaa00]/30'}
-                `}>
-                  {isUpgrade ? (
-                    <span className="flex items-center gap-0.5">
-                      <TrendingUp className="w-2 h-2" />
-                      {t.reinvestNewTier}
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-0.5">
-                      <TrendingDown className="w-2 h-2" />
-                      {t.reinvestRepeatBadge({ round: canAfford?.nextReinvestRound ?? 2 })}
-                    </span>
-                  )}
-                </div>
-              </Tooltip>
-            )}
           </div>
         </div>
 
