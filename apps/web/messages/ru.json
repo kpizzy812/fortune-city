@@ -54,7 +54,10 @@
     "checkEmail": "Проверьте почту",
     "magicLinkSent": "Мы отправили ссылку на:",
     "clickToSignIn": "Нажмите на ссылку в письме для входа",
-    "useDifferentEmail": "Использовать другой email"
+    "useDifferentEmail": "Использовать другой email",
+    "resendEmail": "Отправить повторно",
+    "resendIn": "Повторить через ",
+    "seconds": "с"
   },
   "brand": {
     "name": "FORTUNE CITY",

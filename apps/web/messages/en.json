@@ -54,7 +54,10 @@
     "checkEmail": "Check your email",
     "magicLinkSent": "We sent a magic link to:",
     "clickToSignIn": "Click the link in the email to sign in",
-    "useDifferentEmail": "Use a different email"
+    "useDifferentEmail": "Use a different email",
+    "resendEmail": "Resend email",
+    "resendIn": "Resend in ",
+    "seconds": "s"
   },
   "brand": {
     "name": "FORTUNE CITY",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, useRef, FormEvent } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useTranslations } from 'next-intl';
 
@@ -9,22 +9,63 @@ interface EmailLoginFormProps {
   onError?: (error: Error) => void;
 }
 
+const RESEND_COOLDOWN_SECONDS = 60;
+
 export function EmailLoginForm({ onSuccess, onError }: EmailLoginFormProps) {
   const [email, setEmail] = useState('');
   const [isSent, setIsSent] = useState(false);
-  const { sendMagicLink, isLoading, error } = useAuthStore();
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [isSending, setIsSending] = useState(false);
+  const { sendMagicLink, error } = useAuthStore();
   const t = useTranslations('auth');
+  const cooldownRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cooldown timer
+  useEffect(() => {
+    if (cooldownSeconds > 0) {
+      cooldownRef.current = setTimeout(() => {
+        setCooldownSeconds((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (cooldownRef.current) {
+        clearTimeout(cooldownRef.current);
+      }
+    };
+  }, [cooldownSeconds]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSending || cooldownSeconds > 0) return;
+
+    setIsSending(true);
     try {
       await sendMagicLink(email);
       setIsSent(true);
+      setCooldownSeconds(RESEND_COOLDOWN_SECONDS);
       onSuccess?.();
     } catch (err) {
       onError?.(
         err instanceof Error ? err : new Error('Failed to send magic link'),
       );
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (isSending || cooldownSeconds > 0) return;
+
+    setIsSending(true);
+    try {
+      await sendMagicLink(email);
+      setCooldownSeconds(RESEND_COOLDOWN_SECONDS);
+    } catch (err) {
+      onError?.(
+        err instanceof Error ? err : new Error('Failed to send magic link'),
+      );
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -38,7 +79,25 @@ export function EmailLoginForm({ onSuccess, onError }: EmailLoginFormProps) {
         </p>
         <p className="text-[#00d4ff] text-sm font-medium mb-3">{email}</p>
         <p className="text-xs text-[#b0b0b0] mb-4">{t('clickToSignIn')}</p>
+
+        {/* Resend button with cooldown */}
         <button
+          type="button"
+          onClick={handleResend}
+          disabled={isSending || cooldownSeconds > 0}
+          className="w-full py-2 mb-3 bg-[#1a0a2e] border border-[#ff2d95]/30 rounded-lg
+                     text-white text-sm hover:border-[#00d4ff] transition
+                     disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSending
+            ? t('sending')
+            : cooldownSeconds > 0
+              ? `${t('resendIn')} ${cooldownSeconds}${t('seconds')}`
+              : t('resendEmail')}
+        </button>
+
+        <button
+          type="button"
           onClick={() => setIsSent(false)}
           className="text-sm text-white/60 hover:text-white/80 transition"
         >
@@ -71,12 +130,12 @@ export function EmailLoginForm({ onSuccess, onError }: EmailLoginFormProps) {
 
       <button
         type="submit"
-        disabled={isLoading || !email}
+        disabled={isSending || !email}
         className="w-full py-3 bg-gradient-to-r from-[#ff2d95] to-[#00d4ff]
                    text-white font-bold rounded-lg hover:opacity-90 transition
                    disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isLoading ? t('sending') : t('sendMagicLink')}
+        {isSending ? t('sending') : t('sendMagicLink')}
       </button>
     </form>
   );
