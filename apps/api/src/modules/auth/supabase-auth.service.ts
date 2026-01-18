@@ -76,29 +76,32 @@ export class SupabaseAuthService {
 
   /**
    * Извлекает адрес кошелька из Supabase JWT payload
-   * Для Web3 auth адрес находится в user_metadata
+   * Для Web3 auth адрес находится в user_metadata.custom_claims.address
    * @param payload - Payload от Supabase JWT
    * @returns Wallet address или null
    */
   getWalletAddress(payload: SupabaseJwtPayload): string | null {
-    // Log full payload for debugging (remove in production)
-    this.logger.debug(
-      `Supabase JWT payload: ${JSON.stringify(payload, null, 2)}`,
-    );
-
-    // Try different possible locations for wallet address
     const userMetadata = payload.user_metadata;
 
     if (userMetadata) {
-      // Check common field names
-      if (userMetadata.wallet_address) {
-        return userMetadata.wallet_address;
+      // Supabase Web3 stores address in custom_claims.address
+      const customClaims = userMetadata.custom_claims as
+        | { address?: string }
+        | undefined;
+      if (customClaims?.address) {
+        return customClaims.address;
       }
-      if (userMetadata.address) {
-        return userMetadata.address;
+
+      // Fallback: extract from sub field (format: "web3:solana:ADDRESS")
+      if (
+        typeof userMetadata.sub === 'string' &&
+        userMetadata.sub.startsWith('web3:')
+      ) {
+        const parts = userMetadata.sub.split(':');
+        if (parts.length >= 3) {
+          return parts[2]; // ADDRESS part
+        }
       }
-      // Supabase Web3 stores it as 'wallet_address' in user_metadata
-      // but may also be in identity data
     }
 
     this.logger.warn(
