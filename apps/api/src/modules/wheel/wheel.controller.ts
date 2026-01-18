@@ -17,7 +17,7 @@ import {
 } from './dto/spin.dto';
 
 interface AuthRequest extends Request {
-  user: { userId: string };
+  user: { sub: string };
 }
 
 @Controller('wheel')
@@ -34,7 +34,7 @@ export class WheelController {
     @Request() req: AuthRequest,
     @Body() dto: SpinDto,
   ): Promise<SpinResponseDto> {
-    return this.wheelService.spin(req.user.userId, dto.multiplier);
+    return this.wheelService.spin(req.user.sub, dto.multiplier);
   }
 
   /**
@@ -44,7 +44,7 @@ export class WheelController {
   @Get('state')
   @UseGuards(JwtAuthGuard)
   async getState(@Request() req: AuthRequest): Promise<WheelStateDto> {
-    return this.wheelService.getState(req.user.userId);
+    return this.wheelService.getState(req.user.sub);
   }
 
   /**
@@ -59,7 +59,7 @@ export class WheelController {
     @Query('limit') limit?: string,
   ): Promise<SpinHistoryDto> {
     return this.wheelService.getHistory(
-      req.user.userId,
+      req.user.sub,
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 20,
     );

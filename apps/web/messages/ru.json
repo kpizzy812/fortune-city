@@ -160,7 +160,8 @@
       "depositing": "Пополняем...",
       "purchasing": "Покупаем...",
       "purchaseSuccess": "Автомат успешно куплен!",
-      "purchaseFailed": "Ошибка покупки после пополнения"
+      "purchaseFailed": "Ошибка покупки после пополнения",
+      "refreshAfterDeposit": "После отправки закройте это окно и обновите страницу"
     }
   },
   "machines": {
