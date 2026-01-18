@@ -159,9 +159,16 @@ export interface CanAffordResponse {
   canAfford: boolean;
   price: number;
   currentBalance: number;
+  fortuneBalance: number;
+  referralBalance: number;
   shortfall: number;
   tierLocked: boolean;
   hasActiveMachine: boolean;
+  // Reinvest penalty info
+  isUpgrade: boolean;
+  nextReinvestRound: number;
+  currentProfitReduction: number; // % reduction on current machine (0-85)
+  nextProfitReduction: number; // % reduction if buy now (0-85)
 }
 
 export interface PurchaseResult {

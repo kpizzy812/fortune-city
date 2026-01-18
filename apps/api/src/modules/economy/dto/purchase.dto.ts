@@ -47,9 +47,16 @@ export class CanAffordResponseDto {
   canAfford: boolean;
   price: number;
   currentBalance: number;
+  fortuneBalance: number;
+  referralBalance: number;
   shortfall: number;
   tierLocked: boolean;
   hasActiveMachine: boolean;
+  // Reinvest penalty info
+  isUpgrade: boolean;
+  nextReinvestRound: number;
+  currentProfitReduction: number;
+  nextProfitReduction: number;
 }
 
 export class TransactionResponseDto {

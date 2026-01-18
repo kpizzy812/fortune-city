@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, ChevronLeft, ChevronRight, Tag } from 'lucide-react';
+import { Lock, ChevronLeft, ChevronRight, Tag, TrendingDown, TrendingUp } from 'lucide-react';
 import type { TierInfo, CanAffordResponse, Machine } from '@/types';
 import { Button } from '@/components/ui/Button';
 
@@ -67,8 +67,14 @@ function TierCard({
   const hasActiveMachine = canAfford?.hasActiveMachine ?? false;
   const isAffordable = canAfford?.canAfford ?? false;
   const canBuy = !isLocked && !hasActiveMachine && isAffordable && !isPurchasing;
-  const profit = tier.price * (tier.yieldPercent / 100 - 1);
+  const baseProfit = tier.price * (tier.yieldPercent / 100 - 1);
   const dailyRate = (tier.yieldPercent - 100) / tier.lifespanDays;
+
+  // Reinvest penalty info
+  const reductionRate = canAfford?.nextProfitReduction ?? 0;
+  const hasReinvestPenalty = reductionRate > 0;
+  const isUpgrade = canAfford?.isUpgrade ?? false;
+  const actualProfit = hasReinvestPenalty ? baseProfit * (1 - reductionRate / 100) : baseProfit;
 
   return (
     <motion.div
@@ -152,9 +158,35 @@ function TierCard({
             <p className="text-[9px] text-[#b0b0b0] uppercase tracking-wider">{t.yield}</p>
             <p className="text-sm font-bold text-[#00ff88]">{tier.yieldPercent}%</p>
           </div>
-          <div className="bg-[#1a0a2e]/80 backdrop-blur rounded-lg p-2 text-center border border-white/5">
+          <div className="bg-[#1a0a2e]/80 backdrop-blur rounded-lg p-2 text-center border border-white/5 relative">
             <p className="text-[9px] text-[#b0b0b0] uppercase tracking-wider">{t.profit}</p>
-            <p className="text-sm font-bold text-[#ffd700]">${formatCompactNumber(profit)}</p>
+            <p className={`text-sm font-bold ${hasReinvestPenalty ? 'text-[#ffaa00]' : 'text-[#ffd700]'}`}>
+              ${formatCompactNumber(actualProfit)}
+              {hasReinvestPenalty && (
+                <span className="text-[8px] text-[#ff6666] ml-0.5">-{reductionRate.toFixed(0)}%</span>
+              )}
+            </p>
+            {/* Reinvest penalty or upgrade indicator */}
+            {!isLocked && !hasActiveMachine && (hasReinvestPenalty || isUpgrade) && (
+              <div className={`
+                absolute -top-1.5 -right-1.5 px-1 py-0.5 rounded text-[7px] font-bold
+                ${isUpgrade
+                  ? 'bg-[#00ff88]/20 text-[#00ff88] border border-[#00ff88]/30'
+                  : 'bg-[#ffaa00]/20 text-[#ffaa00] border border-[#ffaa00]/30'}
+              `}>
+                {isUpgrade ? (
+                  <span className="flex items-center gap-0.5">
+                    <TrendingUp className="w-2 h-2" />
+                    NEW
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-0.5">
+                    <TrendingDown className="w-2 h-2" />
+                    x{canAfford?.nextReinvestRound}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

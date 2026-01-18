@@ -11,7 +11,11 @@ import { TransactionsService } from './transactions.service';
 import { FundSourceService } from './fund-source.service';
 import { SettingsService } from '../../settings/settings.service';
 import { ReferralsService } from '../../referrals/referrals.service';
-import { getTierConfigOrThrow, TAX_RATES_BY_TIER } from '@fortune-city/shared';
+import {
+  getTierConfigOrThrow,
+  TAX_RATES_BY_TIER,
+  REINVEST_REDUCTION,
+} from '@fortune-city/shared';
 
 export interface PurchaseMachineInput {
   tier: number;
@@ -277,6 +281,11 @@ export class PurchaseService {
     shortfall: number;
     tierLocked: boolean;
     hasActiveMachine: boolean;
+    // Reinvest penalty info
+    isUpgrade: boolean;
+    nextReinvestRound: number;
+    currentProfitReduction: number;
+    nextProfitReduction: number;
   }> {
     const tierConfig = getTierConfigOrThrow(tier);
     const user = await this.prisma.user.findUnique({
@@ -303,6 +312,32 @@ export class PurchaseService {
       },
     });
 
+    // Calculate reinvest penalty info
+    const isUpgrade = tier > user.maxTierReached;
+    let nextReinvestRound = 1;
+    let currentProfitReduction = 0;
+    let nextProfitReduction = 0;
+
+    if (!isUpgrade) {
+      // Count completed machines of this tier
+      const completedMachinesCount = await this.prisma.machine.count({
+        where: {
+          userId,
+          tier,
+          status: {
+            in: ['expired', 'sold_early', 'sold_auction', 'sold_pawnshop'],
+          },
+        },
+      });
+      nextReinvestRound = completedMachinesCount + 1;
+      // Current reduction (what active machine has, if any)
+      currentProfitReduction =
+        (REINVEST_REDUCTION[completedMachinesCount] ?? 0.85) * 100;
+      // Next reduction (what new machine will have)
+      nextProfitReduction =
+        (REINVEST_REDUCTION[nextReinvestRound] ?? 0.85) * 100;
+    }
+
     return {
       canAfford: totalBalance >= price,
       price,
@@ -312,6 +347,10 @@ export class PurchaseService {
       shortfall: Math.max(0, price - totalBalance),
       tierLocked: tier > maxAllowedTier,
       hasActiveMachine: !!activeMachineOfSameTier,
+      isUpgrade,
+      nextReinvestRound,
+      currentProfitReduction,
+      nextProfitReduction,
     };
   }
 }

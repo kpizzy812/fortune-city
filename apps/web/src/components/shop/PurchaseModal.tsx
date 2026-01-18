@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, XCircle } from 'lucide-react';
+import { AlertTriangle, XCircle, TrendingUp, TrendingDown } from 'lucide-react';
 import type { TierInfo, CanAffordResponse } from '@/types';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -26,10 +26,15 @@ export function PurchaseModal({
 }: PurchaseModalProps) {
   if (!tier) return null;
 
-  const profit = tier.price * (tier.yieldPercent / 100 - 1);
-  const totalYield = tier.price * (tier.yieldPercent / 100);
+  // Calculate profit considering reinvest penalty
+  const baseProfit = tier.price * (tier.yieldPercent / 100 - 1);
+  const reductionRate = canAfford?.nextProfitReduction ?? 0;
+  const actualProfit = baseProfit * (1 - reductionRate / 100);
+  const totalYield = tier.price + actualProfit;
   const balanceAfter = userBalance - tier.price;
   const isLowBalance = balanceAfter < tier.price * 0.1; // Less than 10% of price left
+  const hasReinvestPenalty = reductionRate > 0;
+  const isUpgrade = canAfford?.isUpgrade ?? false;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Purchase ${tier.name}?`}>
@@ -58,12 +63,19 @@ export function PurchaseModal({
           <div className="flex justify-between py-2 border-b border-[#3a2a5e]">
             <span className="text-[#b0b0b0]">Expected Yield</span>
             <span className="font-mono text-[#00ff88]">
-              ${totalYield.toFixed(2)} (+{tier.yieldPercent - 100}%)
+              ${totalYield.toFixed(2)}
             </span>
           </div>
           <div className="flex justify-between py-2 border-b border-[#3a2a5e]">
             <span className="text-[#b0b0b0]">Profit</span>
-            <span className="font-mono text-[#00ff88]">${profit.toFixed(2)}</span>
+            <span className={`font-mono ${hasReinvestPenalty ? 'text-[#ffaa00]' : 'text-[#00ff88]'}`}>
+              ${actualProfit.toFixed(2)}
+              {hasReinvestPenalty && (
+                <span className="text-xs ml-1 text-[#ff6666]">
+                  (-{reductionRate.toFixed(0)}%)
+                </span>
+              )}
+            </span>
           </div>
         </div>
 
@@ -89,6 +101,40 @@ export function PurchaseModal({
             <p className="text-[#ffaa00] text-sm flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
               Your balance will be low after this purchase
+            </p>
+          </div>
+        )}
+
+        {/* Reinvest penalty warning */}
+        {hasReinvestPenalty && (
+          <div className="p-3 bg-[#ffaa00]/10 border border-[#ffaa00]/30 rounded-lg">
+            <p className="text-[#ffaa00] text-sm flex items-center gap-2 font-semibold mb-1">
+              <TrendingDown className="w-4 h-4 flex-shrink-0" />
+              Repeat purchase of the same tier
+            </p>
+            <p className="text-xs text-[#b0b0b0] mb-2">
+              This is your {canAfford?.nextReinvestRound ?? 1}
+              {canAfford?.nextReinvestRound === 2 ? 'nd' : canAfford?.nextReinvestRound === 3 ? 'rd' : 'th'} machine
+              of this tier. Profit reduced by {reductionRate.toFixed(0)}%.
+            </p>
+            {tier.tier < 10 && (
+              <p className="text-xs text-[#00ff88] flex items-center gap-1">
+                <TrendingUp className="w-3 h-3" />
+                Tip: Upgrade to Tier {tier.tier + 1} for full profit!
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Upgrade bonus info */}
+        {isUpgrade && (
+          <div className="p-3 bg-[#00ff88]/10 border border-[#00ff88]/30 rounded-lg">
+            <p className="text-[#00ff88] text-sm flex items-center gap-2 font-semibold">
+              <TrendingUp className="w-4 h-4 flex-shrink-0" />
+              New tier unlocked!
+            </p>
+            <p className="text-xs text-[#b0b0b0]">
+              First purchase of this tier - you&apos;ll get maximum profit with no penalties!
             </p>
           </div>
         )}
