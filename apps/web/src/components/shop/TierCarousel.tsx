@@ -15,6 +15,7 @@ interface TierCarouselProps {
   maxTierReached: number;
   onBuyTier: (tier: number) => void;
   onSellMachine: (machine: Machine) => void;
+  onTopUpAndBuy: (tier: TierInfo, shortfall: number) => void;
   isPurchasing: boolean;
   isLoading: boolean;
 }
@@ -39,6 +40,7 @@ interface TierCardTranslations {
   dailyReturn: (params: { rate: string }) => string;
   reachTierFirst: (params: { tier: number }) => string;
   needMore: (params: { amount: string }) => string;
+  topUpAndBuy: (params: { amount: string }) => string;
   purchasing: string;
   buyMachine: string;
   sellMachine: string;
@@ -55,6 +57,7 @@ function TierCard({
   maxTierReached,
   onBuy,
   onSell,
+  onTopUpAndBuy,
   isPurchasing,
   t,
 }: {
@@ -64,6 +67,7 @@ function TierCard({
   maxTierReached: number;
   onBuy: () => void;
   onSell: () => void;
+  onTopUpAndBuy: () => void;
   isPurchasing: boolean;
   t: TierCardTranslations;
 }) {
@@ -216,8 +220,8 @@ function TierCard({
             {t.sellMachine}
           </Button>
         ) : !isAffordable && canAfford ? (
-          <Button variant="secondary" size="sm" fullWidth disabled>
-            {t.needMore({ amount: formatCompactNumber(canAfford.shortfall) })}
+          <Button variant="gold" size="sm" fullWidth onClick={onTopUpAndBuy}>
+            {t.topUpAndBuy({ amount: formatCompactNumber(canAfford.shortfall) })}
           </Button>
         ) : (
           <Button
@@ -243,6 +247,7 @@ export function TierCarousel({
   maxTierReached,
   onBuyTier,
   onSellMachine,
+  onTopUpAndBuy,
   isPurchasing,
   isLoading,
 }: TierCarouselProps) {
@@ -325,6 +330,7 @@ export function TierCarousel({
     dailyReturn: (params) => tShop('dailyReturn', params),
     reachTierFirst: (params) => tShop('reachTierFirst', params),
     needMore: (params) => tShop('needMore', params),
+    topUpAndBuy: (params) => tShop('topUpAndBuy', params),
     purchasing: tShop('purchasing'),
     buyMachine: tShop('buyMachine'),
     sellMachine: tSell('sellMachine'),
@@ -413,6 +419,12 @@ export function TierCarousel({
                   maxTierReached={maxTierReached}
                   onBuy={() => onBuyTier(tier.tier)}
                   onSell={() => machine && onSellMachine(machine)}
+                  onTopUpAndBuy={() => {
+                    const canAffordInfo = affordability[tier.tier];
+                    if (canAffordInfo) {
+                      onTopUpAndBuy(tier, canAffordInfo.shortfall);
+                    }
+                  }}
                   isPurchasing={isPurchasing}
                   t={cardTranslations}
                 />

@@ -145,6 +145,22 @@
       "ordinal2": "-й",
       "ordinal3": "-й",
       "ordinalOther": "-й"
+    },
+    "topUpAndBuy": "Пополнить ${amount} и купить",
+    "topUpModal": {
+      "title": "Пополнить и купить",
+      "yourBalance": "Ваш баланс",
+      "price": "Цена",
+      "needMore": "Нужно пополнить",
+      "selectCurrency": "Выберите валюту",
+      "depositAmount": "Сумма пополнения",
+      "notEnough": "Ещё нужно ${amount} после пополнения",
+      "connectWalletHint": "Подключите Solana кошелёк для пополнения",
+      "depositAndBuy": "Пополнить и купить",
+      "depositing": "Пополняем...",
+      "purchasing": "Покупаем...",
+      "purchaseSuccess": "Автомат успешно куплен!",
+      "purchaseFailed": "Ошибка покупки после пополнения"
     }
   },
   "machines": {

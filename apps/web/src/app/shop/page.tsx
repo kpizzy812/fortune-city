@@ -9,6 +9,8 @@ import { useFortuneRateStore } from '@/stores/fortune-rate.store';
 import { TierCarousel } from '@/components/shop/TierCarousel';
 import { PurchaseModal } from '@/components/shop/PurchaseModal';
 import { SellMachineModal } from '@/components/shop/SellMachineModal';
+import { TopUpAndBuyModal } from '@/components/shop/TopUpAndBuyModal';
+import { usePurchaseIntentStore } from '@/stores/purchase-intent.store';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { api } from '@/lib/api';
 import type { TierInfo, Machine, SaleOptions } from '@/types';
@@ -43,6 +45,15 @@ export default function ShopPage() {
   const [isSellModalOpen, setIsSellModalOpen] = useState(false);
   const [saleOptions, setSaleOptions] = useState<SaleOptions | null>(null);
   const [isLoadingSaleOptions, setIsLoadingSaleOptions] = useState(false);
+
+  // Top up and buy state
+  const {
+    pendingTierInfo,
+    shortfallAmount,
+    isTopUpModalOpen,
+    setPendingPurchase,
+    clearPendingPurchase,
+  } = usePurchaseIntentStore();
 
   // Track if initial fetch was done
   const hasFetchedTiers = useRef(false);
@@ -181,6 +192,29 @@ export default function ShopPage() {
     }
   }, [token, selectedMachineForSale, refreshUser, fetchMachines, user, checkAllAffordability]);
 
+  // Handle top up and buy click
+  const handleTopUpAndBuy = useCallback((tier: TierInfo, shortfall: number) => {
+    setPendingPurchase(tier.tier, tier, shortfall);
+  }, [setPendingPurchase]);
+
+  // Handle successful top up - auto purchase
+  const handleTopUpSuccess = useCallback(async () => {
+    if (!token || !pendingTierInfo) return;
+
+    // Purchase the machine
+    await purchaseMachine(token, pendingTierInfo.tier);
+    // Refresh user balance
+    await refreshUser();
+    // Recheck affordability
+    if (user) {
+      checkAllAffordability(token, user.maxTierReached);
+    }
+    // Clear the intent
+    clearPendingPurchase();
+    // Redirect to dashboard
+    router.push('/');
+  }, [token, pendingTierInfo, purchaseMachine, refreshUser, user, checkAllAffordability, clearPendingPurchase, router]);
+
   // Loading state
   if (!user || !token) {
     return (
@@ -274,6 +308,7 @@ export default function ShopPage() {
           maxTierReached={user.maxTierReached}
           onBuyTier={handleBuyTier}
           onSellMachine={handleSellMachine}
+          onTopUpAndBuy={handleTopUpAndBuy}
           isPurchasing={isPurchasing}
           isLoading={isLoadingTiers}
         />
@@ -298,6 +333,15 @@ export default function ShopPage() {
           isLoading={isLoadingSaleOptions}
           onSellAuction={handleSellAuction}
           onSellPawnshop={handleSellPawnshop}
+        />
+
+        {/* Top Up and Buy Modal */}
+        <TopUpAndBuyModal
+          isOpen={isTopUpModalOpen}
+          onClose={clearPendingPurchase}
+          tier={pendingTierInfo}
+          shortfall={shortfallAmount ?? 0}
+          onSuccess={handleTopUpSuccess}
         />
       </div>
     </main>

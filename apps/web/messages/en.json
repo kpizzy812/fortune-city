@@ -145,6 +145,22 @@
       "ordinal2": "nd",
       "ordinal3": "rd",
       "ordinalOther": "th"
+    },
+    "topUpAndBuy": "Top up ${amount} & buy",
+    "topUpModal": {
+      "title": "Top up & Buy",
+      "yourBalance": "Your balance",
+      "price": "Price",
+      "needMore": "Need to deposit",
+      "selectCurrency": "Select Currency",
+      "depositAmount": "Deposit Amount",
+      "notEnough": "Still need ${amount} more after deposit",
+      "connectWalletHint": "Connect your Solana wallet to deposit",
+      "depositAndBuy": "Deposit & Buy",
+      "depositing": "Depositing...",
+      "purchasing": "Purchasing...",
+      "purchaseSuccess": "Machine purchased successfully!",
+      "purchaseFailed": "Purchase failed after deposit"
     }
   },
   "machines": {
