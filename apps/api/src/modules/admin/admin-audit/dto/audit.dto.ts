@@ -53,11 +53,15 @@ export class AuditFilterDto {
   sortOrder?: SortOrder = SortOrder.desc;
 
   @IsOptional()
-  @Transform(({ value }: { value: string | undefined }) => (value ? new Date(value) : undefined))
+  @Transform(({ value }: { value: string | undefined }) =>
+    value ? new Date(value) : undefined,
+  )
   dateFrom?: Date;
 
   @IsOptional()
-  @Transform(({ value }: { value: string | undefined }) => (value ? new Date(value) : undefined))
+  @Transform(({ value }: { value: string | undefined }) =>
+    value ? new Date(value) : undefined,
+  )
   dateTo?: Date;
 }
 

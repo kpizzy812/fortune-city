@@ -95,11 +95,15 @@ describe('AdminUsersService', () => {
   const setupUserStatsQueries = () => {
     (prismaService.deposit.aggregate as jest.Mock).mockResolvedValue({
       _count: mockUserStats.totalDeposits,
-      _sum: { amountUsd: new Prisma.Decimal(mockUserStats.totalDepositsAmount) },
+      _sum: {
+        amountUsd: new Prisma.Decimal(mockUserStats.totalDepositsAmount),
+      },
     });
     (prismaService.withdrawal.aggregate as jest.Mock).mockResolvedValue({
       _count: mockUserStats.totalWithdrawals,
-      _sum: { netAmount: new Prisma.Decimal(mockUserStats.totalWithdrawalsAmount) },
+      _sum: {
+        netAmount: new Prisma.Decimal(mockUserStats.totalWithdrawalsAmount),
+      },
     });
     (prismaService.machine.count as jest.Mock)
       .mockResolvedValueOnce(mockUserStats.totalMachinesPurchased)
@@ -194,9 +198,9 @@ describe('AdminUsersService', () => {
     it('should throw NotFoundException if user not found', async () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.banUser('non-existent', banReason),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.banUser('non-existent', banReason)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should log the ban action', async () => {

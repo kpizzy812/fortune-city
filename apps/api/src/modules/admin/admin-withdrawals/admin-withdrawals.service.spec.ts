@@ -100,12 +100,12 @@ describe('AdminWithdrawalsService', () => {
         null,
       );
 
-      await expect(
-        service.getWithdrawalById('non-existent'),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.getWithdrawalById('non-existent'),
-      ).rejects.toThrow('Withdrawal non-existent not found');
+      await expect(service.getWithdrawalById('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.getWithdrawalById('non-existent')).rejects.toThrow(
+        'Withdrawal non-existent not found',
+      );
     });
   });
 
@@ -141,9 +141,9 @@ describe('AdminWithdrawalsService', () => {
         null,
       );
 
-      await expect(
-        service.approveWithdrawal('non-existent'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.approveWithdrawal('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException if withdrawal is not pending', async () => {
@@ -152,12 +152,12 @@ describe('AdminWithdrawalsService', () => {
         completedWithdrawal,
       );
 
-      await expect(
-        service.approveWithdrawal(mockWithdrawalId),
-      ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.approveWithdrawal(mockWithdrawalId),
-      ).rejects.toThrow('Cannot approve withdrawal with status completed');
+      await expect(service.approveWithdrawal(mockWithdrawalId)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.approveWithdrawal(mockWithdrawalId)).rejects.toThrow(
+        'Cannot approve withdrawal with status completed',
+      );
     });
 
     it('should throw BadRequestException if withdrawal is already processing', async () => {
@@ -168,9 +168,9 @@ describe('AdminWithdrawalsService', () => {
         processingWithdrawal,
       );
 
-      await expect(
-        service.approveWithdrawal(mockWithdrawalId),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.approveWithdrawal(mockWithdrawalId)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException if withdrawal is cancelled', async () => {
@@ -179,9 +179,9 @@ describe('AdminWithdrawalsService', () => {
         cancelledWithdrawal,
       );
 
-      await expect(
-        service.approveWithdrawal(mockWithdrawalId),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.approveWithdrawal(mockWithdrawalId)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 

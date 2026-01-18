@@ -23,7 +23,9 @@ export class AdminDashboardController {
   @Get('charts')
   async getChartData(@Query('days') days?: string) {
     const daysNum = days ? parseInt(days, 10) : 30;
-    return this.dashboardService.getChartData(Math.min(Math.max(daysNum, 7), 90));
+    return this.dashboardService.getChartData(
+      Math.min(Math.max(daysNum, 7), 90),
+    );
   }
 
   /**

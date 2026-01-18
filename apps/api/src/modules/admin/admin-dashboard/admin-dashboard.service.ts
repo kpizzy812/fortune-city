@@ -47,7 +47,11 @@ export class AdminDashboardService {
 
   async getStats(): Promise<DashboardStats> {
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const weekAgo = new Date(todayStart);
     weekAgo.setDate(weekAgo.getDate() - 7);
 
@@ -178,7 +182,11 @@ export class AdminDashboardService {
 
     // Generate date range
     const dates: Date[] = [];
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    for (
+      let d = new Date(startDate);
+      d <= endDate;
+      d.setDate(d.getDate() + 1)
+    ) {
       dates.push(new Date(d));
     }
 
@@ -230,7 +238,9 @@ export class AdminDashboardService {
 
     const usersMap = groupByDate(users, () => 1);
     const depositsMap = groupByDate(deposits, (d) => Number(d.amountUsd));
-    const withdrawalsMap = groupByDate(withdrawals, (w) => Number(w.usdtAmount));
+    const withdrawalsMap = groupByDate(withdrawals, (w) =>
+      Number(w.usdtAmount),
+    );
     const revenueMap = groupByDate(withdrawals, (w) => Number(w.taxAmount));
     const machinesMap = groupByDate(machines, () => 1);
 

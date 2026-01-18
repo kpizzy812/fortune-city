@@ -15,7 +15,7 @@ import { getTierConfigOrThrow, TAX_RATES_BY_TIER } from '@fortune-city/shared';
 
 export interface PurchaseMachineInput {
   tier: number;
-  reinvestRound?: number;
+  // reinvestRound is calculated automatically based on user's history
 }
 
 export interface PurchaseMachineResult {
@@ -97,6 +97,26 @@ export class PurchaseService {
       );
     }
 
+    // Calculate reinvestRound automatically
+    // If upgrading to a new tier (higher than ever reached), reset to 1
+    // Otherwise, count completed machines of this tier + 1
+    let reinvestRound = 1;
+    const isUpgrade = input.tier > user.maxTierReached;
+
+    if (!isUpgrade) {
+      // Count completed machines of this tier (not active, not listed)
+      const completedMachinesCount = await this.prisma.machine.count({
+        where: {
+          userId,
+          tier: input.tier,
+          status: {
+            in: ['expired', 'sold_early', 'sold_auction', 'sold_pawnshop'],
+          },
+        },
+      });
+      reinvestRound = completedMachinesCount + 1;
+    }
+
     // Calculate how much to take from each balance
     // Priority: fortuneBalance first, then referralBalance
     const fromFortuneBalance = Prisma.Decimal.min(user.fortuneBalance, price);
@@ -104,10 +124,10 @@ export class PurchaseService {
 
     // Calculate fund source breakdown (how much is fresh deposit vs profit)
     // Note: referralBalance is NOT fresh deposit, so we exclude it from fresh calculation
-    const effectiveBalance = user.fortuneBalance; // Only fortuneBalance can have fresh deposits
+    // User has totalFreshDeposits field that tracks cumulative fresh USDT deposits
     const sourceBreakdown = this.fundSourceService.calculateSourceBreakdown(
-      effectiveBalance,
-      effectiveBalance, // TODO: Track actual fresh deposits at user level
+      user.fortuneBalance,
+      user.totalFreshDeposits,
       fromFortuneBalance, // Only calculate source for fortuneBalance portion
     );
 
@@ -140,10 +160,10 @@ export class PurchaseService {
         });
       }
 
-      // 3. Create machine
+      // 3. Create machine (reinvestRound calculated automatically above)
       const machine = await this.machinesService.create(userId, {
         tier: input.tier,
-        reinvestRound: input.reinvestRound,
+        reinvestRound,
       });
 
       // 4. Create fund source record

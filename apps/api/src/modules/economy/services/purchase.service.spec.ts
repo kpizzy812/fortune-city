@@ -29,6 +29,8 @@ describe('PurchaseService', () => {
     lastName: 'User',
     fortuneBalance: new Prisma.Decimal(100),
     referralBalance: new Prisma.Decimal(0),
+    totalFreshDeposits: new Prisma.Decimal(100),
+    totalProfitCollected: new Prisma.Decimal(0),
     maxTierReached: 1,
     maxTierUnlocked: 1,
     currentTaxRate: new Prisma.Decimal(0.5),
@@ -95,6 +97,7 @@ describe('PurchaseService', () => {
       },
       machine: {
         findFirst: jest.fn(),
+        count: jest.fn().mockResolvedValue(0), // Default: no previous machines
       },
       $transaction: jest.fn(),
     };
@@ -205,9 +208,10 @@ describe('PurchaseService', () => {
       expect(result.machine).toEqual(mockMachine);
       expect(result.transaction).toEqual(mockTransaction);
       expect(result.user).toEqual(updatedUser);
+      // reinvestRound is now calculated automatically (1 for first machine)
       expect(machinesService.create).toHaveBeenCalledWith(mockUserId, {
         tier: 1,
-        reinvestRound: undefined,
+        reinvestRound: 1,
       });
     });
 
@@ -304,9 +308,10 @@ describe('PurchaseService', () => {
       expect(result.machine.tier).toBe(2);
     });
 
-    it('should accept reinvestRound parameter', async () => {
+    it('should calculate reinvestRound automatically based on completed machines', async () => {
       const mockUser = createMockUser({
         fortuneBalance: new Prisma.Decimal(100),
+        maxTierReached: 1, // Not upgrading, so reinvestRound should be calculated
       });
       const mockMachine = createMockMachine({ reinvestRound: 3 });
       const mockTransaction = createMockTransaction();
@@ -315,6 +320,8 @@ describe('PurchaseService', () => {
       });
 
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      // Mock 2 completed machines of same tier -> reinvestRound should be 3
+      (prismaService.machine.count as jest.Mock).mockResolvedValue(2);
       (fundSourceService.calculateSourceBreakdown as jest.Mock).mockReturnValue(
         {
           freshDeposit: 10,
@@ -346,11 +353,68 @@ describe('PurchaseService', () => {
         },
       );
 
-      await service.purchaseMachine(mockUserId, { tier: 1, reinvestRound: 3 });
+      await service.purchaseMachine(mockUserId, { tier: 1 });
 
+      // reinvestRound should be 3 (2 completed + 1)
       expect(machinesService.create).toHaveBeenCalledWith(mockUserId, {
         tier: 1,
         reinvestRound: 3,
+      });
+    });
+
+    it('should reset reinvestRound to 1 when upgrading to higher tier', async () => {
+      const mockUser = createMockUser({
+        fortuneBalance: new Prisma.Decimal(100),
+        maxTierReached: 1, // Buying tier 2 = upgrade
+        maxTierUnlocked: 2,
+      });
+      const mockMachine = createMockMachine({ tier: 2, reinvestRound: 1 });
+      const mockTransaction = createMockTransaction();
+      const updatedUser = createMockUser({
+        fortuneBalance: new Prisma.Decimal(70),
+        maxTierReached: 2,
+      });
+
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      // Even with completed machines of tier 2, should reset to 1 for upgrade
+      (prismaService.machine.count as jest.Mock).mockResolvedValue(5);
+      (fundSourceService.calculateSourceBreakdown as jest.Mock).mockReturnValue(
+        {
+          freshDeposit: 30,
+          profitDerived: 0,
+          totalAmount: 30,
+          profitPercentage: 0,
+        },
+      );
+
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback: (tx: unknown) => Promise<unknown>) => {
+          const mockTx = {
+            user: {
+              update: jest.fn().mockResolvedValue(updatedUser),
+            },
+          };
+          machinesService.create.mockResolvedValue(mockMachine);
+          fundSourceService.create.mockResolvedValue({
+            id: 'fs-123',
+            machineId: mockMachine.id,
+            freshDepositAmount: new Prisma.Decimal(30),
+            profitDerivedAmount: new Prisma.Decimal(0),
+            sourceMachineIds: [],
+            createdAt: new Date(),
+          });
+          transactionsService.create.mockResolvedValue(mockTransaction);
+
+          return callback(mockTx);
+        },
+      );
+
+      await service.purchaseMachine(mockUserId, { tier: 2 });
+
+      // reinvestRound should be 1 because it's an upgrade (tier 2 > maxTierReached 1)
+      expect(machinesService.create).toHaveBeenCalledWith(mockUserId, {
+        tier: 2,
+        reinvestRound: 1,
       });
     });
   });

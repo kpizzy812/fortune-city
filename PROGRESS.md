@@ -180,6 +180,28 @@
 
 ---
 
+## Phase 7: Исправления критичных механик (COMPLETED)
+
+### 7.1 reinvestRound - автоматическое вычисление
+- [x] Убран параметр reinvestRound из PurchaseMachineDto (клиент больше не передаёт)
+- [x] reinvestRound теперь вычисляется автоматически на бэкенде:
+  - Считается количество завершённых машин того же тира у пользователя
+  - reinvestRound = completedMachinesCount + 1
+- [x] Сброс reinvestRound при апгрейде на более высокий тир:
+  - Если tier > user.maxTierReached → reinvestRound = 1 (сброс)
+- [x] Исправлен баг с отслеживанием fresh deposits (использовался approx вместо user.totalFreshDeposits)
+
+### 7.2 Тесты
+- [x] Обновлены тесты в purchase.service.spec.ts
+- [x] Добавлены тесты для автоматического вычисления reinvestRound
+- [x] Добавлены тесты для сброса при апгрейде тира
+
+**Security:** Закрыта дыра в экономике - ранее клиент мог передавать reinvestRound: 1 и обходить механику урезания прибыли
+
+**Build Status:** API собирается успешно, 187 тестов проходят
+
+---
+
 ## Notes
 
 - Используем существующие паттерны из auth, machines, economy модулей

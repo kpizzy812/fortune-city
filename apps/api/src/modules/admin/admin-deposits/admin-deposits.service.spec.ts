@@ -178,12 +178,12 @@ describe('AdminDepositsService', () => {
         creditedDeposit,
       );
 
-      await expect(
-        service.manualCredit(mockDepositId, reason),
-      ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.manualCredit(mockDepositId, reason),
-      ).rejects.toThrow('Deposit already credited');
+      await expect(service.manualCredit(mockDepositId, reason)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.manualCredit(mockDepositId, reason)).rejects.toThrow(
+        'Deposit already credited',
+      );
     });
 
     it('should log the manual credit action', async () => {
@@ -397,8 +397,16 @@ describe('AdminDepositsService', () => {
         });
 
       (prismaService.deposit.groupBy as jest.Mock).mockResolvedValue([
-        { currency: 'USDT_SOL', _count: 70, _sum: { amount: new Prisma.Decimal(35000) } },
-        { currency: 'SOL', _count: 10, _sum: { amount: new Prisma.Decimal(100) } },
+        {
+          currency: 'USDT_SOL',
+          _count: 70,
+          _sum: { amount: new Prisma.Decimal(35000) },
+        },
+        {
+          currency: 'SOL',
+          _count: 10,
+          _sum: { amount: new Prisma.Decimal(100) },
+        },
       ]);
 
       const result = await service.getStats();

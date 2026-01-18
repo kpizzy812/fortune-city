@@ -1,15 +1,12 @@
-import { IsInt, Min, Max, IsOptional } from 'class-validator';
+import { IsInt, Min, Max } from 'class-validator';
 
 export class PurchaseMachineDto {
   @IsInt()
   @Min(1)
   @Max(10)
   tier: number;
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  reinvestRound?: number;
+  // reinvestRound is calculated automatically on the backend
+  // based on user's purchase history for this tier
 }
 
 export class PurchaseMachineResponseDto {
