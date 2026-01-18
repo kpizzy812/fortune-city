@@ -1,9 +1,11 @@
 # Fortune City - Progress Tracker
 
-## Current Task: Admin Panel Implementation
+## Current Task: Колесо Фортуны (Wheel of Fortune)
 
-**Started:** 2026-01-15
-**Plan:** [docs/ADMIN_PANEL_PLAN.md](docs/ADMIN_PANEL_PLAN.md)
+**Started:** 2026-01-18
+**Plan:** Phase 8 в этом документе + [docs/concept.md](docs/concept.md)
+
+### Предыдущая задача: Admin Panel (COMPLETED)
 
 ---
 
@@ -215,6 +217,90 @@
 **Security:** Закрыта дыра в экономике - ранее клиент мог передавать reinvestRound: 1 и обходить механику урезания прибыли
 
 **Build Status:** API и Web собираются успешно, 187 тестов проходят
+
+---
+
+## Phase 8: Колесо Фортуны (PENDING)
+
+**Документация:** [docs/concept.md](docs/concept.md) — секция "КОЛЕСО ФОРТУНЫ"
+
+### Концепция
+Геймифицированная механика для:
+- Вовлечения игроков (азарт)
+- Дефляции токенов (burn)
+- Снижения давления на кассу выплат
+
+### Математика
+| Параметр | Значение |
+|----------|----------|
+| Ставка | $1 (фиксированная) |
+| House Edge | ~43% |
+| EV игрока | ~57% |
+| Burn rate | 80% от проигрышей |
+| Jackpot pool | 20% от проигрышей |
+| Jackpot cap | $1000 |
+
+### Сектора колеса
+| Сектор | Шанс | Выигрыш |
+|--------|------|---------|
+| 5x | 1% | $5 |
+| 2x | 5% | $2 |
+| 1.5x | 8% | $1.50 |
+| Free Spin (1x) | 12% | $1 |
+| 0.5x | 18% | $0.50 |
+| 0.2x | 22% | $0.20 |
+| Empty | 33% | $0 |
+| Jackpot | 1% | Pool |
+
+### Мульти-спин
+Для китов: вместо N кликов — один мульти-спин.
+- Опции: 1x / 5x / 10x / 25x / 50x
+- Каждый спин — независимый розыгрыш
+- Показывается суммарный результат
+
+### 8.1 Backend
+- [ ] Prisma модели:
+  - WheelSpin (id, userId, betAmount, multiplier, sector, payout, isJackpot, createdAt)
+  - WheelJackpot (id, currentPool, lastWinnerId, lastWonAmount, lastWonAt)
+  - User.freeSpinsToday, User.lastFreeSpinAt
+- [ ] WheelModule в apps/api/src/modules/wheel/
+- [ ] wheel.service.ts:
+  - spin(userId, multiplier) — основная логика
+  - calculateResult() — взвешенный рандом по шансам
+  - processJackpot() — добавление в пул / выплата
+  - getFreeSpinsAvailable(userId)
+- [ ] wheel.controller.ts:
+  - POST /wheel/spin — крутить
+  - GET /wheel/state — текущий jackpot pool, free spins
+  - GET /wheel/history — история спинов пользователя
+- [ ] DTOs: SpinDto, SpinResultDto, WheelStateDto
+- [ ] Интеграция с SettingsService (шансы, множители в настройках)
+- [ ] Криптографически безопасный RNG
+
+### 8.2 Frontend
+- [ ] /wheel — страница колеса
+- [ ] WheelComponent — анимированное колесо с секторами
+- [ ] SpinButton — кнопки 1x/5x/10x/25x/50x
+- [ ] JackpotDisplay — текущий пул с анимацией роста
+- [ ] SpinHistory — последние результаты
+- [ ] MultiSpinResult — модалка с результатами мульти-спина
+- [ ] wheel.store.ts — Zustand store
+
+### 8.3 Анимации
+- [ ] Вращение колеса (framer-motion)
+- [ ] Остановка на секторе
+- [ ] Celebration при выигрыше (confetti для 5x/Jackpot)
+- [ ] Быстрый режим для мульти-спина
+
+### 8.4 WebSocket события
+- [ ] jackpot:won — кто-то выиграл джекпот (глобальное уведомление)
+- [ ] jackpot:updated — пул обновился
+
+### 8.5 Тесты
+- [ ] wheel.service.spec.ts
+- [ ] Тесты на распределение шансов (статистический тест)
+- [ ] Тесты на джекпот механику
+- [ ] Edge cases (недостаточно средств, лимиты)
 
 ---
 
