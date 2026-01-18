@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PriceOracleService } from './price-oracle.service';
+import { DepositsGateway } from '../deposits.gateway';
 import {
   Deposit,
   DepositCurrency,
@@ -18,6 +19,8 @@ export class DepositProcessorService {
   constructor(
     private prisma: PrismaService,
     private priceOracle: PriceOracleService,
+    @Inject(forwardRef(() => DepositsGateway))
+    private depositsGateway: DepositsGateway,
   ) {}
 
   /**
@@ -96,10 +99,21 @@ export class DepositProcessorService {
         `Deposit ${deposit.id} credited: $${usdAmount} to user ${deposit.userId}`,
       );
 
-      return updated;
+      return { updated, newBalance: Number(user.fortuneBalance) };
     });
 
-    return updatedDeposit;
+    // Emit WebSocket event for real-time notification
+    this.depositsGateway.emitDepositCredited({
+      depositId: updatedDeposit.updated.id,
+      userId: deposit.userId,
+      amount: Number(deposit.amount),
+      currency: deposit.currency,
+      amountUsd: usdAmount,
+      newBalance: updatedDeposit.newBalance,
+      timestamp: new Date().toISOString(),
+    });
+
+    return updatedDeposit.updated;
   }
 
   /**

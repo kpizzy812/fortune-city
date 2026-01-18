@@ -16,12 +16,13 @@ import {
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import { toast } from 'sonner';
-import { Wallet, ArrowRight, AlertCircle, QrCode, Copy } from 'lucide-react';
+import { Wallet, ArrowRight, AlertCircle, QrCode, Copy, CheckCircle } from 'lucide-react';
 import type { TierInfo } from '@/types';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useDepositsStore } from '@/stores/deposits.store';
 import { useAuthStore } from '@/stores/auth.store';
+import { useDepositsSocket, type DepositCreditedEvent } from '@/hooks/useDepositsSocket';
 import type { DepositCurrency } from '@/lib/api';
 
 // Token mints (mainnet)
@@ -71,6 +72,44 @@ export function TopUpAndBuyModal({
   const [depositAmount, setDepositAmount] = useState<string>('');
   const [isSending, setIsSending] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [depositReceived, setDepositReceived] = useState<DepositCreditedEvent | null>(null);
+
+  // Handle real-time deposit notification
+  const handleDepositCredited = useCallback(async (data: DepositCreditedEvent) => {
+    if (!isOpen || !tier) return;
+
+    setDepositReceived(data);
+
+    // Try to purchase if we now have enough balance
+    if (data.newBalance >= tier.price) {
+      setIsPurchasing(true);
+      try {
+        await onSuccess();
+        toast.success(t('topUpModal.purchaseSuccess'));
+        onClose();
+      } catch (purchaseError) {
+        const errorMsg = purchaseError instanceof Error
+          ? purchaseError.message
+          : t('topUpModal.purchaseFailed');
+        toast.error(errorMsg);
+      } finally {
+        setIsPurchasing(false);
+      }
+    }
+  }, [isOpen, tier, onSuccess, onClose, t]);
+
+  // Subscribe to deposit events (don't show toast, we handle it ourselves)
+  useDepositsSocket({
+    onDepositCredited: handleDepositCredited,
+    showToast: false
+  });
+
+  // Reset deposit received when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setDepositReceived(null);
+    }
+  }, [isOpen]);
 
   // Fetch rates on mount
   useEffect(() => {
@@ -462,23 +501,49 @@ export function TopUpAndBuyModal({
                   </div>
                 </div>
 
-                {/* Important notes - compact */}
-                <div className="p-2 bg-[#ffaa00]/10 border border-[#ffaa00]/30 rounded-lg">
-                  <div className="flex gap-2">
-                    <AlertCircle className="w-3.5 h-3.5 text-[#ffaa00] flex-shrink-0 mt-0.5" />
-                    <div className="text-[10px] text-[#b0b0b0] space-y-0.5">
-                      <p className="text-[#ffaa00] font-medium text-xs">{tCash('important')}</p>
-                      <p>• {tCash('importantNotes.onlySend')}</p>
-                      <p>• {tCash('importantNotes.minDeposit', { amount: depositAddress.minDeposit })}</p>
-                      <p>• {tCash('importantNotes.autoCredit')}</p>
+                {/* Deposit received success */}
+                {depositReceived ? (
+                  <div className="p-3 bg-[#00ff88]/10 border border-[#00ff88]/30 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-[#00ff88]" />
+                      <div>
+                        <p className="text-[#00ff88] font-medium text-sm">
+                          {tCash('depositSuccess')}
+                        </p>
+                        <p className="text-xs text-[#b0b0b0]">
+                          +${depositReceived.amountUsd.toFixed(2)}
+                        </p>
+                      </div>
                     </div>
+                    {isPurchasing && (
+                      <div className="mt-2 flex items-center gap-2 text-xs text-[#b0b0b0]">
+                        <div className="w-3 h-3 border-2 border-[#00d4ff]/30 border-t-[#00d4ff] rounded-full animate-spin" />
+                        {t('topUpModal.purchasing')}
+                      </div>
+                    )}
                   </div>
-                </div>
+                ) : (
+                  <>
+                    {/* Important notes - compact */}
+                    <div className="p-2 bg-[#ffaa00]/10 border border-[#ffaa00]/30 rounded-lg">
+                      <div className="flex gap-2">
+                        <AlertCircle className="w-3.5 h-3.5 text-[#ffaa00] flex-shrink-0 mt-0.5" />
+                        <div className="text-[10px] text-[#b0b0b0] space-y-0.5">
+                          <p className="text-[#ffaa00] font-medium text-xs">{tCash('important')}</p>
+                          <p>• {tCash('importantNotes.onlySend')}</p>
+                          <p>• {tCash('importantNotes.minDeposit', { amount: depositAddress.minDeposit })}</p>
+                          <p>• {tCash('importantNotes.autoCredit')}</p>
+                        </div>
+                      </div>
+                    </div>
 
-                {/* Refresh hint */}
-                <p className="text-[10px] text-center text-[#b0b0b0]">
-                  {t('topUpModal.refreshAfterDeposit')}
-                </p>
+                    {/* Waiting for deposit */}
+                    <div className="flex items-center justify-center gap-2 text-xs text-[#b0b0b0]">
+                      <div className="w-3 h-3 border-2 border-[#00d4ff]/30 border-t-[#00d4ff] rounded-full animate-spin" />
+                      {t('topUpModal.waitingForDeposit')}
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>

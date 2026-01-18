@@ -6,6 +6,7 @@ import { AuthModule } from '../auth/auth.module';
 import { FortuneRateModule } from '../fortune-rate/fortune-rate.module';
 import { DepositsController, WebhooksController } from './deposits.controller';
 import { DepositsService } from './deposits.service';
+import { DepositsGateway } from './deposits.gateway';
 import { SolanaRpcService } from './services/solana-rpc.service';
 import { AddressGeneratorService } from './services/address-generator.service';
 import { HeliusWebhookService } from './services/helius-webhook.service';
@@ -24,6 +25,7 @@ import { PriceOracleService } from './services/price-oracle.service';
   controllers: [DepositsController, WebhooksController],
   providers: [
     DepositsService,
+    DepositsGateway,
     SolanaRpcService,
     AddressGeneratorService,
     HeliusWebhookService,
@@ -31,6 +33,6 @@ import { PriceOracleService } from './services/price-oracle.service';
     SweepService,
     PriceOracleService,
   ],
-  exports: [DepositsService, SolanaRpcService, PriceOracleService],
+  exports: [DepositsService, DepositsGateway, SolanaRpcService, PriceOracleService],
 })
 export class DepositsModule {}

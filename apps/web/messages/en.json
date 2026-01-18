@@ -161,7 +161,7 @@
       "purchasing": "Purchasing...",
       "purchaseSuccess": "Machine purchased successfully!",
       "purchaseFailed": "Purchase failed after deposit",
-      "refreshAfterDeposit": "After sending, close this window and refresh the page"
+      "waitingForDeposit": "Waiting for deposit..."
     }
   },
   "machines": {
@@ -360,6 +360,7 @@
     "enterSolanaAddress": "Enter Solana wallet address...",
     "makeAddressNote": "Make sure this address can receive USDT SPL tokens",
     "depositConfirmed": "Deposit confirmed!",
+    "depositSuccess": "Deposit credited!",
     "depositFailed": "Deposit failed",
     "withdrawalSuccessful": "Withdrawal successful! {amount} USDT sent",
     "withdrawalFailed": "Withdrawal failed",

@@ -161,7 +161,7 @@
       "purchasing": "Покупаем...",
       "purchaseSuccess": "Автомат успешно куплен!",
       "purchaseFailed": "Ошибка покупки после пополнения",
-      "refreshAfterDeposit": "После отправки закройте это окно и обновите страницу"
+      "waitingForDeposit": "Ожидаем пополнение..."
     }
   },
   "machines": {
@@ -360,6 +360,7 @@
     "enterSolanaAddress": "Введи адрес Solana кошелька...",
     "makeAddressNote": "Убедись, что этот адрес может принимать USDT SPL токены",
     "depositConfirmed": "Депозит подтверждён!",
+    "depositSuccess": "Депозит зачислен!",
     "depositFailed": "Ошибка пополнения",
     "withdrawalSuccessful": "Вывод успешен! {amount} USDT отправлено",
     "withdrawalFailed": "Ошибка вывода",

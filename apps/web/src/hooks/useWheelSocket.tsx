@@ -96,7 +96,12 @@ export function useWheelSocket(currentUserId?: string) {
     return () => {
       socket.off('jackpot:won', handleJackpotWon);
       socket.off('jackpot:updated', handleJackpotUpdated);
-      socket.disconnect();
+      // Only disconnect if socket was actually connected (avoids warning in React Strict Mode)
+      if (socket.connected) {
+        socket.disconnect();
+      } else {
+        socket.close();
+      }
       socketRef.current = null;
     };
   }, [handleJackpotWon, handleJackpotUpdated]);
