@@ -30,19 +30,19 @@ export function EmailLoginForm({ onSuccess, onError }: EmailLoginFormProps) {
 
   if (isSent) {
     return (
-      <div className="text-center p-6 bg-[#2a1a4e] rounded-xl border border-[#00d4ff]/30">
-        <div className="text-4xl mb-4">✉️</div>
-        <h3 className="text-xl font-bold text-white mb-2">{t('checkEmail')}</h3>
-        <p className="text-[#b0b0b0] mb-1">
+      <div className="text-center py-4">
+        <div className="text-4xl mb-3">✉️</div>
+        <h3 className="text-lg font-semibold text-white mb-2">{t('checkEmail')}</h3>
+        <p className="text-sm text-[#b0b0b0] mb-1">
           {t('magicLinkSent')}
         </p>
-        <p className="text-[#00d4ff] font-medium">{email}</p>
-        <p className="text-sm text-[#b0b0b0] mt-3">{t('clickToSignIn')}</p>
+        <p className="text-[#00d4ff] text-sm font-medium mb-3">{email}</p>
+        <p className="text-xs text-[#b0b0b0] mb-4">{t('clickToSignIn')}</p>
         <button
           onClick={() => setIsSent(false)}
-          className="mt-4 text-sm text-[#ff2d95] hover:underline transition"
+          className="text-sm text-white/60 hover:text-white/80 transition"
         >
-          {t('useDifferentEmail')}
+          ← {t('useDifferentEmail')}
         </button>
       </div>
     );

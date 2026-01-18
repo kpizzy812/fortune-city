@@ -256,12 +256,9 @@ export default function Home() {
               <p className="text-[#00d4ff] text-lg">{tAuth('authenticating')}</p>
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Email Login Form */}
-              <div className="bg-[#2a1a4e] rounded-xl p-6 border border-[#00d4ff]/30">
-                <h2 className="text-white text-lg font-semibold mb-4 text-center">
-                  {tAuth('signInWithEmail')}
-                </h2>
+            <div className="bg-[#2a1a4e]/40 backdrop-blur-sm rounded-2xl p-8 border border-white/10 shadow-2xl max-w-md mx-auto">
+              {/* Email Login */}
+              <div className="mb-6">
                 <EmailLoginForm
                   onSuccess={() => console.log('Email login success')}
                   onError={(err) => console.error('Email login error:', err)}
@@ -269,22 +266,19 @@ export default function Home() {
               </div>
 
               {/* Divider */}
-              <div className="relative">
+              <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[#b0b0b0]/20"></div>
+                  <div className="w-full border-t border-white/10"></div>
                 </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-[#1a0a2e] text-[#b0b0b0]">
+                <div className="relative flex justify-center">
+                  <span className="px-3 text-xs text-white/40 bg-[#2a1a4e]/40">
                     {tAuth('or')}
                   </span>
                 </div>
               </div>
 
               {/* Solana Wallet Login */}
-              <div className="bg-[#2a1a4e] rounded-xl p-6 border border-[#9945FF]/30">
-                <h2 className="text-white text-lg font-semibold mb-4 text-center">
-                  {tAuth('signInWithWallet')}
-                </h2>
+              <div className="mb-6">
                 <SolanaLoginButton
                   onSuccess={() => console.log('Solana login success')}
                   onError={(err) => console.error('Solana login error:', err)}
@@ -292,36 +286,31 @@ export default function Home() {
               </div>
 
               {/* Divider */}
-              <div className="relative">
+              <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[#b0b0b0]/20"></div>
+                  <div className="w-full border-t border-white/10"></div>
                 </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-[#1a0a2e] text-[#b0b0b0]">
+                <div className="relative flex justify-center">
+                  <span className="px-3 text-xs text-white/40 bg-[#2a1a4e]/40">
                     {tAuth('or')}
                   </span>
                 </div>
               </div>
 
               {/* Telegram Login */}
-              <div className="bg-[#2a1a4e] rounded-xl p-6 border border-[#ff2d95]/30">
-                <h2 className="text-white text-lg font-semibold mb-4 text-center">
-                  {tAuth('signInWithTelegram')}
-                </h2>
-                <div className="flex justify-center">
-                  <TelegramLoginButton
-                    botName={TELEGRAM_BOT_NAME}
-                    onSuccess={() => console.log('Telegram login success')}
-                    onError={(err) => console.error('Telegram login error:', err)}
-                  />
-                </div>
+              <div className="flex justify-center">
+                <TelegramLoginButton
+                  botName={TELEGRAM_BOT_NAME}
+                  onSuccess={() => console.log('Telegram login success')}
+                  onError={(err) => console.error('Telegram login error:', err)}
+                />
               </div>
 
               {/* Dev Login - only in development */}
               {process.env.NODE_ENV === 'development' && (
                 <button
                   onClick={devLogin}
-                  className="w-full px-6 py-2 bg-[#2a1a4e] border border-[#ff2d95]/50 text-[#ff2d95] rounded-lg hover:bg-[#ff2d95]/10 transition text-sm"
+                  className="w-full mt-6 px-4 py-2 text-white/60 hover:text-white/80 transition text-sm"
                 >
                   {tAuth('devLogin')}
                 </button>

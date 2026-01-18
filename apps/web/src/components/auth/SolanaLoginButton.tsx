@@ -44,6 +44,22 @@ export function SolanaLoginButton({
 
       onSuccess?.();
     } catch (err) {
+      // Проверяем тип ошибки
+      const errorMessage =
+        err instanceof Error ? err.message : String(err);
+
+      // Если пользователь отменил подключение - игнорируем (не показываем ошибку)
+      if (
+        errorMessage.includes('User rejected') ||
+        errorMessage.includes('user rejected') ||
+        errorMessage.includes('User declined') ||
+        errorMessage.includes('cancelled')
+      ) {
+        console.log('User cancelled wallet connection');
+        return; // Просто выходим, не вызываем onError
+      }
+
+      // Для всех других ошибок показываем сообщение
       onError?.(
         err instanceof Error ? err : new Error('Failed to connect wallet'),
       );
@@ -68,19 +84,20 @@ export function SolanaLoginButton({
 
   if (!isSolanaAvailable) {
     return (
-      <div className="text-center p-6 bg-[#2a1a4e] rounded-xl border border-[#ff2d95]/30">
-        <div className="text-4xl mb-4">🔒</div>
-        <h3 className="text-xl font-bold text-white mb-2">
+      <div className="text-center py-4">
+        <div className="text-4xl mb-3">🔒</div>
+        <h3 className="text-lg font-semibold text-white mb-2">
           {t('walletNotFound')}
         </h3>
-        <p className="text-[#b0b0b0] text-sm">{t('installWallet')}</p>
+        <p className="text-sm text-[#b0b0b0] mb-4">{t('installWallet')}</p>
         <a
           href="https://phantom.app/"
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-block text-[#00d4ff] hover:underline transition"
+          className="inline-block px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10
+                     text-white/80 hover:text-white rounded-lg transition text-sm"
         >
-          Install Phantom Wallet →
+          Install Phantom →
         </a>
       </div>
     );
