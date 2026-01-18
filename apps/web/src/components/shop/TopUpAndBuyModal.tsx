@@ -51,7 +51,6 @@ export function TopUpAndBuyModal({
 }: TopUpAndBuyModalProps) {
   const t = useTranslations('shop');
   const tCash = useTranslations('cash');
-  const tCommon = useTranslations('common');
 
   const { user, token, refreshUser } = useAuthStore();
   const {
@@ -257,34 +256,26 @@ export function TopUpAndBuyModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('topUpModal.title')}>
-      <div className="space-y-4">
-        {/* Machine preview */}
-        <div className="flex items-center gap-4 p-4 bg-[#1a0a2e] rounded-xl">
-          <span className="text-5xl">{tier.emoji}</span>
-          <div className="flex-1">
-            <h3 className="font-bold text-white text-lg">{tier.name}</h3>
-            <p className="text-[#b0b0b0] text-sm">{t('tier')} {tier.tier}</p>
+      <div className="space-y-3">
+        {/* Machine preview + Balance info combined */}
+        <div className="p-3 bg-[#1a0a2e] rounded-xl">
+          <div className="flex items-center gap-3 pb-3 border-b border-[#3a2a5e]">
+            <span className="text-4xl">{tier.emoji}</span>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-white truncate">{tier.name}</h3>
+              <p className="text-[#b0b0b0] text-xs">{t('tier')} {tier.tier}</p>
+            </div>
+            <p className="text-xl font-bold text-[#ffd700]">${tier.price.toLocaleString()}</p>
           </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-[#ffd700]">
-              ${tier.price.toLocaleString()}
-            </p>
-          </div>
-        </div>
-
-        {/* Balance info */}
-        <div className="p-4 bg-[#1a0a2e] rounded-xl space-y-2">
-          <div className="flex justify-between">
-            <span className="text-[#b0b0b0]">{t('topUpModal.yourBalance')}</span>
-            <span className="font-mono text-white">${userBalance.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-[#b0b0b0]">{t('topUpModal.price')}</span>
-            <span className="font-mono text-[#ffd700]">${tier.price.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between border-t border-[#3a2a5e] pt-2">
-            <span className="text-[#ff2d95] font-medium">{t('topUpModal.needMore')}</span>
-            <span className="font-mono text-[#ff2d95] font-bold">${shortfall.toFixed(2)}</span>
+          <div className="pt-3 grid grid-cols-2 gap-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-[#b0b0b0]">{t('topUpModal.yourBalance')}</span>
+              <span className="font-mono text-white">${userBalance.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#ff2d95]">{t('topUpModal.needMore')}</span>
+              <span className="font-mono text-[#ff2d95] font-bold">${shortfall.toFixed(2)}</span>
+            </div>
           </div>
         </div>
 
@@ -321,7 +312,7 @@ export function TopUpAndBuyModal({
           <>
             {/* Currency selector */}
             <div>
-              <label className="block text-sm text-[#b0b0b0] mb-2">
+              <label className="block text-xs text-[#b0b0b0] mb-1.5">
                 {t('topUpModal.selectCurrency')}
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -331,7 +322,7 @@ export function TopUpAndBuyModal({
                     onClick={() => setSelectedCurrency(currency.id)}
                     disabled={isLoading}
                     className={`
-                      p-3 rounded-lg border transition-all text-center
+                      py-2 px-2 rounded-lg border transition-all text-center
                       ${
                         selectedCurrency === currency.id
                           ? 'border-[#00d4ff] bg-[#00d4ff]/10 text-white'
@@ -340,8 +331,8 @@ export function TopUpAndBuyModal({
                       ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
                     `}
                   >
-                    <span className="text-lg">{currency.icon}</span>
-                    <p className="text-xs mt-1">{currency.label}</p>
+                    <span className="text-base">{currency.icon}</span>
+                    <p className="text-xs">{currency.label}</p>
                   </button>
                 ))}
               </div>
@@ -349,7 +340,7 @@ export function TopUpAndBuyModal({
 
             {/* Amount input */}
             <div>
-              <label className="block text-sm text-[#b0b0b0] mb-2">
+              <label className="block text-xs text-[#b0b0b0] mb-1.5">
                 {t('topUpModal.depositAmount')}
               </label>
               <div className="relative">
@@ -359,8 +350,8 @@ export function TopUpAndBuyModal({
                   onChange={(e) => setDepositAmount(e.target.value)}
                   disabled={isLoading}
                   className={`
-                    w-full p-3 pr-20 bg-[#1a0a2e] border rounded-lg
-                    text-white font-mono text-lg
+                    w-full py-2.5 px-3 pr-16 bg-[#1a0a2e] border rounded-lg
+                    text-white font-mono text-base
                     focus:outline-none focus:ring-2 focus:ring-[#00d4ff]/50
                     ${isLoading ? 'opacity-50 cursor-not-allowed' : 'border-[#3a2a5e]'}
                   `}
@@ -368,7 +359,7 @@ export function TopUpAndBuyModal({
                   step="any"
                   min="0"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#b0b0b0]">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#b0b0b0] text-sm">
                   {CURRENCIES.find((c) => c.id === selectedCurrency)?.label}
                 </span>
               </div>
@@ -381,51 +372,47 @@ export function TopUpAndBuyModal({
 
             {/* Warning if not enough */}
             {depositAmount && !isEnough && (
-              <div className="p-3 bg-[#ffaa00]/10 border border-[#ffaa00]/30 rounded-lg">
-                <p className="text-[#ffaa00] text-sm flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <div className="p-2 bg-[#ffaa00]/10 border border-[#ffaa00]/30 rounded-lg">
+                <p className="text-[#ffaa00] text-xs flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
                   {t('topUpModal.notEnough', { amount: (shortfall - depositUsdValue).toFixed(2) })}
                 </p>
               </div>
             )}
 
             {/* Wallet connect or deposit button */}
-            <div className="pt-2">
+            <div>
               {!connected ? (
-                <div className="space-y-3">
-                  <p className="text-center text-[#b0b0b0] text-sm">
+                <div className="space-y-2">
+                  <p className="text-center text-[#b0b0b0] text-xs">
                     {t('topUpModal.connectWalletHint')}
                   </p>
                   <div className="flex justify-center">
-                    <WalletMultiButton className="!bg-[#00d4ff] hover:!bg-[#00d4ff]/80 !rounded-lg !h-12 !px-6" />
+                    <WalletMultiButton className="!bg-[#00d4ff] hover:!bg-[#00d4ff]/80 !rounded-lg !h-10 !px-5 !text-sm" />
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-center gap-2 text-sm text-[#00ff88]">
-                    <Wallet className="w-4 h-4" />
-                    <span className="truncate max-w-[200px]">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-1.5 text-xs text-[#00ff88]">
+                    <Wallet className="w-3.5 h-3.5" />
+                    <span className="truncate max-w-[180px]">
                       {publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}
                     </span>
                   </div>
                   <Button
                     variant="gold"
-                    size="lg"
+                    size="md"
                     fullWidth
                     onClick={handleDeposit}
                     loading={isLoading}
                     disabled={isLoading || !depositAmount || parseFloat(depositAmount) <= 0}
                   >
                     {isPurchasing ? (
-                      <span className="flex items-center gap-2">
-                        {t('topUpModal.purchasing')}
-                      </span>
+                      t('topUpModal.purchasing')
                     ) : isSending ? (
-                      <span className="flex items-center gap-2">
-                        {t('topUpModal.depositing')}
-                      </span>
+                      t('topUpModal.depositing')
                     ) : (
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-1.5">
                         {t('topUpModal.depositAndBuy')}
                         <ArrowRight className="w-4 h-4" />
                       </span>
@@ -439,52 +426,48 @@ export function TopUpAndBuyModal({
 
         {/* QR/Address deposit tab */}
         {depositTab === 'address' && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {!depositAddress ? (
-              <div className="p-8 text-center">
-                <div className="w-6 h-6 border-2 border-[#00d4ff]/30 border-t-[#00d4ff] rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-[#b0b0b0] text-sm">{tCash('loadingDepositAddress')}</p>
+              <div className="py-6 text-center">
+                <div className="w-5 h-5 border-2 border-[#00d4ff]/30 border-t-[#00d4ff] rounded-full animate-spin mx-auto mb-2" />
+                <p className="text-[#b0b0b0] text-xs">{tCash('loadingDepositAddress')}</p>
               </div>
             ) : (
               <>
-                {/* QR Code */}
-                <div className="flex justify-center">
-                  <div className="bg-white p-3 rounded-xl">
+                {/* QR Code + Address row */}
+                <div className="flex gap-3 items-start">
+                  <div className="bg-white p-2 rounded-lg flex-shrink-0">
                     <img
                       src={depositAddress.qrCode}
                       alt="Deposit QR Code"
-                      className="w-32 h-32"
+                      className="w-24 h-24"
                     />
                   </div>
-                </div>
-
-                {/* Address */}
-                <div>
-                  <label className="block text-sm text-[#b0b0b0] mb-2">
-                    {tCash('depositAddress')}
-                  </label>
-                  <div className="bg-[#1a0a2e] rounded-lg p-3">
-                    <code className="text-xs text-[#00d4ff] break-all font-mono">
-                      {depositAddress.address}
-                    </code>
+                  <div className="flex-1 min-w-0">
+                    <label className="block text-xs text-[#b0b0b0] mb-1">
+                      {tCash('depositAddress')}
+                    </label>
+                    <div className="bg-[#1a0a2e] rounded-lg p-2 mb-2">
+                      <code className="text-[10px] text-[#00d4ff] break-all font-mono leading-tight block">
+                        {depositAddress.address}
+                      </code>
+                    </div>
+                    <button
+                      onClick={copyAddress}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 bg-[#2a1a4e] hover:bg-[#3a2a5e] rounded-lg text-white text-sm font-medium transition-colors"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      {tCash('copyAddress')}
+                    </button>
                   </div>
                 </div>
 
-                {/* Copy button */}
-                <button
-                  onClick={copyAddress}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#2a1a4e] hover:bg-[#3a2a5e] rounded-lg text-white font-medium transition-colors"
-                >
-                  <Copy className="w-4 h-4" />
-                  {tCash('copyAddress')}
-                </button>
-
-                {/* Important notes */}
-                <div className="p-3 bg-[#ffaa00]/10 border border-[#ffaa00]/30 rounded-lg">
+                {/* Important notes - compact */}
+                <div className="p-2 bg-[#ffaa00]/10 border border-[#ffaa00]/30 rounded-lg">
                   <div className="flex gap-2">
-                    <AlertCircle className="w-4 h-4 text-[#ffaa00] flex-shrink-0 mt-0.5" />
-                    <div className="text-xs text-[#b0b0b0] space-y-1">
-                      <p className="text-[#ffaa00] font-medium">{tCash('important')}</p>
+                    <AlertCircle className="w-3.5 h-3.5 text-[#ffaa00] flex-shrink-0 mt-0.5" />
+                    <div className="text-[10px] text-[#b0b0b0] space-y-0.5">
+                      <p className="text-[#ffaa00] font-medium text-xs">{tCash('important')}</p>
                       <p>• {tCash('importantNotes.onlySend')}</p>
                       <p>• {tCash('importantNotes.minDeposit', { amount: depositAddress.minDeposit })}</p>
                       <p>• {tCash('importantNotes.autoCredit')}</p>
@@ -492,25 +475,14 @@ export function TopUpAndBuyModal({
                   </div>
                 </div>
 
-                {/* Info about manual refresh after deposit */}
-                <p className="text-xs text-center text-[#b0b0b0]">
+                {/* Refresh hint */}
+                <p className="text-[10px] text-center text-[#b0b0b0]">
                   {t('topUpModal.refreshAfterDeposit')}
                 </p>
               </>
             )}
           </div>
         )}
-
-        {/* Cancel button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          fullWidth
-          onClick={onClose}
-          disabled={isLoading}
-        >
-          {tCommon('cancel')}
-        </Button>
       </div>
     </Modal>
   );
