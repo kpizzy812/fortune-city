@@ -61,7 +61,7 @@ export class WheelService implements OnModuleInit {
     const settings = await this.settingsService.getSettings();
     const betAmount = Number(settings.wheelBetAmount);
     const totalBet = betAmount * multiplier;
-    const sectors = settings.wheelSectors as WheelSector[];
+    const sectors = settings.wheelSectors as unknown as WheelSector[];
     const burnRate = Number(settings.wheelBurnRate);
     const poolRate = Number(settings.wheelPoolRate);
 
@@ -129,7 +129,8 @@ export class WheelService implements OnModuleInit {
     const [updatedUser, spin, updatedJackpot] = await this.prisma.$transaction(
       async (tx) => {
         // Deduct balance for paid spins
-        const newBalance = Number(user.fortuneBalance) - requiredBalance + totalPayout;
+        const newBalance =
+          Number(user.fortuneBalance) - requiredBalance + totalPayout;
 
         const updatedUser = await tx.user.update({
           where: { id: userId },
@@ -149,7 +150,7 @@ export class WheelService implements OnModuleInit {
             totalBet: new Decimal(totalBet),
             totalPayout: new Decimal(totalPayout),
             netResult: new Decimal(netResult),
-            spinResults: results,
+            spinResults: results as unknown as object,
             jackpotWon,
             jackpotAmount: new Decimal(jackpotAmount),
             burnAmount: new Decimal(burnAmount),
@@ -186,7 +187,9 @@ export class WheelService implements OnModuleInit {
             where: { id: JACKPOT_ID },
             data: {
               currentPool: new Decimal(newPoolAmount),
-              totalContributed: { increment: new Decimal(actualPoolContribution) },
+              totalContributed: {
+                increment: new Decimal(actualPoolContribution),
+              },
               totalBurned: { increment: new Decimal(burnAmount + extraBurn) },
             },
           });
@@ -281,7 +284,7 @@ export class WheelService implements OnModuleInit {
       this.prisma.user.findUnique({ where: { id: userId } }),
     ]);
 
-    const sectors = settings.wheelSectors as WheelSector[];
+    const sectors = settings.wheelSectors as unknown as WheelSector[];
 
     return {
       jackpotPool: jackpot ? Number(jackpot.currentPool) : 0,
@@ -289,7 +292,9 @@ export class WheelService implements OnModuleInit {
       lastWinner: jackpot?.lastWinnerId
         ? {
             odlqпользователя: jackpot.lastWinnerId,
-            amount: jackpot.lastWonAmount ? Number(jackpot.lastWonAmount) : null,
+            amount: jackpot.lastWonAmount
+              ? Number(jackpot.lastWonAmount)
+              : null,
             wonAt: jackpot.lastWonAt?.toISOString() ?? null,
           }
         : null,

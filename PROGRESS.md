@@ -258,24 +258,28 @@
 - Каждый спин — независимый розыгрыш
 - Показывается суммарный результат
 
-### 8.1 Backend
-- [ ] Prisma модели:
-  - WheelSpin (id, userId, betAmount, multiplier, sector, payout, isJackpot, createdAt)
-  - WheelJackpot (id, currentPool, lastWinnerId, lastWonAmount, lastWonAt)
-  - User.freeSpinsToday, User.lastFreeSpinAt
-- [ ] WheelModule в apps/api/src/modules/wheel/
-- [ ] wheel.service.ts:
-  - spin(userId, multiplier) — основная логика
-  - calculateResult() — взвешенный рандом по шансам
-  - processJackpot() — добавление в пул / выплата
-  - getFreeSpinsAvailable(userId)
-- [ ] wheel.controller.ts:
-  - POST /wheel/spin — крутить
+### 8.1 Backend (COMPLETED)
+- [x] Prisma модели:
+  - WheelSpin (id, userId, betAmount, spinCount, totalBet, totalPayout, netResult, spinResults, jackpotWon, jackpotAmount, burnAmount, poolAmount, freeSpinsUsed)
+  - WheelJackpot (id, currentPool, poolCap, totalContributed, totalPaidOut, totalBurned, timesWon, lastWinnerId, lastWonAmount, lastWonAt)
+  - SystemSettings: wheelBetAmount, wheelMultipliers, wheelFreeSpinsBase, wheelFreeSpinsPerRef, wheelJackpotCap, wheelBurnRate, wheelPoolRate, wheelSectors
+- [x] WheelModule в apps/api/src/modules/wheel/
+- [x] wheel.service.ts:
+  - spin(userId, multiplier) — мульти-спин с атомарной транзакцией
+  - spinOnce() — одиночный спин с взвешенным рандомом
+  - secureRandom() — crypto.randomBytes для RNG
+  - getState(userId) — текущее состояние колеса
+  - getHistory(userId) — история спинов
+  - getJackpotInfo() — публичная информация о джекпоте
+  - resetDailyFreeSpins() — для крона
+- [x] wheel.controller.ts:
+  - POST /wheel/spin — крутить (с JwtAuthGuard)
   - GET /wheel/state — текущий jackpot pool, free spins
   - GET /wheel/history — история спинов пользователя
-- [ ] DTOs: SpinDto, SpinResultDto, WheelStateDto
-- [ ] Интеграция с SettingsService (шансы, множители в настройках)
-- [ ] Криптографически безопасный RNG
+  - GET /wheel/jackpot — публичный эндпоинт джекпота
+- [x] DTOs: SpinDto, SpinResult, SpinResponseDto, WheelStateDto, SpinHistoryDto
+- [x] Интеграция с SettingsService (все параметры конфигурируемы)
+- [x] Криптографически безопасный RNG (crypto.randomBytes)
 
 ### 8.2 Frontend
 - [ ] /wheel — страница колеса

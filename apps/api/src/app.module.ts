@@ -15,6 +15,7 @@ import { FortuneRateModule } from './modules/fortune-rate/fortune-rate.module';
 import { DepositsModule } from './modules/deposits/deposits.module';
 import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { WheelModule } from './modules/wheel/wheel.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { AdminModule } from './modules/admin/admin.module';
     DepositsModule,
     WithdrawalsModule,
     AdminModule,
+    WheelModule,
   ],
   controllers: [AppController],
   providers: [AppService],
