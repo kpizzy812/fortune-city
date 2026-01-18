@@ -87,7 +87,21 @@
     "afterPurchase": "After purchase",
     "lowBalanceWarning": "Your balance will be low after this purchase",
     "insufficientBalance": "Insufficient balance. You need ${amount} more.",
-    "purchaseConfirm": "Purchase {name}?"
+    "purchaseConfirm": "Purchase {name}?",
+    "reinvest": {
+      "newTier": "NEW",
+      "repeatBadge": "x{round}",
+      "penaltyWarningTitle": "Repeat purchase of the same tier",
+      "penaltyWarningText": "This is your {round}{ordinal} machine of this tier. Profit reduced by {percent}%.",
+      "upgradeTip": "Tip: Upgrade to Tier {tier} for full profit!",
+      "newTierTitle": "New tier unlocked!",
+      "newTierText": "First purchase of this tier — you'll get maximum profit with no penalties!",
+      "penaltyTooltip": "When you buy the same tier again, profit decreases with each purchase (5% → 10% → ... up to 85%). Move to a higher tier for full profit!",
+      "newTierTooltip": "This is a new tier for you! No penalty applied. Each tier has its own penalty counter.",
+      "ordinal2": "nd",
+      "ordinal3": "rd",
+      "ordinalOther": "th"
+    }
   },
   "machines": {
     "noMachinesYet": "No machines yet",

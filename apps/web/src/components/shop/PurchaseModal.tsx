@@ -1,9 +1,11 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { AlertTriangle, XCircle, TrendingUp, TrendingDown } from 'lucide-react';
 import type { TierInfo, CanAffordResponse } from '@/types';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 interface PurchaseModalProps {
   isOpen: boolean;
@@ -24,6 +26,9 @@ export function PurchaseModal({
   isLoading,
   userBalance,
 }: PurchaseModalProps) {
+  const t = useTranslations('shop');
+  const tCommon = useTranslations('common');
+
   if (!tier) return null;
 
   // Calculate profit considering reinvest penalty
@@ -35,39 +40,52 @@ export function PurchaseModal({
   const isLowBalance = balanceAfter < tier.price * 0.1; // Less than 10% of price left
   const hasReinvestPenalty = reductionRate > 0;
   const isUpgrade = canAfford?.isUpgrade ?? false;
+  const reinvestRound = canAfford?.nextReinvestRound ?? 1;
+
+  // Get ordinal suffix
+  const getOrdinal = (n: number) => {
+    if (n === 2) return t('reinvest.ordinal2');
+    if (n === 3) return t('reinvest.ordinal3');
+    return t('reinvest.ordinalOther');
+  };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Purchase ${tier.name}?`}>
+    <Modal isOpen={isOpen} onClose={onClose} title={t('purchaseConfirm', { name: tier.name })}>
       <div className="space-y-4">
         {/* Machine preview */}
         <div className="flex items-center gap-4 p-4 bg-[#1a0a2e] rounded-xl">
           <span className="text-5xl">{tier.emoji}</span>
           <div>
             <h3 className="font-bold text-white text-xl">{tier.name}</h3>
-            <p className="text-[#b0b0b0]">Tier {tier.tier}</p>
+            <p className="text-[#b0b0b0]">{t('tier')} {tier.tier}</p>
           </div>
         </div>
 
         {/* Details */}
         <div className="space-y-2">
           <div className="flex justify-between py-2 border-b border-[#3a2a5e]">
-            <span className="text-[#b0b0b0]">Price</span>
+            <span className="text-[#b0b0b0]">{t('price')}</span>
             <span className="font-mono text-[#ffd700] font-semibold">
               ${tier.price.toLocaleString()}
             </span>
           </div>
           <div className="flex justify-between py-2 border-b border-[#3a2a5e]">
-            <span className="text-[#b0b0b0]">Duration</span>
-            <span className="font-mono text-white">{tier.lifespanDays} days</span>
+            <span className="text-[#b0b0b0]">{t('duration')}</span>
+            <span className="font-mono text-white">{tier.lifespanDays} {tCommon('days')}</span>
           </div>
           <div className="flex justify-between py-2 border-b border-[#3a2a5e]">
-            <span className="text-[#b0b0b0]">Expected Yield</span>
+            <span className="text-[#b0b0b0]">{t('expectedYield')}</span>
             <span className="font-mono text-[#00ff88]">
               ${totalYield.toFixed(2)}
             </span>
           </div>
           <div className="flex justify-between py-2 border-b border-[#3a2a5e]">
-            <span className="text-[#b0b0b0]">Profit</span>
+            <Tooltip
+              content={isUpgrade ? t('reinvest.newTierTooltip') : t('reinvest.penaltyTooltip')}
+              position="bottom"
+            >
+              <span className="text-[#b0b0b0]">{t('profit')}</span>
+            </Tooltip>
             <span className={`font-mono ${hasReinvestPenalty ? 'text-[#ffaa00]' : 'text-[#00ff88]'}`}>
               ${actualProfit.toFixed(2)}
               {hasReinvestPenalty && (
@@ -82,11 +100,11 @@ export function PurchaseModal({
         {/* Balance info */}
         <div className="p-4 bg-[#1a0a2e] rounded-xl space-y-2">
           <div className="flex justify-between">
-            <span className="text-[#b0b0b0]">Your balance</span>
+            <span className="text-[#b0b0b0]">{tCommon('yourBalance')}</span>
             <span className="font-mono text-white">${userBalance.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-[#b0b0b0]">After purchase</span>
+            <span className="text-[#b0b0b0]">{t('afterPurchase')}</span>
             <span
               className={`font-mono ${isLowBalance ? 'text-[#ffaa00]' : 'text-white'}`}
             >
@@ -100,7 +118,7 @@ export function PurchaseModal({
           <div className="p-3 bg-[#ffaa00]/10 border border-[#ffaa00]/30 rounded-lg">
             <p className="text-[#ffaa00] text-sm flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-              Your balance will be low after this purchase
+              {t('lowBalanceWarning')}
             </p>
           </div>
         )}
@@ -108,19 +126,27 @@ export function PurchaseModal({
         {/* Reinvest penalty warning */}
         {hasReinvestPenalty && (
           <div className="p-3 bg-[#ffaa00]/10 border border-[#ffaa00]/30 rounded-lg">
-            <p className="text-[#ffaa00] text-sm flex items-center gap-2 font-semibold mb-1">
-              <TrendingDown className="w-4 h-4 flex-shrink-0" />
-              Repeat purchase of the same tier
-            </p>
-            <p className="text-xs text-[#b0b0b0] mb-2">
-              This is your {canAfford?.nextReinvestRound ?? 1}
-              {canAfford?.nextReinvestRound === 2 ? 'nd' : canAfford?.nextReinvestRound === 3 ? 'rd' : 'th'} machine
-              of this tier. Profit reduced by {reductionRate.toFixed(0)}%.
+            <div className="flex items-start gap-2 mb-1">
+              <TrendingDown className="w-4 h-4 flex-shrink-0 text-[#ffaa00] mt-0.5" />
+              <div className="flex-1">
+                <Tooltip content={t('reinvest.penaltyTooltip')} position="bottom">
+                  <p className="text-[#ffaa00] text-sm font-semibold">
+                    {t('reinvest.penaltyWarningTitle')}
+                  </p>
+                </Tooltip>
+              </div>
+            </div>
+            <p className="text-xs text-[#b0b0b0] mb-2 ml-6">
+              {t('reinvest.penaltyWarningText', {
+                round: reinvestRound,
+                ordinal: getOrdinal(reinvestRound),
+                percent: reductionRate.toFixed(0),
+              })}
             </p>
             {tier.tier < 10 && (
-              <p className="text-xs text-[#00ff88] flex items-center gap-1">
+              <p className="text-xs text-[#00ff88] flex items-center gap-1 ml-6">
                 <TrendingUp className="w-3 h-3" />
-                Tip: Upgrade to Tier {tier.tier + 1} for full profit!
+                {t('reinvest.upgradeTip', { tier: tier.tier + 1 })}
               </p>
             )}
           </div>
@@ -129,13 +155,19 @@ export function PurchaseModal({
         {/* Upgrade bonus info */}
         {isUpgrade && (
           <div className="p-3 bg-[#00ff88]/10 border border-[#00ff88]/30 rounded-lg">
-            <p className="text-[#00ff88] text-sm flex items-center gap-2 font-semibold">
-              <TrendingUp className="w-4 h-4 flex-shrink-0" />
-              New tier unlocked!
-            </p>
-            <p className="text-xs text-[#b0b0b0]">
-              First purchase of this tier - you&apos;ll get maximum profit with no penalties!
-            </p>
+            <div className="flex items-start gap-2">
+              <TrendingUp className="w-4 h-4 flex-shrink-0 text-[#00ff88] mt-0.5" />
+              <div className="flex-1">
+                <Tooltip content={t('reinvest.newTierTooltip')} position="bottom">
+                  <p className="text-[#00ff88] text-sm font-semibold">
+                    {t('reinvest.newTierTitle')}
+                  </p>
+                </Tooltip>
+                <p className="text-xs text-[#b0b0b0] mt-1">
+                  {t('reinvest.newTierText')}
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -144,7 +176,7 @@ export function PurchaseModal({
           <div className="p-3 bg-[#ff4444]/10 border border-[#ff4444]/30 rounded-lg">
             <p className="text-[#ff4444] text-sm flex items-center gap-2">
               <XCircle className="w-4 h-4 flex-shrink-0" />
-              Insufficient balance. You need ${canAfford.shortfall.toFixed(2)} more.
+              {t('insufficientBalance', { amount: canAfford.shortfall.toFixed(2) })}
             </p>
           </div>
         )}
@@ -158,7 +190,7 @@ export function PurchaseModal({
             onClick={onClose}
             disabled={isLoading}
           >
-            Cancel
+            {tCommon('cancel')}
           </Button>
           <Button
             variant="gold"
@@ -168,7 +200,7 @@ export function PurchaseModal({
             loading={isLoading}
             disabled={!canAfford?.canAfford || isLoading}
           >
-            {isLoading ? 'Purchasing...' : 'Confirm'}
+            {isLoading ? tCommon('processing') : tCommon('confirm')}
           </Button>
         </div>
       </div>

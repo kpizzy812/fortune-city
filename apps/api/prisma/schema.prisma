@@ -396,6 +396,18 @@ model SystemSettings {
   // Auto Collect cost
   autoCollectCostPercent Int @default(15) @map("auto_collect_cost_percent")
 
+  // Fortune Wheel settings
+  wheelBetAmount     Decimal @default(1) @map("wheel_bet_amount") @db.Decimal(10, 2)  // $1 per spin
+  wheelMultipliers   Json    @default("[1, 5, 10, 25, 50]") @map("wheel_multipliers") // Multi-spin options
+  wheelFreeSpinsBase Int     @default(1) @map("wheel_free_spins_base")               // Free spins per day
+  wheelFreeSpinsPerRef Int   @default(5) @map("wheel_free_spins_per_ref")            // Per active referral
+  wheelJackpotCap    Decimal @default(1000) @map("wheel_jackpot_cap") @db.Decimal(20, 2)
+  wheelBurnRate      Decimal @default(0.80) @map("wheel_burn_rate") @db.Decimal(5, 4)   // 80% of losses burn
+  wheelPoolRate      Decimal @default(0.20) @map("wheel_pool_rate") @db.Decimal(5, 4)   // 20% to jackpot
+
+  // Wheel sectors: [{sector, chance, multiplier}]
+  wheelSectors Json @default("[{\"sector\":\"5x\",\"chance\":0.01,\"multiplier\":5},{\"sector\":\"2x\",\"chance\":0.05,\"multiplier\":2},{\"sector\":\"1.5x\",\"chance\":0.08,\"multiplier\":1.5},{\"sector\":\"1x\",\"chance\":0.12,\"multiplier\":1},{\"sector\":\"0.5x\",\"chance\":0.18,\"multiplier\":0.5},{\"sector\":\"0.2x\",\"chance\":0.22,\"multiplier\":0.2},{\"sector\":\"empty\",\"chance\":0.33,\"multiplier\":0},{\"sector\":\"jackpot\",\"chance\":0.01,\"multiplier\":0}]") @map("wheel_sectors")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -554,4 +566,65 @@ enum WithdrawalStatus {
   completed    // Successfully sent
   failed       // Error occurred
   cancelled    // Cancelled by user
+}
+
+// ============== FORTUNE WHEEL ==============
+
+model WheelSpin {
+  id        String @id @default(cuid())
+  userId    String @map("user_id")
+
+  // Bet info
+  betAmount      Decimal @map("bet_amount") @db.Decimal(20, 8)       // Always $1 per spin
+  spinCount      Int     @default(1) @map("spin_count")             // Multi-spin: 1/5/10/25/50
+  totalBet       Decimal @map("total_bet") @db.Decimal(20, 8)       // betAmount * spinCount
+
+  // Result (for single spin or summary for multi-spin)
+  totalPayout    Decimal @map("total_payout") @db.Decimal(20, 8)    // Total won
+  netResult      Decimal @map("net_result") @db.Decimal(20, 8)      // totalPayout - totalBet
+
+  // Breakdown (JSON array of individual spin results for multi-spin)
+  // [{sector: "2x", multiplier: 2, payout: 2}, ...]
+  spinResults    Json    @map("spin_results")
+
+  // Jackpot
+  jackpotWon     Boolean @default(false) @map("jackpot_won")
+  jackpotAmount  Decimal @default(0) @map("jackpot_amount") @db.Decimal(20, 8)
+
+  // Burn/Pool tracking
+  burnAmount     Decimal @default(0) @map("burn_amount") @db.Decimal(20, 8)    // 80% of losses
+  poolAmount     Decimal @default(0) @map("pool_amount") @db.Decimal(20, 8)    // 20% of losses
+
+  // Free spin usage
+  freeSpinsUsed  Int     @default(0) @map("free_spins_used")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([jackpotWon])
+  @@map("wheel_spins")
+}
+
+model WheelJackpot {
+  id            String  @id @default("current")
+
+  // Current pool
+  currentPool   Decimal @default(0) @map("current_pool") @db.Decimal(20, 8)
+  poolCap       Decimal @default(1000) @map("pool_cap") @db.Decimal(20, 8)
+
+  // Statistics
+  totalContributed Decimal @default(0) @map("total_contributed") @db.Decimal(20, 8)
+  totalPaidOut     Decimal @default(0) @map("total_paid_out") @db.Decimal(20, 8)
+  totalBurned      Decimal @default(0) @map("total_burned") @db.Decimal(20, 8)
+  timesWon         Int     @default(0) @map("times_won")
+
+  // Last winner info
+  lastWinnerId     String?   @map("last_winner_id")
+  lastWonAmount    Decimal?  @map("last_won_amount") @db.Decimal(20, 8)
+  lastWonAt        DateTime? @map("last_won_at")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("wheel_jackpot")
 }

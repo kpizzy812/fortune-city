@@ -87,7 +87,21 @@
     "afterPurchase": "После покупки",
     "lowBalanceWarning": "После покупки баланс будет низким",
     "insufficientBalance": "Недостаточно средств. Нужно ещё ${amount}.",
-    "purchaseConfirm": "Купить {name}?"
+    "purchaseConfirm": "Купить {name}?",
+    "reinvest": {
+      "newTier": "НОВЫЙ",
+      "repeatBadge": "x{round}",
+      "penaltyWarningTitle": "Повторная покупка того же уровня",
+      "penaltyWarningText": "Это твой {round}-й автомат этого уровня. Прибыль снижена на {percent}%.",
+      "upgradeTip": "Совет: перейди на уровень {tier} для полной прибыли!",
+      "newTierTitle": "Новый уровень открыт!",
+      "newTierText": "Первая покупка этого уровня — максимальная прибыль без штрафов!",
+      "penaltyTooltip": "При повторной покупке того же уровня прибыль снижается (5% → 10% → ... до 85%). Переходи на более высокий уровень для полной прибыли!",
+      "newTierTooltip": "Это новый уровень для тебя! Штраф не применяется. У каждого уровня свой счётчик штрафов.",
+      "ordinal2": "-й",
+      "ordinal3": "-й",
+      "ordinalOther": "-й"
+    }
   },
   "machines": {
     "noMachinesYet": "Автоматов пока нет",

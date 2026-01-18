@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, ChevronLeft, ChevronRight, Tag, TrendingDown, TrendingUp } from 'lucide-react';
 import type { TierInfo, CanAffordResponse, Machine } from '@/types';
 import { Button } from '@/components/ui/Button';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 interface TierCarouselProps {
   tiers: TierInfo[];
@@ -41,6 +42,10 @@ interface TierCardTranslations {
   purchasing: string;
   buyMachine: string;
   sellMachine: string;
+  reinvestNewTier: string;
+  reinvestRepeatBadge: (params: { round: number }) => string;
+  reinvestPenaltyTooltip: string;
+  reinvestNewTierTooltip: string;
 }
 
 function TierCard({
@@ -168,24 +173,30 @@ function TierCard({
             </p>
             {/* Reinvest penalty or upgrade indicator */}
             {!isLocked && !hasActiveMachine && (hasReinvestPenalty || isUpgrade) && (
-              <div className={`
-                absolute -top-1.5 -right-1.5 px-1 py-0.5 rounded text-[7px] font-bold
-                ${isUpgrade
-                  ? 'bg-[#00ff88]/20 text-[#00ff88] border border-[#00ff88]/30'
-                  : 'bg-[#ffaa00]/20 text-[#ffaa00] border border-[#ffaa00]/30'}
-              `}>
-                {isUpgrade ? (
-                  <span className="flex items-center gap-0.5">
-                    <TrendingUp className="w-2 h-2" />
-                    NEW
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-0.5">
-                    <TrendingDown className="w-2 h-2" />
-                    x{canAfford?.nextReinvestRound}
-                  </span>
-                )}
-              </div>
+              <Tooltip
+                content={isUpgrade ? t.reinvestNewTierTooltip : t.reinvestPenaltyTooltip}
+                position="left"
+                showIcon={false}
+              >
+                <div className={`
+                  absolute -top-1.5 -right-1.5 px-1 py-0.5 rounded text-[7px] font-bold cursor-help
+                  ${isUpgrade
+                    ? 'bg-[#00ff88]/20 text-[#00ff88] border border-[#00ff88]/30'
+                    : 'bg-[#ffaa00]/20 text-[#ffaa00] border border-[#ffaa00]/30'}
+                `}>
+                  {isUpgrade ? (
+                    <span className="flex items-center gap-0.5">
+                      <TrendingUp className="w-2 h-2" />
+                      {t.reinvestNewTier}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-0.5">
+                      <TrendingDown className="w-2 h-2" />
+                      {t.reinvestRepeatBadge({ round: canAfford?.nextReinvestRound ?? 2 })}
+                    </span>
+                  )}
+                </div>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -324,6 +335,10 @@ export function TierCarousel({
     purchasing: tShop('purchasing'),
     buyMachine: tShop('buyMachine'),
     sellMachine: tSell('sellMachine'),
+    reinvestNewTier: tShop('reinvest.newTier'),
+    reinvestRepeatBadge: (params) => tShop('reinvest.repeatBadge', params),
+    reinvestPenaltyTooltip: tShop('reinvest.penaltyTooltip'),
+    reinvestNewTierTooltip: tShop('reinvest.newTierTooltip'),
   };
 
   return (
