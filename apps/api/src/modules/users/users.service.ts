@@ -254,4 +254,83 @@ export class UsersService {
       },
     });
   }
+
+  // ============ Web3 Auth Methods ============
+
+  /**
+   * Поиск пользователя по Web3 адресу
+   */
+  async findByWeb3Address(address: string): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: { web3Address: address },
+    });
+  }
+
+  /**
+   * Создание нового пользователя с Web3 адресом
+   */
+  private async createUserWithWeb3(
+    web3Address: string,
+    referrerCode?: string,
+  ): Promise<User> {
+    const referralCode = nanoid(8);
+
+    // Find referrer by their code (if provided)
+    let referrerId: string | undefined;
+    if (referrerCode) {
+      const referrer = await this.prisma.user.findUnique({
+        where: { referralCode: referrerCode },
+        select: { id: true },
+      });
+      if (referrer) {
+        referrerId = referrer.id;
+      }
+    }
+
+    return this.prisma.user.create({
+      data: {
+        web3Address,
+        referralCode,
+        referredById: referrerId,
+      },
+    });
+  }
+
+  /**
+   * Найти или создать пользователя по Web3 адресу
+   */
+  async findOrCreateFromWeb3(
+    web3Address: string,
+    referrerCode?: string,
+  ): Promise<{ user: User; isNewUser: boolean }> {
+    // Ищем по web3Address
+    let user = await this.findByWeb3Address(web3Address);
+    let isNewUser = false;
+
+    if (!user) {
+      // Создаём нового пользователя
+      user = await this.createUserWithWeb3(web3Address, referrerCode);
+      isNewUser = true;
+    }
+
+    return { user, isNewUser };
+  }
+
+  /**
+   * Привязывает Web3 кошелёк к существующему пользователю
+   */
+  async linkWeb3ToUser(userId: string, web3Address: string): Promise<User> {
+    // Проверяем, не привязан ли уже этот адрес
+    const existingWeb3User = await this.findByWeb3Address(web3Address);
+    if (existingWeb3User && existingWeb3User.id !== userId) {
+      throw new Error('This wallet is already linked to another user');
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        web3Address,
+      },
+    });
+  }
 }

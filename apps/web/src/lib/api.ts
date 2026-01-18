@@ -108,6 +108,21 @@ class ApiClient {
     });
   }
 
+  async authWithWeb3(accessToken: string, referralCode?: string) {
+    return this.request<AuthResponse>('/auth/web3', {
+      method: 'POST',
+      body: JSON.stringify({ accessToken, referralCode }),
+    });
+  }
+
+  async linkWeb3(token: string, supabaseAccessToken: string) {
+    return this.request<AuthResponse>('/auth/link-web3', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ accessToken: supabaseAccessToken }),
+    });
+  }
+
   // ============================================
   // Tiers endpoints
   // ============================================
@@ -952,8 +967,9 @@ export const api = new ApiClient(API_URL);
 
 export interface UserData {
   id: string;
-  telegramId: string | null; // Nullable для email auth
-  email: string | null; // Новое поле
+  telegramId: string | null; // Nullable для email/web3 auth
+  email: string | null;
+  web3Address: string | null; // Solana wallet address
   username: string | null;
   firstName: string | null;
   lastName: string | null;

@@ -8,7 +8,11 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { validate, parse } from '@tma.js/init-data-node';
 import * as crypto from 'crypto';
-import { UsersService, TelegramUserData, EmailUserData } from '../users/users.service';
+import {
+  UsersService,
+  TelegramUserData,
+  EmailUserData,
+} from '../users/users.service';
 import {
   TelegramLoginWidgetDto,
   AuthResponseDto,
@@ -202,6 +206,7 @@ export class AuthService {
       id: user.id,
       telegramId: user.telegramId,
       email: user.email,
+      web3Address: user.web3Address,
       username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -317,6 +322,82 @@ export class AuthService {
       supabasePayload.email,
       supabasePayload.sub,
     );
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email ?? undefined,
+      telegramId: user.telegramId ?? undefined,
+      username: user.username ?? undefined,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: this.formatUserResponse(user),
+    };
+  }
+
+  // ============ Web3 Auth ============
+
+  /**
+   * Авторизация через Web3 (Solana wallet)
+   * Supabase уже проверил подпись через signInWithWeb3
+   */
+  async authWithWeb3Token(
+    supabaseToken: string,
+    referralCode?: string,
+  ): Promise<AuthResponseDto> {
+    // Валидируем Supabase JWT (он уже проверил подпись wallet)
+    const supabasePayload =
+      await this.supabaseAuthService.verifyToken(supabaseToken);
+
+    // Web3 identity в Supabase содержит wallet address
+    const walletAddress = supabasePayload.sub;
+
+    if (!walletAddress) {
+      throw new UnauthorizedException('Wallet address not found in token');
+    }
+
+    const { user } = await this.usersService.findOrCreateFromWeb3(
+      walletAddress,
+      referralCode,
+    );
+
+    // Создаем собственный JWT
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email ?? undefined,
+      telegramId: user.telegramId ?? undefined,
+      username: user.username ?? undefined,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: this.formatUserResponse(user),
+    };
+  }
+
+  /**
+   * Привязка Web3 кошелька к текущему пользователю
+   */
+  async linkWeb3(
+    userId: string,
+    supabaseToken: string,
+  ): Promise<AuthResponseDto> {
+    // Валидируем Supabase токен
+    const supabasePayload =
+      await this.supabaseAuthService.verifyToken(supabaseToken);
+
+    const walletAddress = supabasePayload.sub;
+
+    if (!walletAddress) {
+      throw new UnauthorizedException('Wallet address not found in token');
+    }
+
+    const user = await this.usersService.linkWeb3ToUser(userId, walletAddress);
 
     const payload: JwtPayload = {
       sub: user.id,

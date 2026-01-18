@@ -77,7 +77,9 @@ export class AutoCollectService {
     }
 
     if (machine.status !== 'active') {
-      throw new BadRequestException('Cannot hire collector for expired machine');
+      throw new BadRequestException(
+        'Cannot hire collector for expired machine',
+      );
     }
 
     if (machine.autoCollectEnabled) {

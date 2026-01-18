@@ -67,6 +67,7 @@ export class AuthController {
       id: user.id,
       telegramId: user.telegramId,
       email: user.email,
+      web3Address: user.web3Address,
       username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -121,6 +122,34 @@ export class AuthController {
   ): Promise<AuthResponseDto> {
     const payload = req.user as JwtPayload;
     return this.authService.linkEmail(payload.sub, dto.accessToken);
+  }
+
+  /**
+   * POST /auth/web3
+   * Авторизация через Web3 (Solana wallet)
+   */
+  @Post('web3')
+  @HttpCode(HttpStatus.OK)
+  async authWithWeb3(@Body() dto: SupabaseAuthDto): Promise<AuthResponseDto> {
+    return this.authService.authWithWeb3Token(
+      dto.accessToken,
+      dto.referralCode,
+    );
+  }
+
+  /**
+   * POST /auth/link-web3
+   * Привязка Web3 кошелька к текущему аккаунту
+   */
+  @Post('link-web3')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async linkWeb3(
+    @Req() req: Request,
+    @Body() dto: SupabaseAuthDto,
+  ): Promise<AuthResponseDto> {
+    const payload = req.user as JwtPayload;
+    return this.authService.linkWeb3(payload.sub, dto.accessToken);
   }
 
   /**

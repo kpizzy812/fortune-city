@@ -40,7 +40,9 @@ export class WheelNotificationService {
    */
   async broadcastJackpotWin(data: JackpotBroadcastData): Promise<void> {
     if (!this.botToken) {
-      this.logger.warn('Telegram notifications disabled: missing TELEGRAM_BOT_TOKEN');
+      this.logger.warn(
+        'Telegram notifications disabled: missing TELEGRAM_BOT_TOKEN',
+      );
       return;
     }
 

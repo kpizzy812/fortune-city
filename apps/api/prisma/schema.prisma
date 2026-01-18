@@ -17,6 +17,7 @@ model User {
   email       String?  @unique
   supabaseId  String?  @unique @map("supabase_id")
   emailVerifiedAt DateTime? @map("email_verified_at")
+  web3Address String?  @unique @map("web3_address") // Solana wallet address
 
   // Profile (can come from any provider)
   username    String?

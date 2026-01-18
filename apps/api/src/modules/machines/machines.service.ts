@@ -562,5 +562,4 @@ export class MachinesService {
       newBalance: result.newBalance,
     };
   }
-
 }

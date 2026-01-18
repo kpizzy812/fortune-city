@@ -41,9 +41,7 @@ export class SupabaseAuthService {
         audience: 'authenticated',
       });
 
-      this.logger.debug(
-        `Supabase token verified for user: ${payload.sub}`,
-      );
+      this.logger.debug(`Supabase token verified for user: ${payload.sub}`);
 
       return payload as SupabaseJwtPayload;
     } catch (error) {

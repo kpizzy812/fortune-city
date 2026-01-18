@@ -68,8 +68,9 @@ export class AuthResponseDto {
   accessToken: string;
   user: {
     id: string;
-    telegramId: string | null; // Nullable теперь
-    email: string | null; // Новое поле
+    telegramId: string | null;
+    email: string | null;
+    web3Address: string | null; // Solana wallet address
     username: string | null;
     firstName: string | null;
     lastName: string | null;

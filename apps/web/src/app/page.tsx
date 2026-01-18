@@ -8,6 +8,7 @@ import { useFortuneRateStore } from '@/stores/fortune-rate.store';
 import { useTelegramWebApp } from '@/providers/TelegramProvider';
 import { TelegramLoginButton } from '@/components/auth/TelegramLoginButton';
 import { EmailLoginForm } from '@/components/auth/EmailLoginForm';
+import { SolanaLoginButton } from '@/components/auth/SolanaLoginButton';
 import { MachineGrid } from '@/components/machines/MachineGrid';
 import { RiskyCollectModal } from '@/components/machines/RiskyCollectModal';
 import { GambleResultAnimation } from '@/components/machines/GambleResultAnimation';
@@ -264,6 +265,29 @@ export default function Home() {
                 <EmailLoginForm
                   onSuccess={() => console.log('Email login success')}
                   onError={(err) => console.error('Email login error:', err)}
+                />
+              </div>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#b0b0b0]/20"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-[#1a0a2e] text-[#b0b0b0]">
+                    {tAuth('or')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Solana Wallet Login */}
+              <div className="bg-[#2a1a4e] rounded-xl p-6 border border-[#9945FF]/30">
+                <h2 className="text-white text-lg font-semibold mb-4 text-center">
+                  {tAuth('signInWithWallet')}
+                </h2>
+                <SolanaLoginButton
+                  onSuccess={() => console.log('Solana login success')}
+                  onError={(err) => console.error('Solana login error:', err)}
                 />
               </div>
 
