@@ -220,7 +220,7 @@
 
 ---
 
-## Phase 8: Колесо Фортуны (PENDING)
+## Phase 8: Колесо Фортуны (IN PROGRESS)
 
 **Документация:** [docs/concept.md](docs/concept.md) — секция "КОЛЕСО ФОРТУНЫ"
 
@@ -281,20 +281,24 @@
 - [x] Интеграция с SettingsService (все параметры конфигурируемы)
 - [x] Криптографически безопасный RNG (crypto.randomBytes)
 
-### 8.2 Frontend
-- [ ] /wheel — страница колеса
-- [ ] WheelComponent — анимированное колесо с секторами
-- [ ] SpinButton — кнопки 1x/5x/10x/25x/50x
-- [ ] JackpotDisplay — текущий пул с анимацией роста
-- [ ] SpinHistory — последние результаты
-- [ ] MultiSpinResult — модалка с результатами мульти-спина
-- [ ] wheel.store.ts — Zustand store
+### 8.2 Frontend (COMPLETED)
+- [x] /wheel — страница колеса
+- [x] FortuneWheel.tsx — SVG колесо с анимацией вращения (framer-motion)
+- [x] SpinControls.tsx — кнопка SPIN + переключатель мультиплера (x1→x5→x10→x25→x50 циклично)
+- [x] JackpotDisplay.tsx — текущий пул с анимацией роста и sparkles
+- [x] SpinHistory.tsx — последние результаты спинов
+- [x] SpinResultModal.tsx — модалка с результатами (confetti для джекпота/больших выигрышей)
+- [x] wheel.store.ts — Zustand store для состояния колеса
+- [x] API типы и методы в lib/api.ts
+- [x] Типы в types/index.ts
+- [x] Навигация: убран "coming soon" флаг с колеса
 
-### 8.3 Анимации
-- [ ] Вращение колеса (framer-motion)
-- [ ] Остановка на секторе
-- [ ] Celebration при выигрыше (confetti для 5x/Jackpot)
-- [ ] Быстрый режим для мульти-спина
+### 8.3 Анимации (COMPLETED)
+- [x] Вращение колеса (framer-motion с custom easing)
+- [x] Остановка на целевом секторе
+- [x] Confetti при джекпоте и больших выигрышах
+- [x] Анимация изменения джекпота
+- [x] Анимированный переключатель мультиплера
 
 ### 8.4 WebSocket события
 - [ ] jackpot:won — кто-то выиграл джекпот (глобальное уведомление)
@@ -305,6 +309,8 @@
 - [ ] Тесты на распределение шансов (статистический тест)
 - [ ] Тесты на джекпот механику
 - [ ] Edge cases (недостаточно средств, лимиты)
+
+**Build Status:** API и Web собираются успешно
 
 ---
 

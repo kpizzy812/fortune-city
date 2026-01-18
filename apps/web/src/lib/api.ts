@@ -889,6 +889,49 @@ class ApiClient {
       { token },
     );
   }
+
+  // ============================================
+  // Fortune Wheel endpoints
+  // ============================================
+
+  /**
+   * Spin the wheel (1x/5x/10x/25x/50x)
+   */
+  async wheelSpin(token: string, multiplier: WheelMultiplier): Promise<WheelSpinResponse> {
+    return this.request<WheelSpinResponse>('/wheel/spin', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ multiplier }),
+    });
+  }
+
+  /**
+   * Get current wheel state (jackpot, sectors, free spins)
+   */
+  async getWheelState(token: string): Promise<WheelStateResponse> {
+    return this.request<WheelStateResponse>('/wheel/state', { token });
+  }
+
+  /**
+   * Get spin history
+   */
+  async getWheelHistory(
+    token: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<WheelHistoryResponse> {
+    return this.request<WheelHistoryResponse>(
+      `/wheel/history?page=${page}&limit=${limit}`,
+      { token },
+    );
+  }
+
+  /**
+   * Get jackpot info (public)
+   */
+  async getWheelJackpot(): Promise<WheelJackpotResponse> {
+    return this.request<WheelJackpotResponse>('/wheel/jackpot');
+  }
 }
 
 export const api = new ApiClient(API_URL);
@@ -1558,4 +1601,82 @@ export interface AdminAuditStatsResponse {
   byAction: Record<string, number>;
   byResource: Record<string, number>;
   recentActions: AdminAuditLogItem[];
+}
+
+// ============================================
+// Fortune Wheel Types
+// ============================================
+
+export type WheelMultiplier = 1 | 5 | 10 | 25 | 50;
+
+export interface WheelSector {
+  sector: string;
+  chance: number;
+  multiplier: number;
+}
+
+export interface WheelSpinResult {
+  sector: string;
+  multiplier: number;
+  payout: number;
+  isJackpot: boolean;
+}
+
+export interface WheelSpinResponse {
+  success: boolean;
+  spinId: string;
+  spinCount: number;
+  totalBet: number;
+  totalPayout: number;
+  netResult: number;
+  results: WheelSpinResult[];
+  jackpotWon: boolean;
+  jackpotAmount: number;
+  burnAmount: number;
+  poolAmount: number;
+  freeSpinsUsed: number;
+  freeSpinsRemaining: number;
+  newBalance: number;
+  currentJackpotPool: number;
+}
+
+export interface WheelStateResponse {
+  jackpotPool: number;
+  jackpotCap: number;
+  lastWinner: {
+    userId: string;
+    amount: number | null;
+    wonAt: string | null;
+  } | null;
+  timesWon: number;
+  totalPaidOut: number;
+  betAmount: number;
+  multipliers: number[];
+  freeSpinsRemaining: number;
+  sectors: WheelSector[];
+}
+
+export interface WheelHistoryItem {
+  id: string;
+  spinCount: number;
+  totalBet: number;
+  totalPayout: number;
+  netResult: number;
+  jackpotWon: boolean;
+  jackpotAmount: number;
+  createdAt: string;
+}
+
+export interface WheelHistoryResponse {
+  items: WheelHistoryItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface WheelJackpotResponse {
+  currentPool: number;
+  lastWinner: string | null;
+  lastAmount: number | null;
+  timesWon: number;
 }

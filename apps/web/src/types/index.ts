@@ -304,3 +304,81 @@ export interface UserData {
   maxTierReached: number;
   currentTaxRate: string;
 }
+
+// ============================================
+// Fortune Wheel Types
+// ============================================
+
+export type WheelMultiplier = 1 | 5 | 10 | 25 | 50;
+
+export interface WheelSector {
+  sector: string;
+  chance: number;
+  multiplier: number;
+}
+
+export interface SpinResult {
+  sector: string;
+  multiplier: number;
+  payout: number;
+  isJackpot: boolean;
+}
+
+export interface SpinResponse {
+  success: boolean;
+  spinId: string;
+  spinCount: number;
+  totalBet: number;
+  totalPayout: number;
+  netResult: number;
+  results: SpinResult[];
+  jackpotWon: boolean;
+  jackpotAmount: number;
+  burnAmount: number;
+  poolAmount: number;
+  freeSpinsUsed: number;
+  freeSpinsRemaining: number;
+  newBalance: number;
+  currentJackpotPool: number;
+}
+
+export interface WheelState {
+  jackpotPool: number;
+  jackpotCap: number;
+  lastWinner: {
+    userId: string;
+    amount: number | null;
+    wonAt: string | null;
+  } | null;
+  timesWon: number;
+  totalPaidOut: number;
+  betAmount: number;
+  multipliers: number[];
+  freeSpinsRemaining: number;
+  sectors: WheelSector[];
+}
+
+export interface SpinHistoryItem {
+  id: string;
+  spinCount: number;
+  totalBet: number;
+  totalPayout: number;
+  netResult: number;
+  jackpotWon: boolean;
+  jackpotAmount: number;
+  createdAt: string;
+}
+
+export interface SpinHistory {
+  items: SpinHistoryItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface JackpotInfo {
+  currentPool: number;
+  lastWinner: string | null;
+  lastAmount: number | null;
+  timesWon: number;
+}
