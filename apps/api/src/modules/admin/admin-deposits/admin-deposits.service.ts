@@ -2,9 +2,10 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Prisma, DepositStatus } from '@prisma/client';
+import { Prisma, DepositStatus, DepositMethod } from '@prisma/client';
 import {
   DepositsFilterDto,
   DepositListItemResponse,
@@ -14,11 +15,30 @@ import {
   DepositSortField,
   SortOrder,
   DepositStatusFilter,
+  ApproveOtherCryptoDepositDto,
+  RejectOtherCryptoDepositDto,
 } from './dto/deposit.dto';
+import { PriceOracleService } from '../../deposits/services/price-oracle.service';
+import { DepositsGateway } from '../../deposits/deposits.gateway';
+import {
+  OtherCryptoToken,
+  OtherCryptoNetwork,
+} from '../../deposits/constants/other-crypto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AdminDepositsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(AdminDepositsService.name);
+  private readonly botToken: string | undefined;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly priceOracle: PriceOracleService,
+    private readonly depositsGateway: DepositsGateway,
+    private readonly config: ConfigService,
+  ) {
+    this.botToken = this.config.get<string>('TELEGRAM_BOT_TOKEN');
+  }
 
   /**
    * Get paginated list of deposits with filters
@@ -392,6 +412,13 @@ export class AdminDepositsService {
     creditedAt: Date | null;
     errorMessage: string | null;
     createdAt: Date;
+    otherCryptoNetwork?: string | null;
+    otherCryptoToken?: string | null;
+    claimedAmount?: Prisma.Decimal | null;
+    adminNotes?: string | null;
+    processedBy?: string | null;
+    processedAt?: Date | null;
+    rejectionReason?: string | null;
     user: {
       id: string;
       telegramId: string | null;
@@ -427,6 +454,14 @@ export class AdminDepositsService {
       creditedAt: deposit.creditedAt?.toISOString() || null,
       errorMessage: deposit.errorMessage,
       createdAt: deposit.createdAt.toISOString(),
+      // Other crypto fields
+      otherCryptoNetwork: deposit.otherCryptoNetwork,
+      otherCryptoToken: deposit.otherCryptoToken,
+      claimedAmount: deposit.claimedAmount ? Number(deposit.claimedAmount) : null,
+      adminNotes: deposit.adminNotes,
+      processedBy: deposit.processedBy,
+      processedAt: deposit.processedAt?.toISOString() || null,
+      rejectionReason: deposit.rejectionReason,
     };
   }
 
@@ -454,5 +489,223 @@ export class AdminDepositsService {
         adminUser: 'admin',
       },
     });
+  }
+
+  // ============================================
+  // Other Crypto Methods
+  // ============================================
+
+  /**
+   * Approve other crypto deposit
+   */
+  async approveOtherCryptoDeposit(
+    depositId: string,
+    dto: ApproveOtherCryptoDepositDto,
+    adminUsername: string,
+  ): Promise<DepositDetailResponse> {
+    const deposit = await this.prisma.deposit.findUnique({
+      where: { id: depositId },
+      include: { user: true },
+    });
+
+    if (!deposit) {
+      throw new NotFoundException('Deposit not found');
+    }
+
+    if (deposit.method !== DepositMethod.other_crypto) {
+      throw new BadRequestException('This is not an other_crypto deposit');
+    }
+
+    if (deposit.status !== DepositStatus.pending) {
+      throw new BadRequestException('Deposit is not pending');
+    }
+
+    const token = deposit.otherCryptoToken as OtherCryptoToken;
+
+    // Get USD conversion rate
+    let amountUsd: number;
+    let rateToUsd: number;
+
+    if (token === 'USDT') {
+      amountUsd = dto.actualAmount;
+      rateToUsd = 1;
+    } else {
+      // Get price for BNB or TON
+      const ticker = token === 'BNB' ? 'BNB' : 'TON';
+      const rate = await this.priceOracle.getPrice(ticker as 'BNB' | 'TON');
+      amountUsd = dto.actualAmount * rate;
+      rateToUsd = rate;
+    }
+
+    // Process in transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Credit user balance
+      await tx.user.update({
+        where: { id: deposit.userId },
+        data: {
+          fortuneBalance: { increment: amountUsd },
+          totalFreshDeposits: { increment: amountUsd },
+        },
+      });
+
+      // Update deposit
+      const updatedDeposit = await tx.deposit.update({
+        where: { id: depositId },
+        data: {
+          status: DepositStatus.credited,
+          amount: dto.actualAmount,
+          amountUsd,
+          rateToUsd,
+          creditedAt: new Date(),
+          processedBy: adminUsername,
+          processedAt: new Date(),
+          adminNotes: dto.notes,
+        },
+        include: { user: true },
+      });
+
+      // Create transaction record
+      await tx.transaction.create({
+        data: {
+          userId: deposit.userId,
+          type: 'deposit',
+          amount: amountUsd,
+          currency: 'FORTUNE',
+          netAmount: amountUsd,
+          status: 'completed',
+        },
+      });
+
+      // Process referral bonuses (3 levels: 5%, 3%, 1%)
+      await this.processReferralBonuses(tx, deposit.user, amountUsd);
+
+      return updatedDeposit;
+    });
+
+    // Log action
+    await this.logAction(
+      'approve_other_crypto_deposit',
+      'deposit',
+      depositId,
+      { status: 'pending' },
+      {
+        status: 'credited',
+        actualAmount: dto.actualAmount,
+        amountUsd,
+        notes: dto.notes,
+      },
+    );
+
+    // WebSocket notification
+    this.depositsGateway.emitDepositCredited({
+      depositId: result.id,
+      userId: result.userId,
+      amount: dto.actualAmount,
+      currency: token,
+      amountUsd,
+      newBalance: Number(result.user.fortuneBalance),
+      timestamp: new Date().toISOString(),
+    });
+
+    return this.formatDepositDetail(result);
+  }
+
+  /**
+   * Reject other crypto deposit
+   */
+  async rejectOtherCryptoDeposit(
+    depositId: string,
+    dto: RejectOtherCryptoDepositDto,
+    adminUsername: string,
+  ): Promise<DepositDetailResponse> {
+    const deposit = await this.prisma.deposit.findUnique({
+      where: { id: depositId },
+      include: { user: true },
+    });
+
+    if (!deposit) {
+      throw new NotFoundException('Deposit not found');
+    }
+
+    if (deposit.method !== DepositMethod.other_crypto) {
+      throw new BadRequestException('This is not an other_crypto deposit');
+    }
+
+    if (deposit.status !== DepositStatus.pending) {
+      throw new BadRequestException('Deposit is not pending');
+    }
+
+    const updated = await this.prisma.deposit.update({
+      where: { id: depositId },
+      data: {
+        status: DepositStatus.rejected,
+        rejectionReason: dto.reason,
+        processedBy: adminUsername,
+        processedAt: new Date(),
+      },
+      include: { user: true },
+    });
+
+    // Log action
+    await this.logAction(
+      'reject_other_crypto_deposit',
+      'deposit',
+      depositId,
+      { status: 'pending' },
+      { status: 'rejected', reason: dto.reason },
+    );
+
+    return this.formatDepositDetail(updated);
+  }
+
+  /**
+   * Process referral bonuses (3 levels)
+   */
+  private async processReferralBonuses(
+    tx: Prisma.TransactionClient,
+    user: { id: string; referredById: string | null; username: string | null; firstName: string | null },
+    depositAmountUsd: number,
+  ): Promise<void> {
+    if (!user.referredById) return;
+
+    const REFERRAL_RATES = [0.05, 0.03, 0.01]; // 5%, 3%, 1%
+    let currentReferrer = await tx.user.findUnique({
+      where: { id: user.referredById },
+    });
+
+    for (let level = 0; level < 3 && currentReferrer; level++) {
+      const bonus = depositAmountUsd * REFERRAL_RATES[level];
+
+      // Credit referral balance
+      await tx.user.update({
+        where: { id: currentReferrer.id },
+        data: { referralBalance: { increment: bonus } },
+      });
+
+      // Record referral bonus
+      await tx.referralBonus.create({
+        data: {
+          receiverId: currentReferrer.id,
+          sourceId: user.id,
+          level: level + 1,
+          rate: REFERRAL_RATES[level],
+          amount: bonus,
+          machineId: 'deposit', // Special marker for deposit-triggered bonus
+          freshAmount: depositAmountUsd,
+        },
+      });
+
+      this.logger.debug(
+        `Referral bonus L${level + 1}: $${bonus.toFixed(2)} to ${currentReferrer.id}`,
+      );
+
+      if (currentReferrer.referredById) {
+        currentReferrer = await tx.user.findUnique({
+          where: { id: currentReferrer.referredById },
+        });
+      } else {
+        break;
+      }
+    }
   }
 }

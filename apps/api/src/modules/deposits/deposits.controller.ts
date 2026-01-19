@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Headers,
+  Param,
   UseGuards,
   UnauthorizedException,
   Logger,
@@ -13,8 +14,14 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../auth/auth.service';
 import { DepositsService } from './deposits.service';
 import { HeliusWebhookService } from './services/helius-webhook.service';
-import { ConnectWalletDto, InitiateDepositDto, ConfirmDepositDto } from './dto';
+import {
+  ConnectWalletDto,
+  InitiateDepositDto,
+  ConfirmDepositDto,
+  InitiateOtherCryptoDepositDto,
+} from './dto';
 import type { HeliusWebhookPayload } from './dto';
+import { OtherCryptoNetwork } from './constants/other-crypto';
 
 @Controller('deposits')
 export class DepositsController {
@@ -116,6 +123,32 @@ export class DepositsController {
   @Get('rates')
   async getRates() {
     return this.depositsService.getRates();
+  }
+
+  // ============== OTHER CRYPTO ==============
+
+  /**
+   * GET /deposits/other-crypto/instructions/:network
+   * Get instructions for other crypto deposits (BEP20/TON)
+   */
+  @Get('other-crypto/instructions/:network')
+  async getOtherCryptoInstructions(
+    @Param('network') network: OtherCryptoNetwork,
+  ): Promise<import('./dto').OtherCryptoInstructionsDto> {
+    return this.depositsService.getOtherCryptoInstructions(network);
+  }
+
+  /**
+   * POST /deposits/other-crypto
+   * Initiate other crypto deposit (user claims they sent funds)
+   */
+  @Post('other-crypto')
+  @UseGuards(JwtAuthGuard)
+  async initiateOtherCryptoDeposit(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: InitiateOtherCryptoDepositDto,
+  ): Promise<import('./dto').OtherCryptoDepositResponseDto> {
+    return this.depositsService.initiateOtherCryptoDeposit(user.sub, dto);
   }
 }
 

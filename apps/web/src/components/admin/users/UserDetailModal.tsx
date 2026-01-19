@@ -13,6 +13,9 @@ import {
   Copy,
   Check,
   Settings,
+  Trash2,
+  Clock,
+  Plus,
 } from 'lucide-react';
 import { useAdminUsersStore } from '@/stores/admin/admin-users.store';
 import { ReferralTree } from './ReferralTree';
@@ -33,6 +36,9 @@ export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
     fetchUser,
     banUser,
     unbanUser,
+    addMachine,
+    deleteMachine,
+    extendMachineLifespan,
     clearSelectedUser,
     clearError,
   } = useAdminUsersStore();
@@ -43,6 +49,19 @@ export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
   const [showUnbanConfirm, setShowUnbanConfirm] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Machine management states
+  const [showAddMachine, setShowAddMachine] = useState(false);
+  const [newMachineTier, setNewMachineTier] = useState('1');
+  const [newMachineReinvest, setNewMachineReinvest] = useState('1');
+  const [addMachineReason, setAddMachineReason] = useState('');
+  const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteMachineReason, setDeleteMachineReason] = useState('');
+  const [showExtendConfirm, setShowExtendConfirm] = useState(false);
+  const [extendDays, setExtendDays] = useState('30');
+  const [extendReason, setExtendReason] = useState('');
+  const [machineActionLoading, setMachineActionLoading] = useState(false);
 
   useEffect(() => {
     fetchUser(userId);
@@ -71,6 +90,54 @@ export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
       setShowUnbanConfirm(false);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleAddMachine = async () => {
+    const tier = parseInt(newMachineTier);
+    const reinvest = parseInt(newMachineReinvest);
+    if (tier < 1 || tier > 10) return;
+    if (reinvest < 1 || reinvest > 7) return;
+
+    setMachineActionLoading(true);
+    try {
+      await addMachine(userId, tier, reinvest, addMachineReason || undefined);
+      setShowAddMachine(false);
+      setNewMachineTier('1');
+      setNewMachineReinvest('1');
+      setAddMachineReason('');
+    } finally {
+      setMachineActionLoading(false);
+    }
+  };
+
+  const handleDeleteMachine = async () => {
+    if (!selectedMachineId) return;
+    setMachineActionLoading(true);
+    try {
+      await deleteMachine(userId, selectedMachineId, deleteMachineReason || undefined);
+      setShowDeleteConfirm(false);
+      setSelectedMachineId(null);
+      setDeleteMachineReason('');
+    } finally {
+      setMachineActionLoading(false);
+    }
+  };
+
+  const handleExtendMachine = async () => {
+    if (!selectedMachineId) return;
+    const days = parseInt(extendDays);
+    if (days < 1 || days > 365) return;
+
+    setMachineActionLoading(true);
+    try {
+      await extendMachineLifespan(userId, selectedMachineId, days, extendReason || undefined);
+      setShowExtendConfirm(false);
+      setSelectedMachineId(null);
+      setExtendDays('30');
+      setExtendReason('');
+    } finally {
+      setMachineActionLoading(false);
     }
   };
 
@@ -379,6 +446,273 @@ export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
                     <p className="text-white">{selectedUser.freeSpinsRemaining}</p>
                   </div>
                 </div>
+              </div>
+
+              {/* Machines */}
+              <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">
+                    Machines ({selectedUser.machines?.length || 0})
+                  </h3>
+                  <button
+                    onClick={() => setShowAddMachine(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Machine
+                  </button>
+                </div>
+
+                {selectedUser.machines && selectedUser.machines.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedUser.machines.map((machine) => {
+                      const isExpired = new Date(machine.expiresAt) < new Date();
+                      const statusColor =
+                        machine.status === 'active' ? 'text-green-400' :
+                        machine.status === 'expired' ? 'text-red-400' :
+                        'text-yellow-400';
+
+                      return (
+                        <div
+                          key={machine.id}
+                          className="bg-slate-700/50 rounded-lg p-4 border border-slate-600"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
+                              <div>
+                                <p className="text-xs text-slate-400">Tier</p>
+                                <p className="text-lg font-bold text-amber-400">T{machine.tier}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-400">Status</p>
+                                <p className={`text-sm font-medium ${statusColor}`}>
+                                  {machine.status}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-400">Expires</p>
+                                <p className="text-sm text-white">
+                                  {new Date(machine.expiresAt).toLocaleDateString('ru-RU')}
+                                </p>
+                                {isExpired && (
+                                  <p className="text-xs text-red-400">Expired</p>
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-400">Coin Box</p>
+                                <p className="text-sm text-white">
+                                  ${machine.coinBoxCurrent.toFixed(2)} / ${machine.coinBoxCapacity.toFixed(2)}
+                                </p>
+                                <p className="text-xs text-slate-400">
+                                  Level {machine.coinBoxLevel}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-400">Purchase Price</p>
+                                <p className="text-sm text-white">
+                                  ${machine.purchasePrice.toFixed(2)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-400">Reinvest Round</p>
+                                <p className="text-sm text-white">
+                                  {machine.reinvestRound}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-400">Fortune Gamble</p>
+                                <p className="text-sm text-white">
+                                  Level {machine.fortuneGambleLevel}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-400">Auto Collect</p>
+                                <p className="text-sm text-white">
+                                  {machine.autoCollectEnabled ? 'Yes' : 'No'}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2 ml-4">
+                              <button
+                                onClick={() => {
+                                  setSelectedMachineId(machine.id);
+                                  setShowExtendConfirm(true);
+                                }}
+                                className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+                                title="Extend lifespan"
+                              >
+                                <Clock className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedMachineId(machine.id);
+                                  setShowDeleteConfirm(true);
+                                }}
+                                className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-colors"
+                                title="Delete machine"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-slate-400 text-center py-4">No machines</p>
+                )}
+
+                {/* Add Machine Modal */}
+                {showAddMachine && (
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mt-4">
+                    <h4 className="text-green-400 font-medium mb-3">Add Machine</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm text-slate-400 block mb-1">Tier (1-10)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={newMachineTier}
+                          onChange={(e) => setNewMachineTier(e.target.value)}
+                          className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-slate-400 block mb-1">Reinvest Round (1-7)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="7"
+                          value={newMachineReinvest}
+                          onChange={(e) => setNewMachineReinvest(e.target.value)}
+                          className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-slate-400 block mb-1">Reason (optional)</label>
+                        <input
+                          type="text"
+                          value={addMachineReason}
+                          onChange={(e) => setAddMachineReason(e.target.value)}
+                          placeholder="Reason for adding machine..."
+                          className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3 mt-3">
+                      <button
+                        onClick={() => {
+                          setShowAddMachine(false);
+                          setNewMachineTier('1');
+                          setNewMachineReinvest('1');
+                          setAddMachineReason('');
+                        }}
+                        className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleAddMachine}
+                        disabled={machineActionLoading}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {machineActionLoading ? 'Adding...' : 'Add Machine'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Delete Machine Modal */}
+                {showDeleteConfirm && selectedMachineId && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mt-4">
+                    <h4 className="text-red-400 font-medium mb-3">Delete Machine</h4>
+                    <p className="text-slate-300 mb-3">
+                      Are you sure you want to delete this machine? Coin box balance will be lost.
+                    </p>
+                    <div>
+                      <label className="text-sm text-slate-400 block mb-1">Reason (optional)</label>
+                      <input
+                        type="text"
+                        value={deleteMachineReason}
+                        onChange={(e) => setDeleteMachineReason(e.target.value)}
+                        placeholder="Reason for deletion..."
+                        className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-3 mt-3">
+                      <button
+                        onClick={() => {
+                          setShowDeleteConfirm(false);
+                          setSelectedMachineId(null);
+                          setDeleteMachineReason('');
+                        }}
+                        className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleDeleteMachine}
+                        disabled={machineActionLoading}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {machineActionLoading ? 'Deleting...' : 'Delete Machine'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Extend Machine Modal */}
+                {showExtendConfirm && selectedMachineId && (
+                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 mt-4">
+                    <h4 className="text-blue-400 font-medium mb-3">Extend Machine Lifespan</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm text-slate-400 block mb-1">Days to Add (1-365)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="365"
+                          value={extendDays}
+                          onChange={(e) => setExtendDays(e.target.value)}
+                          className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-slate-400 block mb-1">Reason (optional)</label>
+                        <input
+                          type="text"
+                          value={extendReason}
+                          onChange={(e) => setExtendReason(e.target.value)}
+                          placeholder="Reason for extension..."
+                          className="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3 mt-3">
+                      <button
+                        onClick={() => {
+                          setShowExtendConfirm(false);
+                          setSelectedMachineId(null);
+                          setExtendDays('30');
+                          setExtendReason('');
+                        }}
+                        className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleExtendMachine}
+                        disabled={machineActionLoading}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {machineActionLoading ? 'Extending...' : 'Extend Lifespan'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Actions */}
