@@ -371,6 +371,7 @@
     "enterAmount": "Введи сумму",
     "withdrawButton": "Вывести ${amount} → {usdt} USDT",
     "sending": "Отправка...",
+    "change": "Изменить",
     "otherNetworks": "Другие сети",
     "otherNetworksDescription": "BNB Smart Chain, TON",
     "otherCrypto": {

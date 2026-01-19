@@ -371,6 +371,7 @@
     "enterAmount": "Enter Amount",
     "withdrawButton": "Withdraw ${amount} → {usdt} USDT",
     "sending": "Sending...",
+    "change": "Change",
     "otherNetworks": "Other Networks",
     "otherNetworksDescription": "BNB Smart Chain, TON",
     "otherCrypto": {

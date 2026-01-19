@@ -110,6 +110,7 @@ export default function CashPage() {
   const [withdrawAddress, setWithdrawAddress] = useState<string>('');
   const [isSending, setIsSending] = useState(false);
   const [isOtherCryptoModalOpen, setIsOtherCryptoModalOpen] = useState(false);
+  const [isCurrencySelected, setIsCurrencySelected] = useState(false);
 
   // Memoize wallet address to prevent re-renders
   const walletAddress = useMemo(
@@ -155,7 +156,7 @@ export default function CashPage() {
         try {
           // Silent connect - won't show popup if previously approved
           await window.solana.connect({ onlyIfTrusted: true });
-        } catch (error) {
+        } catch {
           // Silent connect failed - user needs to manually connect
           console.log('Auto-connect skipped - user needs to manually approve');
         }
@@ -452,44 +453,54 @@ export default function CashPage() {
 
   return (
     <div className="min-h-screen pb-24">
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Balance Card */}
-        <div className="bg-gradient-to-br from-[#1a0a2e] to-[#2a1040] rounded-2xl p-6 mb-6 border border-[#ff2d95]/20">
-          <div className="text-sm text-gray-400 mb-1">{t('availableBalance')}</div>
-          <div className="text-3xl font-bold text-white">
-            $
-            {parseFloat(user.fortuneBalance).toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </div>
-          <div className="text-xs text-gray-500 mt-2">
-            {t('taxRate', { rate: taxRatePercent, tier: user.maxTierReached || 1 })}
+      <div className="max-w-4xl mx-auto px-4 py-4 md:py-6">
+        {/* Compact Balance Header */}
+        <div className="bg-gradient-to-br from-[#1a0a2e] to-[#2a1040] rounded-xl p-3 md:p-4 mb-4 border border-[#ff2d95]/20">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-gray-400 mb-0.5">{t('availableBalance')}</div>
+              <div className="text-xl md:text-2xl font-bold text-white truncate">
+                $
+                {parseFloat(user.fortuneBalance).toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
+              <div className="text-[10px] md:text-xs text-gray-500 mt-0.5">
+                {t('taxRate', { rate: taxRatePercent, tier: user.maxTierReached || 1 })}
+              </div>
+            </div>
+            {/* Wallet button on the right - show when connected in wallet tabs */}
+            {((mainTab === 'deposit' && depositTab === 'wallet') ||
+              (mainTab === 'withdraw' && withdrawTab === 'wallet')) &&
+              connected && (
+              <WalletMultiButton className="!bg-gradient-to-r !from-[#ff2d95] !to-[#8b5cf6] !rounded-lg !h-9 !text-xs !font-medium !px-3 !min-w-0" />
+            )}
           </div>
         </div>
 
         {/* Main Tabs: Deposit / Withdraw */}
-        <div className="flex bg-[#1a0a2e] rounded-xl p-1 mb-6">
+        <div className="flex bg-[#1a0a2e] rounded-xl p-1 mb-3">
           <button
             onClick={() => setMainTab('deposit')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs md:text-sm font-medium transition-all ${
               mainTab === 'deposit'
                 ? 'bg-[#ff2d95] text-white shadow-lg shadow-[#ff2d95]/25'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <ArrowDownToLine className="w-4 h-4" />
+            <ArrowDownToLine className="w-3.5 h-3.5 md:w-4 md:h-4" />
             <span>{t('deposit')}</span>
           </button>
           <button
             onClick={() => setMainTab('withdraw')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs md:text-sm font-medium transition-all ${
               mainTab === 'withdraw'
                 ? 'bg-[#ff2d95] text-white shadow-lg shadow-[#ff2d95]/25'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <ArrowUpFromLine className="w-4 h-4" />
+            <ArrowUpFromLine className="w-3.5 h-3.5 md:w-4 md:h-4" />
             <span>{t('withdraw')}</span>
           </button>
         </div>
@@ -498,149 +509,183 @@ export default function CashPage() {
         {mainTab === 'deposit' && (
           <>
             {/* Deposit Sub-tabs */}
-            <div className="flex bg-[#1a0a2e]/50 rounded-xl p-1 mb-6">
+            <div className="flex bg-[#1a0a2e]/50 rounded-xl p-1 mb-3">
               <button
                 onClick={() => setDepositTab('wallet')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
                   depositTab === 'wallet'
                     ? 'bg-[#2a1a4e] text-white'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                <Wallet className="w-4 h-4" />
+                <Wallet className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 <span>{t('wallet')}</span>
               </button>
               <button
                 onClick={() => setDepositTab('address')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
                   depositTab === 'address'
                     ? 'bg-[#2a1a4e] text-white'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                <QrCode className="w-4 h-4" />
+                <QrCode className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 <span>{t('qrAddress')}</span>
               </button>
             </div>
 
-            {/* Other Networks Button */}
+            {/* Other Networks Button - Compact */}
             <button
               onClick={() => setIsOtherCryptoModalOpen(true)}
               className="
-                w-full mb-6 p-4 rounded-xl
+                w-full mb-3 p-2.5 md:p-3 rounded-lg
                 bg-gradient-to-r from-amber-500/10 to-orange-500/10
                 border border-amber-500/30 hover:border-amber-500/50
                 flex items-center justify-between
                 transition-all group
               "
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center relative overflow-visible">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center relative overflow-visible">
                   {/* Overlapping BSC and TON logos */}
                   <div className="relative w-full h-full flex items-center justify-center">
                     {/* BSC logo - background */}
-                    <div className="absolute left-0 w-6 h-6 rounded-full overflow-hidden border border-yellow-400/30 shadow-sm bg-white">
-                      <Image src="/bsc.png" alt="BSC" width={24} height={24} className="w-full h-full object-cover" />
+                    <div className="absolute left-0 w-5 h-5 rounded-full overflow-hidden border border-yellow-400/30 shadow-sm bg-white">
+                      <Image src="/bsc.png" alt="BSC" width={20} height={20} className="w-full h-full object-cover" />
                     </div>
                     {/* TON logo - foreground, overlapping */}
-                    <div className="absolute right-0 w-6 h-6 rounded-full overflow-hidden border border-blue-400/30 shadow-sm bg-white">
-                      <Image src="/ton.png" alt="TON" width={24} height={24} className="w-full h-full object-cover" />
+                    <div className="absolute right-0 w-5 h-5 rounded-full overflow-hidden border border-blue-400/30 shadow-sm bg-white">
+                      <Image src="/ton.png" alt="TON" width={20} height={20} className="w-full h-full object-cover" />
                     </div>
                   </div>
                 </div>
                 <div className="text-left">
-                  <div className="text-white font-medium">
+                  <div className="text-white font-medium text-xs md:text-sm">
                     {t('otherNetworks')}
                   </div>
-                  <div className="text-xs text-amber-200/80">
+                  <div className="text-[10px] md:text-xs text-amber-200/80 hidden sm:block">
                     {t('otherNetworksDescription')}
                   </div>
                 </div>
               </div>
-              <div className="text-amber-400 group-hover:translate-x-1 transition-transform">
+              <div className="text-amber-400 group-hover:translate-x-1 transition-transform text-sm">
                 →
               </div>
             </button>
 
             {/* Wallet Connect Deposit */}
             {depositTab === 'wallet' && (
-              <div className="space-y-6">
-                <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                      <h3 className="font-medium text-white mb-1">
-                        {t('connectWallet')}
-                      </h3>
-                      <p className="text-sm text-gray-400">
-                        {connected
-                          ? t('walletConnectedDeposit')
-                          : t('connectWalletToDeposit')}
-                      </p>
+              <div className="space-y-3">
+                {/* Show wallet connect prompt only if not connected */}
+                {!connected && (
+                  <div className="bg-[#1a0a2e] rounded-xl p-4 border border-[#ff2d95]/10">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div>
+                        <h3 className="font-medium text-white mb-1 text-sm">
+                          {t('connectWallet')}
+                        </h3>
+                        <p className="text-xs text-gray-400">
+                          {t('connectWalletToDeposit')}
+                        </p>
+                      </div>
+                      <WalletMultiButton className="!bg-gradient-to-r !from-[#ff2d95] !to-[#8b5cf6] !rounded-lg !h-9 !text-xs !font-medium" />
                     </div>
-                    <WalletMultiButton className="!bg-gradient-to-r !from-[#ff2d95] !to-[#8b5cf6] !rounded-xl !h-11 !text-sm !font-medium" />
                   </div>
-                </div>
+                )}
 
                 {connected && (
                   <>
                     {/* Currency Selection */}
-                    <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
-                      <h3 className="font-medium text-white mb-4">
-                        {t('selectCurrency')}
-                      </h3>
-                      <div className="grid grid-cols-3 gap-3">
-                        {CURRENCIES.map((currency) => (
-                          <button
-                            key={currency.id}
-                            onClick={() => setSelectedCurrency(currency.id)}
-                            className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center ${
-                              selectedCurrency === currency.id
-                                ? 'border-[#ff2d95] bg-[#ff2d95]/10'
-                                : 'border-transparent bg-[#0d0416] hover:border-[#ff2d95]/30'
-                            }`}
-                          >
-                            <div className="mb-2">
-                              <CurrencyIcon currency={currency.id} size="md" />
-                            </div>
-                            <div className="font-medium text-white text-sm">
-                              {currency.label}
-                            </div>
-                            {rates && currency.id === 'SOL' && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                ${rates.sol.toFixed(2)}
+                    {!isCurrencySelected ? (
+                      <div className="bg-[#1a0a2e] rounded-xl p-4 border border-[#ff2d95]/10">
+                        <h3 className="font-medium text-white mb-3 text-sm">
+                          {t('selectCurrency')}
+                        </h3>
+                        <div className="grid grid-cols-3 gap-2">
+                          {CURRENCIES.map((currency) => (
+                            <button
+                              key={currency.id}
+                              onClick={() => {
+                                setSelectedCurrency(currency.id);
+                                setIsCurrencySelected(true);
+                              }}
+                              className={`relative p-3 rounded-lg border-2 transition-all flex flex-col items-center ${
+                                selectedCurrency === currency.id
+                                  ? 'border-[#ff2d95] bg-[#ff2d95]/10'
+                                  : 'border-transparent bg-[#0d0416] hover:border-[#ff2d95]/30'
+                              }`}
+                            >
+                              <div className="mb-1.5">
+                                <CurrencyIcon currency={currency.id} size="sm" />
                               </div>
-                            )}
-                            {rates &&
-                              currency.id === 'FORTUNE' &&
-                              rates.fortune > 0 && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  ${rates.fortune.toFixed(6)}
+                              <div className="font-medium text-white text-xs">
+                                {currency.label}
+                              </div>
+                              {rates && currency.id === 'SOL' && (
+                                <div className="text-[10px] text-gray-500 mt-0.5">
+                                  ${rates.sol.toFixed(2)}
                                 </div>
                               )}
-                          </button>
-                        ))}
+                              {rates &&
+                                currency.id === 'FORTUNE' &&
+                                rates.fortune > 0 && (
+                                  <div className="text-[10px] text-gray-500 mt-0.5">
+                                    ${rates.fortune.toFixed(6)}
+                                  </div>
+                                )}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      /* Compact selected currency */
+                      <div className="bg-[#1a0a2e] rounded-xl p-3 border border-[#ff2d95]/10">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <CurrencyIcon currency={selectedCurrency} size="sm" />
+                            <span className="text-white font-medium text-sm">
+                              {CURRENCIES.find((c) => c.id === selectedCurrency)?.label}
+                            </span>
+                            {rates && selectedCurrency === 'SOL' && (
+                              <span className="text-xs text-gray-500">
+                                ${rates.sol.toFixed(2)}
+                              </span>
+                            )}
+                            {rates && selectedCurrency === 'FORTUNE' && rates.fortune > 0 && (
+                              <span className="text-xs text-gray-500">
+                                ${rates.fortune.toFixed(6)}
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => setIsCurrencySelected(false)}
+                            className="text-xs text-[#ff2d95] hover:text-[#ff2d95]/80 font-medium"
+                          >
+                            {t('change') || 'Изменить'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Amount Input */}
-                    <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
-                      <h3 className="font-medium text-white mb-4">{t('amount')}</h3>
+                    <div className="bg-[#1a0a2e] rounded-xl p-4 border border-[#ff2d95]/10">
+                      <h3 className="font-medium text-white mb-3 text-sm">{t('amount')}</h3>
                       <div className="relative">
                         <input
                           type="number"
                           value={depositAmount}
                           onChange={(e) => setDepositAmount(e.target.value)}
                           placeholder="0.00"
-                          className="w-full bg-[#0d0416] border border-[#2a1a4e] rounded-xl px-4 py-4 text-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d95] transition-colors"
+                          className="w-full bg-[#0d0416] border border-[#2a1a4e] rounded-lg px-3 py-3 text-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d95] transition-colors"
                           min="0"
                           step="0.01"
                         />
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">
                           {CURRENCIES.find((c) => c.id === selectedCurrency)?.label}
                         </div>
                       </div>
                       {depositAmount && parseFloat(depositAmount) > 0 && rates && (
-                        <div className="mt-3 text-right text-gray-400">
+                        <div className="mt-2 text-right text-gray-400 text-xs">
                           ≈{' '}
                           <span className="text-white font-medium">
                             $
@@ -660,13 +705,14 @@ export default function CashPage() {
                       disabled={
                         !depositAmount ||
                         parseFloat(depositAmount) <= 0 ||
-                        isDepositProcessing
+                        isDepositProcessing ||
+                        !isCurrencySelected
                       }
-                      className="w-full py-4 bg-gradient-to-r from-[#ff2d95] to-[#8b5cf6] rounded-xl font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-opacity shadow-lg shadow-[#ff2d95]/20"
+                      className="w-full py-3 bg-gradient-to-r from-[#ff2d95] to-[#8b5cf6] rounded-lg font-semibold text-white text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-opacity shadow-lg shadow-[#ff2d95]/20"
                     >
                       {isDepositProcessing ? (
                         <span className="flex items-center justify-center gap-2">
-                          <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           {tCommon('processing')}
                         </span>
                       ) : (
@@ -680,56 +726,60 @@ export default function CashPage() {
 
             {/* Deposit Address Tab */}
             {depositTab === 'address' && (
-              <div className="space-y-6">
+              <div className="space-y-3">
                 {isDepositsLoading && !depositAddress ? (
-                  <div className="bg-[#1a0a2e] rounded-2xl p-12 border border-[#ff2d95]/10 text-center">
-                    <div className="w-8 h-8 border-2 border-[#ff2d95]/30 border-t-[#ff2d95] rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-gray-400">{t('loadingDepositAddress')}</p>
+                  <div className="bg-[#1a0a2e] rounded-xl p-8 border border-[#ff2d95]/10 text-center">
+                    <div className="w-6 h-6 border-2 border-[#ff2d95]/30 border-t-[#ff2d95] rounded-full animate-spin mx-auto mb-3" />
+                    <p className="text-gray-400 text-sm">{t('loadingDepositAddress')}</p>
                   </div>
                 ) : depositAddress ? (
                   <>
-                    <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
-                      <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-                        <div className="flex-shrink-0 mx-auto lg:mx-0">
-                          <div className="bg-white p-4 rounded-xl">
+                    <div className="bg-[#1a0a2e] rounded-xl p-3 border border-[#ff2d95]/10">
+                      {/* Mobile layout: QR left, content right */}
+                      <div className="flex gap-3 items-start">
+                        {/* QR Code - smaller on mobile */}
+                        <div className="flex-shrink-0">
+                          <div className="bg-white p-1.5 rounded-lg">
                             <img
                               src={depositAddress.qrCode}
                               alt="Deposit QR Code"
-                              className="w-40 h-40 lg:w-48 lg:h-48"
+                              className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32"
                             />
                           </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-white mb-2">
+
+                        {/* Content - address and button */}
+                        <div className="flex-1 min-w-0 flex flex-col">
+                          <h3 className="font-medium text-white mb-1 text-xs sm:text-sm">
                             {t('depositAddress')}
                           </h3>
-                          <p className="text-sm text-gray-400 mb-4">
+                          <p className="text-[10px] sm:text-xs text-gray-400 mb-2">
                             {t('sendToAddress')}
                           </p>
-                          <div className="bg-[#0d0416] rounded-xl p-4 mb-4">
-                            <code className="text-sm text-[#ff2d95] break-all font-mono">
+                          <div className="bg-[#0d0416] rounded-lg p-2 mb-2">
+                            <code className="text-[10px] sm:text-xs text-[#ff2d95] break-all font-mono leading-tight">
                               {depositAddress.address}
                             </code>
                           </div>
                           <button
                             onClick={copyAddress}
-                            className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-[#2a1a4e] hover:bg-[#3a2a5e] rounded-xl text-white font-medium transition-colors"
+                            className="flex items-center justify-center gap-1.5 w-full px-3 py-2 bg-[#2a1a4e] hover:bg-[#3a2a5e] rounded-lg text-white font-medium text-xs transition-colors"
                           >
-                            <Copy className="w-4 h-4" />
+                            <Copy className="w-3 h-3" />
                             {t('copyAddress')}
                           </button>
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-yellow-500/20">
-                      <div className="flex gap-3">
-                        <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                    <div className="bg-[#1a0a2e] rounded-xl p-3 border border-yellow-500/20">
+                      <div className="flex gap-2">
+                        <AlertCircle className="w-4 h-4 text-yellow-500 flex-shrink-0 mt-0.5" />
                         <div>
-                          <h4 className="font-medium text-yellow-500 mb-2">
+                          <h4 className="font-medium text-yellow-500 mb-1.5 text-xs">
                             {t('important')}
                           </h4>
-                          <ul className="text-sm text-gray-400 space-y-1">
+                          <ul className="text-[10px] md:text-xs text-gray-400 space-y-0.5">
                             <li>• {t('importantNotes.onlySend')}</li>
                             <li>
                               • {t('importantNotes.minDeposit', { amount: depositAddress.minDeposit })}
@@ -808,55 +858,55 @@ export default function CashPage() {
         {mainTab === 'withdraw' && (
           <>
             {/* Withdraw Sub-tabs */}
-            <div className="flex bg-[#1a0a2e]/50 rounded-xl p-1 mb-6">
+            <div className="flex bg-[#1a0a2e]/50 rounded-xl p-1 mb-3">
               <button
                 onClick={() => setWithdrawTab('wallet')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
                   withdrawTab === 'wallet'
                     ? 'bg-[#2a1a4e] text-white'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                <Wallet className="w-4 h-4" />
+                <Wallet className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 <span>{t('walletConnect')}</span>
               </button>
               <button
                 onClick={() => setWithdrawTab('address')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
                   withdrawTab === 'address'
                     ? 'bg-[#2a1a4e] text-white'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                <Copy className="w-4 h-4" />
+                <Copy className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 <span>{t('enterAddress')}</span>
               </button>
             </div>
 
             {/* Wallet Connect Withdrawal */}
             {withdrawTab === 'wallet' && (
-              <div className="space-y-6">
-                <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                      <h3 className="font-medium text-white mb-1">
-                        {t('connectWallet')}
-                      </h3>
-                      <p className="text-sm text-gray-400">
-                        {connected
-                          ? t('walletConnectedWithdraw')
-                          : t('connectWalletToReceive')}
-                      </p>
+              <div className="space-y-3">
+                {!connected && (
+                  <div className="bg-[#1a0a2e] rounded-xl p-4 border border-[#ff2d95]/10">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div>
+                        <h3 className="font-medium text-white mb-1 text-sm">
+                          {t('connectWallet')}
+                        </h3>
+                        <p className="text-xs text-gray-400">
+                          {t('connectWalletToReceive')}
+                        </p>
+                      </div>
+                      <WalletMultiButton className="!bg-gradient-to-r !from-[#ff2d95] !to-[#8b5cf6] !rounded-lg !h-9 !text-xs !font-medium" />
                     </div>
-                    <WalletMultiButton className="!bg-gradient-to-r !from-[#ff2d95] !to-[#8b5cf6] !rounded-xl !h-11 !text-sm !font-medium" />
                   </div>
-                </div>
+                )}
 
                 {connected && (
                   <>
                     {/* Amount Input */}
-                    <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
-                      <h3 className="font-medium text-white mb-4">
+                    <div className="bg-[#1a0a2e] rounded-xl p-4 border border-[#ff2d95]/10">
+                      <h3 className="font-medium text-white mb-3 text-sm">
                         {t('amountUsd')}
                       </h3>
                       <div className="relative">
@@ -865,27 +915,27 @@ export default function CashPage() {
                           value={withdrawAmount}
                           onChange={(e) => setWithdrawAmount(e.target.value)}
                           placeholder="0.00"
-                          className="w-full bg-[#0d0416] border border-[#2a1a4e] rounded-xl px-4 py-4 text-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d95] transition-colors"
+                          className="w-full bg-[#0d0416] border border-[#2a1a4e] rounded-lg px-3 py-3 text-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d95] transition-colors"
                           min="1"
                           max={parseFloat(user.fortuneBalance)}
                           step="0.01"
                         />
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">
                           USD
                         </div>
                       </div>
-                      <div className="mt-2 text-sm text-gray-500">
+                      <div className="mt-2 text-xs text-gray-500">
                         {t('minMax', { min: '1', max: Math.min(parseFloat(user.fortuneBalance), 10000).toFixed(2) })}
                       </div>
                     </div>
 
                     {/* Tax Breakdown */}
                     {preview && (
-                      <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
-                        <h3 className="font-medium text-white mb-4">
+                      <div className="bg-[#1a0a2e] rounded-xl p-4 border border-[#ff2d95]/10">
+                        <h3 className="font-medium text-white mb-3 text-sm">
                           {t('breakdown')}
                         </h3>
-                        <div className="space-y-3 text-sm">
+                        <div className="space-y-2 text-xs">
                           <div className="flex justify-between text-gray-400">
                             <span>{t('fromDeposits')}</span>
                             <span className="text-white">
@@ -904,13 +954,13 @@ export default function CashPage() {
                           </div>
                           <div className="flex justify-between text-gray-400">
                             <span>{t('networkFee')}</span>
-                            <span className="text-white">
+                            <span className="text-white text-xs">
                               {preview.feeSol} SOL
                             </span>
                           </div>
-                          <div className="border-t border-[#2a1a4e] pt-3 flex justify-between font-semibold">
+                          <div className="border-t border-[#2a1a4e] pt-2 flex justify-between font-semibold">
                             <span className="text-white">{t('youReceive')}</span>
-                            <span className="text-green-400 text-lg">
+                            <span className="text-green-400 text-base">
                               {preview.usdtAmount.toFixed(2)} USDT
                             </span>
                           </div>
@@ -919,14 +969,14 @@ export default function CashPage() {
                     )}
 
                     {/* Info */}
-                    <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-blue-500/20">
-                      <div className="flex gap-3">
-                        <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div className="bg-[#1a0a2e] rounded-xl p-3 border border-blue-500/20">
+                      <div className="flex gap-2">
+                        <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
                         <div>
-                          <h4 className="font-medium text-blue-400 mb-2">
+                          <h4 className="font-medium text-blue-400 mb-1 text-xs">
                             {t('atomicWithdrawal')}
                           </h4>
-                          <p className="text-sm text-gray-400">
+                          <p className="text-[10px] md:text-xs text-gray-400">
                             {t('atomicDescription')}
                           </p>
                         </div>
@@ -942,11 +992,11 @@ export default function CashPage() {
                         !preview ||
                         isWithdrawProcessing
                       }
-                      className="w-full py-4 bg-gradient-to-r from-[#ff2d95] to-[#8b5cf6] rounded-xl font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-opacity shadow-lg shadow-[#ff2d95]/20"
+                      className="w-full py-3 bg-gradient-to-r from-[#ff2d95] to-[#8b5cf6] rounded-lg font-semibold text-white text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-opacity shadow-lg shadow-[#ff2d95]/20"
                     >
                       {isWithdrawProcessing ? (
                         <span className="flex items-center justify-center gap-2">
-                          <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           {tCommon('processing')}
                         </span>
                       ) : preview ? (
@@ -962,33 +1012,33 @@ export default function CashPage() {
 
             {/* Manual Address Withdrawal */}
             {withdrawTab === 'address' && (
-              <div className="space-y-6">
+              <div className="space-y-3">
                 {/* Amount Input */}
-                <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
-                  <h3 className="font-medium text-white mb-4">{t('amountUsd')}</h3>
+                <div className="bg-[#1a0a2e] rounded-xl p-4 border border-[#ff2d95]/10">
+                  <h3 className="font-medium text-white mb-3 text-sm">{t('amountUsd')}</h3>
                   <div className="relative">
                     <input
                       type="number"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
                       placeholder="0.00"
-                      className="w-full bg-[#0d0416] border border-[#2a1a4e] rounded-xl px-4 py-4 text-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d95] transition-colors"
+                      className="w-full bg-[#0d0416] border border-[#2a1a4e] rounded-lg px-3 py-3 text-lg text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d95] transition-colors"
                       min="1"
                       max={parseFloat(user.fortuneBalance)}
                       step="0.01"
                     />
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">
                       USD
                     </div>
                   </div>
-                  <div className="mt-2 text-sm text-gray-500">
+                  <div className="mt-2 text-xs text-gray-500">
                     {t('minMax', { min: '1', max: Math.min(parseFloat(user.fortuneBalance), 10000).toFixed(2) })}
                   </div>
                 </div>
 
                 {/* Wallet Address Input */}
-                <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
-                  <h3 className="font-medium text-white mb-4">
+                <div className="bg-[#1a0a2e] rounded-xl p-4 border border-[#ff2d95]/10">
+                  <h3 className="font-medium text-white mb-3 text-sm">
                     {t('usdtAddressSolana')}
                   </h3>
                   <input
@@ -996,18 +1046,18 @@ export default function CashPage() {
                     value={withdrawAddress}
                     onChange={(e) => setWithdrawAddress(e.target.value)}
                     placeholder={t('enterSolanaAddress')}
-                    className="w-full bg-[#0d0416] border border-[#2a1a4e] rounded-xl px-4 py-4 text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d95] transition-colors font-mono text-sm"
+                    className="w-full bg-[#0d0416] border border-[#2a1a4e] rounded-lg px-3 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-[#ff2d95] transition-colors font-mono text-xs"
                   />
-                  <p className="mt-2 text-xs text-gray-500">
+                  <p className="mt-2 text-[10px] text-gray-500">
                     {t('makeAddressNote')}
                   </p>
                 </div>
 
                 {/* Tax Breakdown */}
                 {preview && (
-                  <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-[#ff2d95]/10">
-                    <h3 className="font-medium text-white mb-4">{t('breakdown')}</h3>
-                    <div className="space-y-3 text-sm">
+                  <div className="bg-[#1a0a2e] rounded-xl p-4 border border-[#ff2d95]/10">
+                    <h3 className="font-medium text-white mb-3 text-sm">{t('breakdown')}</h3>
+                    <div className="space-y-2 text-xs">
                       <div className="flex justify-between text-gray-400">
                         <span>{t('fromDeposits')}</span>
                         <span className="text-white">
@@ -1024,9 +1074,9 @@ export default function CashPage() {
                         <span>{t('taxAmount')}</span>
                         <span>-${preview.taxAmount.toFixed(2)}</span>
                       </div>
-                      <div className="border-t border-[#2a1a4e] pt-3 flex justify-between font-semibold">
+                      <div className="border-t border-[#2a1a4e] pt-2 flex justify-between font-semibold">
                         <span className="text-white">{t('youReceive')}</span>
-                        <span className="text-green-400 text-lg">
+                        <span className="text-green-400 text-base">
                           {preview.usdtAmount.toFixed(2)} USDT
                         </span>
                       </div>
@@ -1035,14 +1085,14 @@ export default function CashPage() {
                 )}
 
                 {/* Info */}
-                <div className="bg-[#1a0a2e] rounded-2xl p-6 border border-green-500/20">
-                  <div className="flex gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                <div className="bg-[#1a0a2e] rounded-xl p-3 border border-green-500/20">
+                  <div className="flex gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-medium text-green-400 mb-2">
+                      <h4 className="font-medium text-green-400 mb-1 text-xs">
                         {t('instantWithdrawal')}
                       </h4>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-[10px] md:text-xs text-gray-400">
                         {t('instantDescription')}
                       </p>
                     </div>
@@ -1059,11 +1109,11 @@ export default function CashPage() {
                     !preview ||
                     isWithdrawProcessing
                   }
-                  className="w-full py-4 bg-gradient-to-r from-[#ff2d95] to-[#8b5cf6] rounded-xl font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-opacity shadow-lg shadow-[#ff2d95]/20"
+                  className="w-full py-3 bg-gradient-to-r from-[#ff2d95] to-[#8b5cf6] rounded-lg font-semibold text-white text-sm disabled:opacity-40 disabled:cursor-not-allowed transition-opacity shadow-lg shadow-[#ff2d95]/20"
                 >
                   {isWithdrawProcessing ? (
                     <span className="flex items-center justify-center gap-2">
-                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       {t('sending')}
                     </span>
                   ) : preview ? (
