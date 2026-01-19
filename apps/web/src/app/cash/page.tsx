@@ -32,6 +32,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useDepositsStore } from '@/stores/deposits.store';
 import { useWithdrawalsStore } from '@/stores/withdrawals.store';
 import { useOnDepositCredited } from '@/hooks/useDepositsSocket';
+import { OtherCryptoModal } from '@/components/shop/OtherCryptoModal';
 import type { DepositCurrency } from '@/lib/api';
 
 // Token mints (mainnet)
@@ -106,6 +107,7 @@ export default function CashPage() {
   const [withdrawAmount, setWithdrawAmount] = useState<string>('');
   const [withdrawAddress, setWithdrawAddress] = useState<string>('');
   const [isSending, setIsSending] = useState(false);
+  const [isOtherCryptoModalOpen, setIsOtherCryptoModalOpen] = useState(false);
 
   // Memoize wallet address to prevent re-renders
   const walletAddress = useMemo(
@@ -518,6 +520,35 @@ export default function CashPage() {
                 <span>{t('qrAddress')}</span>
               </button>
             </div>
+
+            {/* Other Networks Button */}
+            <button
+              onClick={() => setIsOtherCryptoModalOpen(true)}
+              className="
+                w-full mb-6 p-4 rounded-xl
+                bg-gradient-to-r from-amber-500/10 to-orange-500/10
+                border border-amber-500/30 hover:border-amber-500/50
+                flex items-center justify-between
+                transition-all group
+              "
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                  <span className="text-xl">🌐</span>
+                </div>
+                <div className="text-left">
+                  <div className="text-white font-medium">
+                    {t('otherNetworks')}
+                  </div>
+                  <div className="text-xs text-amber-200/80">
+                    {t('otherNetworksDescription')}
+                  </div>
+                </div>
+              </div>
+              <div className="text-amber-400 group-hover:translate-x-1 transition-transform">
+                →
+              </div>
+            </button>
 
             {/* Wallet Connect Deposit */}
             {depositTab === 'wallet' && (
@@ -1085,6 +1116,12 @@ export default function CashPage() {
           </>
         )}
       </div>
+
+      {/* Other Crypto Modal */}
+      <OtherCryptoModal
+        isOpen={isOtherCryptoModalOpen}
+        onClose={() => setIsOtherCryptoModalOpen(false)}
+      />
 
       {/* Error Toast */}
       {error && (

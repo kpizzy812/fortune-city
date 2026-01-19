@@ -360,3 +360,113 @@ export interface JackpotInfo {
   lastAmount: number | null;
   timesWon: number;
 }
+
+// ============================================
+// Deposit Types
+// ============================================
+
+export type DepositCurrency = 'SOL' | 'USDT_SOL' | 'FORTUNE';
+export type DepositStatus = 'pending' | 'confirmed' | 'credited' | 'failed' | 'rejected';
+export type DepositMethod = 'wallet_connect' | 'deposit_address' | 'other_crypto';
+
+export type OtherCryptoNetwork = 'BEP20' | 'TON';
+export type OtherCryptoToken = 'USDT' | 'BNB' | 'TON';
+
+export interface OtherCryptoInstructions {
+  network: OtherCryptoNetwork;
+  depositAddress: string;
+  supportedTokens: OtherCryptoToken[];
+  minAmounts: Record<string, number>;
+  blockExplorer: string;
+  instructions: string;
+}
+
+export interface InitiateOtherCryptoDepositRequest {
+  network: OtherCryptoNetwork;
+  token: OtherCryptoToken;
+  claimedAmount: number;
+}
+
+export interface OtherCryptoDepositResponse {
+  depositId: string;
+  network: OtherCryptoNetwork;
+  token: OtherCryptoToken;
+  claimedAmount: number;
+  status: 'pending';
+  message: string;
+}
+
+export interface Deposit {
+  id: string;
+  userId: string;
+  method: DepositMethod;
+  currency: DepositCurrency | null;
+  amount: number;
+  amountUsd: number;
+  rateToUsd: number;
+  status: DepositStatus;
+  txSignature: string | null;
+  walletAddress: string | null;
+  memo: string | null;
+  recipientAddress: string | null;
+  otherCryptoNetwork: OtherCryptoNetwork | null;
+  otherCryptoToken: OtherCryptoToken | null;
+  claimedAmount: number | null;
+  rejectionReason: string | null;
+  processedBy: string | null;
+  processedAt: string | null;
+  adminNotes: string | null;
+  creditedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DepositRates {
+  sol: number;
+  fortune: number;
+  usdt: number;
+}
+
+// ============================================
+// Notification Types
+// ============================================
+
+export type NotificationType =
+  | 'machine_expired_soon'
+  | 'machine_expired'
+  | 'coin_box_full'
+  | 'coin_box_almost_full'
+  | 'referral_joined'
+  | 'deposit_credited'
+  | 'deposit_rejected'
+  | 'wheel_jackpot_won'
+  | 'wheel_jackpot_alert'
+  | 'withdrawal_approved'
+  | 'withdrawal_completed'
+  | 'withdrawal_rejected';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data: Record<string, any> | null;
+  channels: string[];
+  readAt: string | null;
+  sentToTelegramAt: string | null;
+  telegramError: string | null;
+  createdAt: string;
+}
+
+export interface GetNotificationsResponse {
+  notifications: Notification[];
+  total: number;
+  unreadCount: number;
+}
+
+export interface NotificationFilters {
+  limit?: number;
+  offset?: number;
+  type?: NotificationType;
+  unreadOnly?: boolean;
+}

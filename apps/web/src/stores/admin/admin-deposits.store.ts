@@ -39,6 +39,12 @@ interface AdminDepositsState {
   fetchDeposit: (id: string) => Promise<AdminDepositDetail | null>;
   creditDeposit: (id: string, reason: string) => Promise<AdminDepositDetail>;
   retryDeposit: (id: string, note?: string) => Promise<AdminDepositDetail>;
+  approveOtherCryptoDeposit: (
+    id: string,
+    actualAmount: number,
+    notes?: string,
+  ) => Promise<AdminDepositDetail>;
+  rejectOtherCryptoDeposit: (id: string, reason: string) => Promise<AdminDepositDetail>;
 
   // Filter actions
   setSearch: (search: string) => void;
@@ -199,6 +205,67 @@ export const useAdminDepositsStore = create<AdminDepositsState>((set, get) => ({
       return updated;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to retry deposit';
+      set({ error: message, isProcessing: false });
+      throw error;
+    }
+  },
+
+  // Approve other crypto deposit with actual amount
+  approveOtherCryptoDeposit: async (id: string, actualAmount: number, notes?: string) => {
+    const token = useAdminAuthStore.getState().token;
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    set({ isProcessing: true, error: null });
+    try {
+      const updated = await api.adminApproveOtherCryptoDeposit(token, id, {
+        actualAmount,
+        notes,
+      });
+
+      // Update deposit in list
+      set((state) => ({
+        deposits: state.deposits.map((d) =>
+          d.id === id ? { ...d, status: 'credited' } : d,
+        ),
+        selectedDeposit: state.selectedDeposit?.id === id ? updated : state.selectedDeposit,
+        isProcessing: false,
+      }));
+
+      return updated;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to approve other crypto deposit';
+      set({ error: message, isProcessing: false });
+      throw error;
+    }
+  },
+
+  // Reject other crypto deposit with reason
+  rejectOtherCryptoDeposit: async (id: string, reason: string) => {
+    const token = useAdminAuthStore.getState().token;
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    set({ isProcessing: true, error: null });
+    try {
+      const updated = await api.adminRejectOtherCryptoDeposit(token, id, { reason });
+
+      // Update deposit in list
+      set((state) => ({
+        deposits: state.deposits.map((d) =>
+          d.id === id ? { ...d, status: 'rejected' } : d,
+        ),
+        selectedDeposit: state.selectedDeposit?.id === id ? updated : state.selectedDeposit,
+        isProcessing: false,
+      }));
+
+      return updated;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to reject other crypto deposit';
       set({ error: message, isProcessing: false });
       throw error;
     }

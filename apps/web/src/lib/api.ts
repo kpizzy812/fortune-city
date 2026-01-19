@@ -15,6 +15,13 @@ import type {
   ListOnAuctionResult,
   CancelAuctionResult,
   PawnshopSaleResult,
+  OtherCryptoNetwork,
+  OtherCryptoInstructions,
+  InitiateOtherCryptoDepositRequest,
+  OtherCryptoDepositResponse,
+  Notification,
+  GetNotificationsResponse,
+  NotificationFilters,
 } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -381,6 +388,23 @@ class ApiClient {
 
   async getDepositRates(): Promise<DepositRatesResponse> {
     return this.request<DepositRatesResponse>('/deposits/rates');
+  }
+
+  async getOtherCryptoInstructions(
+    network: OtherCryptoNetwork,
+  ): Promise<OtherCryptoInstructions> {
+    return this.request<OtherCryptoInstructions>(`/deposits/other-crypto/instructions/${network}`);
+  }
+
+  async initiateOtherCryptoDeposit(
+    token: string,
+    data: InitiateOtherCryptoDepositRequest,
+  ): Promise<OtherCryptoDepositResponse> {
+    return this.request<OtherCryptoDepositResponse>('/deposits/other-crypto', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(data),
+    });
   }
 
   // ============================================
@@ -1017,6 +1041,36 @@ class ApiClient {
     });
   }
 
+  /**
+   * Approve other crypto deposit with actual amount
+   */
+  async adminApproveOtherCryptoDeposit(
+    token: string,
+    id: string,
+    data: { actualAmount: number; notes?: string },
+  ): Promise<AdminDepositDetail> {
+    return this.request<AdminDepositDetail>(`/admin/deposits/${id}/approve-other-crypto`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Reject other crypto deposit with reason
+   */
+  async adminRejectOtherCryptoDeposit(
+    token: string,
+    id: string,
+    data: { reason: string },
+  ): Promise<AdminDepositDetail> {
+    return this.request<AdminDepositDetail>(`/admin/deposits/${id}/reject-other-crypto`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
   // ============================================
   // Admin Audit endpoints
   // ============================================
@@ -1103,6 +1157,70 @@ class ApiClient {
   async getWheelJackpot(): Promise<WheelJackpotResponse> {
     return this.request<WheelJackpotResponse>('/wheel/jackpot');
   }
+
+  // ============================================
+  // Notification endpoints
+  // ============================================
+
+  /**
+   * Get notifications for current user
+   */
+  async getNotifications(
+    token: string,
+    filters?: {
+      limit?: number;
+      offset?: number;
+      type?: string;
+      unreadOnly?: boolean;
+    },
+  ) {
+    const params = new URLSearchParams();
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.offset) params.append('offset', filters.offset.toString());
+    if (filters?.type) params.append('type', filters.type);
+    if (filters?.unreadOnly) params.append('unreadOnly', 'true');
+
+    const query = params.toString();
+    return this.request<import('@/types').GetNotificationsResponse>(
+      `/notifications${query ? `?${query}` : ''}`,
+      { token },
+    );
+  }
+
+  /**
+   * Get unread notification count
+   */
+  async getUnreadCount(token: string): Promise<{ count: number }> {
+    return this.request<{ count: number }>('/notifications/unread-count', {
+      token,
+    });
+  }
+
+  /**
+   * Mark notification as read
+   */
+  async markNotificationAsRead(
+    token: string,
+    notificationId: string,
+  ): Promise<import('@/types').Notification> {
+    return this.request<import('@/types').Notification>(
+      `/notifications/${notificationId}/read`,
+      {
+        method: 'POST',
+        token,
+      },
+    );
+  }
+
+  /**
+   * Mark all notifications as read
+   */
+  async markAllNotificationsAsRead(token: string): Promise<{ count: number }> {
+    return this.request<{ count: number }>('/notifications/read-all', {
+      method: 'POST',
+      token,
+    });
+  }
 }
 
 export const api = new ApiClient(API_URL);
@@ -1124,6 +1242,7 @@ export interface UserData {
   maxTierReached: number;
   currentTaxRate: string;
   referralCode: string;
+  telegramNotificationsEnabled: boolean;
 }
 
 export interface ReferralStats {

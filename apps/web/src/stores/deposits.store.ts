@@ -10,6 +10,12 @@ import {
   DepositCurrency,
   WalletConnectionData,
 } from '@/lib/api';
+import type {
+  OtherCryptoNetwork,
+  OtherCryptoInstructions,
+  InitiateOtherCryptoDepositRequest,
+  OtherCryptoDepositResponse,
+} from '@/types';
 
 interface DepositsState {
   // Data
@@ -18,11 +24,14 @@ interface DepositsState {
   connectedWallet: WalletConnectionData | null;
   rates: DepositRatesResponse | null;
   pendingDeposit: InitiateDepositResponse | null;
+  otherCryptoInstructions: OtherCryptoInstructions | null;
+  pendingOtherCryptoDeposit: OtherCryptoDepositResponse | null;
 
   // Loading states
   isLoading: boolean;
   isInitiating: boolean;
   isConfirming: boolean;
+  isLoadingInstructions: boolean;
 
   // Error
   error: string | null;
@@ -44,6 +53,11 @@ interface DepositsState {
     depositId: string,
     txSignature: string,
   ) => Promise<void>;
+  fetchOtherCryptoInstructions: (network: OtherCryptoNetwork) => Promise<void>;
+  initiateOtherCryptoDeposit: (
+    token: string,
+    data: InitiateOtherCryptoDepositRequest,
+  ) => Promise<OtherCryptoDepositResponse>;
   clearPendingDeposit: () => void;
   clearError: () => void;
 }
@@ -55,9 +69,12 @@ export const useDepositsStore = create<DepositsState>()((set) => ({
   connectedWallet: null,
   rates: null,
   pendingDeposit: null,
+  otherCryptoInstructions: null,
+  pendingOtherCryptoDeposit: null,
   isLoading: false,
   isInitiating: false,
   isConfirming: false,
+  isLoadingInstructions: false,
   error: null,
 
   fetchDeposits: async (token) => {
@@ -153,8 +170,38 @@ export const useDepositsStore = create<DepositsState>()((set) => ({
     }
   },
 
+  fetchOtherCryptoInstructions: async (network) => {
+    set({ isLoadingInstructions: true, error: null });
+    try {
+      const otherCryptoInstructions = await api.getOtherCryptoInstructions(network);
+      set({ otherCryptoInstructions, isLoadingInstructions: false });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to fetch other crypto instructions';
+      set({ error: message, isLoadingInstructions: false });
+      throw error;
+    }
+  },
+
+  initiateOtherCryptoDeposit: async (token, data) => {
+    set({ isInitiating: true, error: null });
+    try {
+      const pendingOtherCryptoDeposit = await api.initiateOtherCryptoDeposit(token, data);
+      set({ pendingOtherCryptoDeposit, isInitiating: false });
+      // Refresh deposits list
+      const deposits = await api.getDeposits(token);
+      set({ deposits });
+      return pendingOtherCryptoDeposit;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to initiate other crypto deposit';
+      set({ error: message, isInitiating: false });
+      throw error;
+    }
+  },
+
   clearPendingDeposit: () => {
-    set({ pendingDeposit: null });
+    set({ pendingDeposit: null, pendingOtherCryptoDeposit: null });
   },
 
   clearError: () => {
