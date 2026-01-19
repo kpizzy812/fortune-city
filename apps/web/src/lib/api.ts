@@ -1383,7 +1383,9 @@ export interface AdminUsersFilter {
 
 export interface AdminUserListItem {
   id: string;
-  telegramId: string;
+  telegramId: string | null;
+  email: string | null;
+  web3Address: string | null;
   username: string | null;
   firstName: string | null;
   lastName: string | null;
@@ -1441,7 +1443,9 @@ export interface AdminUsersStatsResponse {
 
 export interface ReferralTreeNode {
   id: string;
-  telegramId: string;
+  telegramId: string | null;
+  email: string | null;
+  web3Address: string | null;
   username: string | null;
   firstName: string | null;
   fortuneBalance: number;

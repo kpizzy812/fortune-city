@@ -84,10 +84,7 @@ export class AdminUsersController {
    * Update user balance (set exact value)
    */
   @Put(':id/balance')
-  async updateBalance(
-    @Param('id') id: string,
-    @Body() dto: UpdateBalanceDto,
-  ) {
+  async updateBalance(@Param('id') id: string, @Body() dto: UpdateBalanceDto) {
     return this.usersService.updateBalance(id, dto);
   }
 
@@ -96,10 +93,7 @@ export class AdminUsersController {
    * Adjust user balance (add/subtract/set)
    */
   @Post(':id/adjust-balance')
-  async adjustBalance(
-    @Param('id') id: string,
-    @Body() dto: AdjustBalanceDto,
-  ) {
+  async adjustBalance(@Param('id') id: string, @Body() dto: AdjustBalanceDto) {
     return this.usersService.adjustBalance(id, dto);
   }
 
