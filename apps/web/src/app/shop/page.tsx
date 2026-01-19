@@ -244,15 +244,9 @@ export default function ShopPage() {
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-xs text-[#b0b0b0]">{tCommon('balance')}</p>
-              <p className="text-lg text-[#ffd700] font-mono font-bold">
+              <p className="text-lg lg:text-xl text-[#ffd700] font-mono font-bold">
                 ${userBalance.toFixed(2)}
               </p>
-              {isRateAvailable() && (
-                <p className="text-[10px] text-[#b0b0b0]">
-                  ({Math.floor(usdToFortune(userBalance) ?? 0).toLocaleString()} $FORTUNE)
-                </p>
-              )}
             </div>
             <LanguageSwitcher />
           </div>
@@ -265,15 +259,9 @@ export default function ShopPage() {
             <p className="text-sm text-[#b0b0b0]">{t('pageSubtitle')}</p>
           </div>
           <div className="bg-[#2a1a4e] rounded-xl px-6 py-3 border border-[#ffd700]/30">
-            <p className="text-sm text-[#b0b0b0]">{tCommon('yourBalance')}</p>
             <p className="text-2xl text-[#ffd700] font-mono font-bold">
               ${userBalance.toFixed(2)}
             </p>
-            {isRateAvailable() && (
-              <p className="text-xs text-[#b0b0b0] mt-0.5">
-                ({Math.floor(usdToFortune(userBalance) ?? 0).toLocaleString()} $FORTUNE)
-              </p>
-            )}
           </div>
         </header>
 

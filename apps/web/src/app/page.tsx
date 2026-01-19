@@ -345,15 +345,9 @@ export default function Home() {
           </h1>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-xs text-[#b0b0b0]">{tBrand('currency')}</p>
-              <p className="text-lg text-[#ffd700] font-mono font-bold">
+              <p className="text-lg lg:text-xl text-[#ffd700] font-mono font-bold">
                 ${parseFloat(user.fortuneBalance).toFixed(2)}
               </p>
-              {isRateAvailable() && (
-                <p className="text-[10px] text-[#b0b0b0]">
-                  ({Math.floor(usdToFortune(parseFloat(user.fortuneBalance)) ?? 0).toLocaleString()} $FORTUNE)
-                </p>
-              )}
             </div>
             <NotificationBell />
             <LanguageSwitcher />

@@ -121,8 +121,7 @@ export default function WheelPage() {
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <h1 className="text-xl font-bold text-white">Fortune Wheel</h1>
           <div className="text-right">
-            <div className="text-sm text-white/60">Balance</div>
-            <div className="text-lg font-bold text-[#ff2d95]">${balance.toFixed(2)}</div>
+            <div className="text-lg lg:text-xl text-[#ffd700] font-mono font-bold">${balance.toFixed(2)}</div>
           </div>
         </div>
       </header>

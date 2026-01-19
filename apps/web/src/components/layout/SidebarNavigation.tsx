@@ -141,24 +141,15 @@ export function SidebarNavigation() {
           )}
           {!sidebarCollapsed && (
             <div className="mt-3 bg-[#2a1a4e] rounded-lg p-3">
-              <p className="text-xs text-[#b0b0b0]">{tBrand('currency')}</p>
-              <p className="text-lg text-[#ffd700] font-mono font-bold">
+              <p className="text-lg lg:text-xl text-[#ffd700] font-mono font-bold">
                 ${parseFloat(user.fortuneBalance).toFixed(2)}
               </p>
-              {isRateAvailable() && (
-                <p className="text-[10px] text-[#b0b0b0] mt-0.5">
-                  ({Math.floor(usdToFortune(parseFloat(user.fortuneBalance)) ?? 0).toLocaleString()} $FORTUNE)
-                </p>
-              )}
             </div>
           )}
           {sidebarCollapsed && (
             <div
               className="mt-2 text-center"
-              title={isRateAvailable()
-                ? `$${parseFloat(user.fortuneBalance).toFixed(2)} (${Math.floor(usdToFortune(parseFloat(user.fortuneBalance)) ?? 0).toLocaleString()} $FORTUNE)`
-                : `$${parseFloat(user.fortuneBalance).toFixed(2)}`
-              }
+              title={`$${parseFloat(user.fortuneBalance).toFixed(2)}`}
             >
               <p className="text-xs text-[#ffd700] font-mono font-bold truncate">
                 ${parseFloat(user.fortuneBalance).toFixed(0)}

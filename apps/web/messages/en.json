@@ -90,7 +90,7 @@
     "name": "FORTUNE CITY",
     "tagline": "Spin your fortune. Own the floor.",
     "description": "Build your slot machine empire in the neon-lit streets of Fortune City. Buy machines, collect coins, and become the king of the floor.",
-    "currency": "$FORTUNE"
+    "currency": "Balance"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -166,7 +166,7 @@
   },
   "machines": {
     "noMachinesYet": "No machines yet",
-    "buyFirstMachine": "Buy your first slot machine to start earning $FORTUNE!",
+    "buyFirstMachine": "Buy your first slot machine to start earning USDT!",
     "visitShop": "Visit Shop",
     "loadingMachines": "Loading machines...",
     "noMachinesAvailable": "No machines available",

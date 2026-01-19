@@ -90,7 +90,7 @@
     "name": "FORTUNE CITY",
     "tagline": "Крути фортуну. Владей залом.",
     "description": "Строй империю игровых автоматов на неоновых улицах Fortune City. Покупай автоматы, собирай монеты и стань королём зала.",
-    "currency": "$FORTUNE"
+    "currency": "Баланс"
   },
   "dashboard": {
     "title": "Панель управления",
@@ -166,7 +166,7 @@
   },
   "machines": {
     "noMachinesYet": "Автоматов пока нет",
-    "buyFirstMachine": "Купи свой первый автомат и начни зарабатывать $FORTUNE!",
+    "buyFirstMachine": "Купи свой первый автомат и начни зарабатывать USDT!",
     "visitShop": "В магазин",
     "loadingMachines": "Загрузка автоматов...",
     "noMachinesAvailable": "Автоматы недоступны",
