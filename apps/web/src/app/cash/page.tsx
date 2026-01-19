@@ -1053,6 +1053,21 @@ export default function CashPage() {
                   </p>
                 </div>
 
+                {/* Info */}
+                <div className="bg-[#1a0a2e] rounded-xl p-3 border border-green-500/20">
+                  <div className="flex gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-green-400 mb-1 text-xs">
+                        {t('instantWithdrawal')}
+                      </h4>
+                      <p className="text-[10px] md:text-xs text-gray-400">
+                        {t('instantDescription')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Tax Breakdown */}
                 {preview && (
                   <div className="bg-[#1a0a2e] rounded-xl p-4 border border-[#ff2d95]/10">
@@ -1083,21 +1098,6 @@ export default function CashPage() {
                     </div>
                   </div>
                 )}
-
-                {/* Info */}
-                <div className="bg-[#1a0a2e] rounded-xl p-3 border border-green-500/20">
-                  <div className="flex gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-green-400 mb-1 text-xs">
-                        {t('instantWithdrawal')}
-                      </h4>
-                      <p className="text-[10px] md:text-xs text-gray-400">
-                        {t('instantDescription')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Withdraw Button */}
                 <button
