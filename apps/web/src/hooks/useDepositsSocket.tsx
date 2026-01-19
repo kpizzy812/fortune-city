@@ -89,8 +89,6 @@ export function useDepositsSocket() {
       socketRef.current = null;
     };
   }, [user?.id, handleDepositCredited]);
-
-  return socketRef.current;
 }
 
 /**

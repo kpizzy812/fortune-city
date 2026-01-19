@@ -19,13 +19,8 @@ export function Tooltip({
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
-  const [mounted, setMounted] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
-
-  // Wait for client-side mount for portal
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const isMounted = typeof window !== 'undefined';
 
   // Calculate tooltip position
   const updatePosition = useCallback(() => {
@@ -151,7 +146,7 @@ export function Tooltip({
     right: 'right-full top-1/2 -translate-y-1/2 border-r-[#2a1a4e] border-y-transparent border-l-transparent',
   };
 
-  const tooltipContent = isVisible && mounted && (
+  const tooltipContent = isVisible && isMounted && (
     <div
       style={getTooltipStyles()}
       className="px-3 py-2 text-xs text-white bg-[#2a1a4e] border border-[#ff2d95]/30 rounded-lg shadow-xl min-w-[200px] max-w-[280px] whitespace-normal pointer-events-none"
@@ -181,7 +176,7 @@ export function Tooltip({
       </div>
 
       {/* Portal tooltip */}
-      {mounted && typeof document !== 'undefined' && createPortal(tooltipContent, document.body)}
+      {isMounted && createPortal(tooltipContent, document.body)}
     </>
   );
 }

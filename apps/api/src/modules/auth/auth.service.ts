@@ -19,7 +19,10 @@ import {
 } from './dto/telegram-auth.dto';
 import { User } from '@prisma/client';
 import { SupabaseAuthService } from './supabase-auth.service';
-import { RefreshTokenService, RefreshTokenMetadata } from './refresh-token.service';
+import {
+  RefreshTokenService,
+  RefreshTokenMetadata,
+} from './refresh-token.service';
 
 export interface JwtPayload {
   sub: string; // user.id
@@ -75,7 +78,12 @@ export class AuthService {
         last_name: user.lastName as string | undefined,
       };
 
-      return this.authenticateUser(telegramUser, referralCode, rememberMe, metadata);
+      return this.authenticateUser(
+        telegramUser,
+        referralCode,
+        rememberMe,
+        metadata,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`InitData validation failed: ${message}`);
@@ -115,7 +123,12 @@ export class AuthService {
       last_name: data.last_name,
     };
 
-    return this.authenticateUser(telegramUser, referralCode, rememberMe, metadata);
+    return this.authenticateUser(
+      telegramUser,
+      referralCode,
+      rememberMe,
+      metadata,
+    );
   }
 
   /**

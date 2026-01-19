@@ -33,6 +33,11 @@ import { PriceOracleService } from './services/price-oracle.service';
     SweepService,
     PriceOracleService,
   ],
-  exports: [DepositsService, DepositsGateway, SolanaRpcService, PriceOracleService],
+  exports: [
+    DepositsService,
+    DepositsGateway,
+    SolanaRpcService,
+    PriceOracleService,
+  ],
 })
 export class DepositsModule {}

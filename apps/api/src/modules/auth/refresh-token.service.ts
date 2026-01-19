@@ -116,7 +116,9 @@ export class RefreshTokenService {
       where: { userId },
     });
 
-    this.logger.log(`Revoked ${result.count} refresh tokens for user ${userId}`);
+    this.logger.log(
+      `Revoked ${result.count} refresh tokens for user ${userId}`,
+    );
   }
 
   /**

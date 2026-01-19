@@ -3,7 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { AdminLoginDto, AdminAuthResponseDto } from '../dto/admin-auth.dto';
-import { AdminRefreshTokenService, RefreshTokenMetadata } from './admin-refresh-token.service';
+import {
+  AdminRefreshTokenService,
+  RefreshTokenMetadata,
+} from './admin-refresh-token.service';
 
 export interface AdminJwtPayload {
   sub: string; // 'admin'

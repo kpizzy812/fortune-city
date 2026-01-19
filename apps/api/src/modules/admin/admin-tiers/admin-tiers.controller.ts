@@ -81,7 +81,10 @@ export class AdminTiersController {
    * Delete a tier (soft delete if machines exist)
    */
   @Delete(':tier')
-  async deleteTier(@Param('tier', ParseIntPipe) tier: number, @Req() req: Request) {
+  async deleteTier(
+    @Param('tier', ParseIntPipe) tier: number,
+    @Req() req: Request,
+  ) {
     const adminUser = req.adminUser?.username ?? 'unknown';
     return this.tiersService.deleteTier(tier, adminUser);
   }
@@ -111,6 +114,10 @@ export class AdminTiersController {
     @Req() req: Request,
   ) {
     const adminUser = req.adminUser?.username ?? 'unknown';
-    return this.tiersService.updateAvailability(tier, dto.isPubliclyAvailable, adminUser);
+    return this.tiersService.updateAvailability(
+      tier,
+      dto.isPubliclyAvailable,
+      adminUser,
+    );
   }
 }

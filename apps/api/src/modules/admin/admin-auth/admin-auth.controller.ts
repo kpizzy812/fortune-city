@@ -10,7 +10,11 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { AdminAuthService, AdminJwtPayload } from './admin-auth.service';
-import { AdminLoginDto, AdminAuthResponseDto, RefreshTokenDto } from '../dto/admin-auth.dto';
+import {
+  AdminLoginDto,
+  AdminAuthResponseDto,
+  RefreshTokenDto,
+} from '../dto/admin-auth.dto';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 
 @Controller('admin/auth')
@@ -39,7 +43,7 @@ export class AdminAuthController {
    */
   @Get('me')
   @UseGuards(AdminJwtGuard)
-  async getMe(@Req() req: Request): Promise<{ admin: { username: string } }> {
+  getMe(@Req() req: Request): { admin: { username: string } } {
     const payload = req.adminUser as AdminJwtPayload;
     return {
       admin: {

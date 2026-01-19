@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsBoolean,
   IsInt,
+  IsNumber,
   IsEnum,
   Min,
   Max,
@@ -97,12 +98,78 @@ export class UnbanUserDto {
 }
 
 // ============================================
+// Balance Management DTOs
+// ============================================
+
+export class UpdateBalanceDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 8 })
+  @Min(0, { message: 'Fortune balance must be non-negative' })
+  fortuneBalance?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 8 })
+  @Min(0, { message: 'Referral balance must be non-negative' })
+  referralBalance?: number;
+}
+
+export enum BalanceOperation {
+  ADD = 'add',
+  SUBTRACT = 'subtract',
+  SET = 'set',
+}
+
+export class AdjustBalanceDto {
+  @IsEnum(BalanceOperation)
+  operation: BalanceOperation;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 8 })
+  @Min(0, { message: 'Fortune amount must be non-negative' })
+  fortuneAmount?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 8 })
+  @Min(0, { message: 'Referral amount must be non-negative' })
+  referralAmount?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}
+
+// ============================================
+// User Management DTOs
+// ============================================
+
+export class UpdateReferrerDto {
+  @IsOptional()
+  @IsString()
+  referredById?: string | null;
+}
+
+export class UpdateFreeSpinsDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(1000, { message: 'Free spins cannot exceed 1000' })
+  freeSpinsRemaining: number;
+}
+
+// ============================================
 // Response Types
 // ============================================
 
 export interface UserListItemResponse {
   id: string;
   telegramId: string | null;
+  email: string | null;
+  web3Address: string | null;
   username: string | null;
   firstName: string | null;
   lastName: string | null;
@@ -165,6 +232,8 @@ export interface UsersStatsResponse {
 export interface ReferralTreeNode {
   id: string;
   telegramId: string | null;
+  email: string | null;
+  web3Address: string | null;
   username: string | null;
   firstName: string | null;
   fortuneBalance: number;

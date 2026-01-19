@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { X, Trophy, Flame, Sparkles, Gift } from 'lucide-react';
-import type { WheelSpinResponse, WheelSpinResult } from '@/lib/api';
+import type { WheelSpinResponse } from '@/lib/api';
 import { Modal } from '@/components/ui/Modal';
 
 interface SpinResultModalProps {
@@ -12,11 +12,22 @@ interface SpinResultModalProps {
   result: WheelSpinResponse | null;
 }
 
-// Confetti particle component
-function ConfettiParticle({ delay }: { delay: number }) {
-  const colors = ['#ff2d95', '#9333ea', '#ffd700', '#22c55e', '#3b82f6'];
-  const color = colors[Math.floor(Math.random() * colors.length)];
+const CONFETTI_COLORS = ['#ff2d95', '#9333ea', '#ffd700', '#22c55e', '#3b82f6'];
 
+// Confetti particle component with pre-generated random values
+function ConfettiParticle({
+  delay,
+  color,
+  x,
+  y,
+  rotate
+}: {
+  delay: number;
+  color: string;
+  x: number;
+  y: number;
+  rotate: number;
+}) {
   return (
     <motion.div
       className="absolute w-2 h-2 rounded-sm"
@@ -29,11 +40,11 @@ function ConfettiParticle({ delay }: { delay: number }) {
         rotate: 0,
       }}
       animate={{
-        x: `${Math.random() * 100}%`,
-        y: `${Math.random() * 100}%`,
+        x: `${x}%`,
+        y: `${y}%`,
         opacity: [0, 1, 1, 0],
         scale: [0, 1, 1, 0.5],
-        rotate: Math.random() * 720,
+        rotate,
       }}
       transition={{
         duration: 2,
@@ -51,12 +62,28 @@ export function SpinResultModal({
 }: SpinResultModalProps) {
   const [showConfetti, setShowConfetti] = useState(false);
 
+  // Generate random values once for confetti particles using lazy initialization
+  const [confettiParticles] = useState(() =>
+    Array.from({ length: 50 }, () => ({
+      delay: Math.random() * 0.5,
+      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      rotate: Math.random() * 720,
+    }))
+  );
+
   // Trigger confetti for big wins
   useEffect(() => {
     if (result && (result.jackpotWon || result.netResult > result.totalBet * 2)) {
-      setShowConfetti(true);
-      const timer = setTimeout(() => setShowConfetti(false), 3000);
-      return () => clearTimeout(timer);
+      // Use setTimeout to avoid synchronous setState in effect
+      const showTimer = setTimeout(() => setShowConfetti(true), 0);
+      const hideTimer = setTimeout(() => setShowConfetti(false), 3000);
+      return () => {
+        clearTimeout(showTimer);
+        clearTimeout(hideTimer);
+        setShowConfetti(false);
+      };
     }
   }, [result]);
 
@@ -80,8 +107,15 @@ export function SpinResultModal({
         {/* Confetti overlay for big wins */}
         {showConfetti && (
           <div className="absolute inset-0 pointer-events-none overflow-hidden z-50">
-            {[...Array(50)].map((_, i) => (
-              <ConfettiParticle key={i} delay={Math.random() * 0.5} />
+            {confettiParticles.map((particle, i) => (
+              <ConfettiParticle
+                key={i}
+                delay={particle.delay}
+                color={particle.color}
+                x={particle.x}
+                y={particle.y}
+                rotate={particle.rotate}
+              />
             ))}
           </div>
         )}

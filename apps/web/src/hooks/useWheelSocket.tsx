@@ -105,6 +105,4 @@ export function useWheelSocket(currentUserId?: string) {
       socketRef.current = null;
     };
   }, [handleJackpotWon, handleJackpotUpdated]);
-
-  return socketRef.current;
 }

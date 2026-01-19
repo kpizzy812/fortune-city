@@ -44,7 +44,10 @@ export class AdminTiersService {
   /**
    * Create a new tier
    */
-  async createTier(dto: CreateTierDto, adminUser: string): Promise<TierResponse> {
+  async createTier(
+    dto: CreateTierDto,
+    adminUser: string,
+  ): Promise<TierResponse> {
     // Check if tier number already exists
     const existing = await this.prisma.tierConfig.findUnique({
       where: { tier: dto.tier },
@@ -70,7 +73,14 @@ export class AdminTiersService {
     });
 
     // Log action
-    await this.logAction('tier_created', 'tier', String(dto.tier), null, tier, adminUser);
+    await this.logAction(
+      'tier_created',
+      'tier',
+      String(dto.tier),
+      null,
+      tier,
+      adminUser,
+    );
 
     // Invalidate cache immediately
     await this.tierCacheService.invalidateCache();

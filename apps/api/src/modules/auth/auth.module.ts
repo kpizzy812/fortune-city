@@ -26,7 +26,17 @@ import { UsersModule } from '../users/users.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, SupabaseAuthService, RefreshTokenService, JwtAuthGuard],
-  exports: [AuthService, SupabaseAuthService, RefreshTokenService, JwtAuthGuard],
+  providers: [
+    AuthService,
+    SupabaseAuthService,
+    RefreshTokenService,
+    JwtAuthGuard,
+  ],
+  exports: [
+    AuthService,
+    SupabaseAuthService,
+    RefreshTokenService,
+    JwtAuthGuard,
+  ],
 })
 export class AuthModule {}

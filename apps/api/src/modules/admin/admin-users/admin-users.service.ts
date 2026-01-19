@@ -11,6 +11,11 @@ import {
   ReferralTreeResponse,
   UserSortField,
   SortOrder,
+  UpdateBalanceDto,
+  AdjustBalanceDto,
+  BalanceOperation,
+  UpdateReferrerDto,
+  UpdateFreeSpinsDto,
 } from './dto/user.dto';
 
 @Injectable()
@@ -42,6 +47,8 @@ export class AdminUsersService {
         { firstName: { contains: search, mode: 'insensitive' } },
         { lastName: { contains: search, mode: 'insensitive' } },
         { telegramId: { contains: search } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { web3Address: { contains: search, mode: 'insensitive' } },
         { referralCode: { contains: search, mode: 'insensitive' } },
       ];
     }
@@ -377,6 +384,8 @@ export class AdminUsersService {
     return referrals.map((ref) => ({
       id: ref.id,
       telegramId: ref.telegramId,
+      email: ref.email,
+      web3Address: ref.web3Address,
       username: ref.username,
       firstName: ref.firstName,
       fortuneBalance: Number(ref.fortuneBalance),
@@ -440,6 +449,8 @@ export class AdminUsersService {
   private formatUserListItem(user: {
     id: string;
     telegramId: string | null;
+    email: string | null;
+    web3Address: string | null;
     username: string | null;
     firstName: string | null;
     lastName: string | null;
@@ -461,6 +472,8 @@ export class AdminUsersService {
     return {
       id: user.id,
       telegramId: user.telegramId,
+      email: user.email,
+      web3Address: user.web3Address,
       username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -483,6 +496,8 @@ export class AdminUsersService {
     user: {
       id: string;
       telegramId: string | null;
+      email: string | null;
+      web3Address: string | null;
       username: string | null;
       firstName: string | null;
       lastName: string | null;
@@ -525,6 +540,8 @@ export class AdminUsersService {
     return {
       id: user.id,
       telegramId: user.telegramId,
+      email: user.email,
+      web3Address: user.web3Address,
       username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -548,6 +565,324 @@ export class AdminUsersService {
       referrer: user.referredBy,
       stats,
     };
+  }
+
+  /**
+   * Update user balance (set exact value)
+   */
+  async updateBalance(
+    userId: string,
+    dto: UpdateBalanceDto,
+  ): Promise<UserDetailResponse> {
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        include: {
+          referredBy: {
+            select: {
+              id: true,
+              username: true,
+              telegramId: true,
+            },
+          },
+          _count: {
+            select: {
+              referrals: true,
+              machines: true,
+            },
+          },
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException(`User ${userId} not found`);
+      }
+
+      const updateData: Prisma.UserUpdateInput = {};
+
+      if (dto.fortuneBalance !== undefined) {
+        updateData.fortuneBalance = new Prisma.Decimal(dto.fortuneBalance);
+      }
+
+      if (dto.referralBalance !== undefined) {
+        updateData.referralBalance = new Prisma.Decimal(dto.referralBalance);
+      }
+
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data: updateData,
+        include: {
+          referredBy: {
+            select: {
+              id: true,
+              username: true,
+              telegramId: true,
+            },
+          },
+          _count: {
+            select: {
+              referrals: true,
+              machines: true,
+            },
+          },
+        },
+      });
+
+      await this.logAction(
+        'user_balance_updated',
+        'user',
+        userId,
+        {
+          fortuneBalance: user.fortuneBalance.toString(),
+          referralBalance: user.referralBalance.toString(),
+        },
+        {
+          fortuneBalance: updated.fortuneBalance.toString(),
+          referralBalance: updated.referralBalance.toString(),
+        },
+      );
+
+      const stats = await this.getUserStats(userId);
+      return this.formatUserDetail(updated, stats);
+    });
+  }
+
+  /**
+   * Adjust user balance (add/subtract/set)
+   */
+  async adjustBalance(
+    userId: string,
+    dto: AdjustBalanceDto,
+  ): Promise<UserDetailResponse> {
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        include: {
+          referredBy: {
+            select: {
+              id: true,
+              username: true,
+              telegramId: true,
+            },
+          },
+          _count: {
+            select: {
+              referrals: true,
+              machines: true,
+            },
+          },
+        },
+      });
+
+      if (!user) {
+        throw new NotFoundException(`User ${userId} not found`);
+      }
+
+      const updateData: Prisma.UserUpdateInput = {};
+
+      if (dto.operation === BalanceOperation.SET) {
+        if (dto.fortuneAmount !== undefined) {
+          updateData.fortuneBalance = new Prisma.Decimal(dto.fortuneAmount);
+        }
+        if (dto.referralAmount !== undefined) {
+          updateData.referralBalance = new Prisma.Decimal(dto.referralAmount);
+        }
+      } else if (dto.operation === BalanceOperation.ADD) {
+        if (dto.fortuneAmount !== undefined) {
+          updateData.fortuneBalance = {
+            increment: new Prisma.Decimal(dto.fortuneAmount),
+          };
+        }
+        if (dto.referralAmount !== undefined) {
+          updateData.referralBalance = {
+            increment: new Prisma.Decimal(dto.referralAmount),
+          };
+        }
+      } else if (dto.operation === BalanceOperation.SUBTRACT) {
+        if (dto.fortuneAmount !== undefined) {
+          const currentFortune = user.fortuneBalance.toNumber();
+          if (currentFortune < dto.fortuneAmount) {
+            throw new Error(
+              `Insufficient fortune balance. Current: ${currentFortune}, Required: ${dto.fortuneAmount}`,
+            );
+          }
+          updateData.fortuneBalance = {
+            decrement: new Prisma.Decimal(dto.fortuneAmount),
+          };
+        }
+        if (dto.referralAmount !== undefined) {
+          const currentReferral = user.referralBalance.toNumber();
+          if (currentReferral < dto.referralAmount) {
+            throw new Error(
+              `Insufficient referral balance. Current: ${currentReferral}, Required: ${dto.referralAmount}`,
+            );
+          }
+          updateData.referralBalance = {
+            decrement: new Prisma.Decimal(dto.referralAmount),
+          };
+        }
+      }
+
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data: updateData,
+        include: {
+          referredBy: {
+            select: {
+              id: true,
+              username: true,
+              telegramId: true,
+            },
+          },
+          _count: {
+            select: {
+              referrals: true,
+              machines: true,
+            },
+          },
+        },
+      });
+
+      await this.logAction(
+        'user_balance_adjusted',
+        'user',
+        userId,
+        {
+          fortuneBalance: user.fortuneBalance.toString(),
+          referralBalance: user.referralBalance.toString(),
+        },
+        {
+          operation: dto.operation,
+          fortuneAmount: dto.fortuneAmount,
+          referralAmount: dto.referralAmount,
+          reason: dto.reason,
+          newFortuneBalance: updated.fortuneBalance.toString(),
+          newReferralBalance: updated.referralBalance.toString(),
+        },
+      );
+
+      const stats = await this.getUserStats(userId);
+      return this.formatUserDetail(updated, stats);
+    });
+  }
+
+  /**
+   * Update user referrer
+   */
+  async updateReferrer(
+    userId: string,
+    dto: UpdateReferrerDto,
+  ): Promise<UserDetailResponse> {
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new NotFoundException(`User ${userId} not found`);
+      }
+
+      // Валидация нового реферера
+      if (dto.referredById) {
+        const referrer = await tx.user.findUnique({
+          where: { id: dto.referredById },
+        });
+
+        if (!referrer) {
+          throw new NotFoundException(
+            `Referrer with ID ${dto.referredById} not found`,
+          );
+        }
+
+        if (dto.referredById === userId) {
+          throw new Error('User cannot refer themselves');
+        }
+      }
+
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data: {
+          referredById: dto.referredById ?? null,
+        },
+        include: {
+          referredBy: {
+            select: {
+              id: true,
+              username: true,
+              telegramId: true,
+            },
+          },
+          _count: {
+            select: {
+              referrals: true,
+              machines: true,
+            },
+          },
+        },
+      });
+
+      await this.logAction(
+        'user_referrer_updated',
+        'user',
+        userId,
+        { referredById: user.referredById },
+        { referredById: updated.referredById },
+      );
+
+      const stats = await this.getUserStats(userId);
+      return this.formatUserDetail(updated, stats);
+    });
+  }
+
+  /**
+   * Update free spins
+   */
+  async updateFreeSpins(
+    userId: string,
+    dto: UpdateFreeSpinsDto,
+  ): Promise<UserDetailResponse> {
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new NotFoundException(`User ${userId} not found`);
+      }
+
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data: {
+          freeSpinsRemaining: dto.freeSpinsRemaining,
+        },
+        include: {
+          referredBy: {
+            select: {
+              id: true,
+              username: true,
+              telegramId: true,
+            },
+          },
+          _count: {
+            select: {
+              referrals: true,
+              machines: true,
+            },
+          },
+        },
+      });
+
+      await this.logAction(
+        'user_free_spins_updated',
+        'user',
+        userId,
+        { freeSpinsRemaining: user.freeSpinsRemaining },
+        { freeSpinsRemaining: updated.freeSpinsRemaining },
+      );
+
+      const stats = await this.getUserStats(userId);
+      return this.formatUserDetail(updated, stats);
+    });
   }
 
   /**
