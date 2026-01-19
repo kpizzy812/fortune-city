@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { FortuneRateModule } from '../fortune-rate/fortune-rate.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { DepositsController, WebhooksController } from './deposits.controller';
 import { DepositsService } from './deposits.service';
 import { DepositsGateway } from './deposits.gateway';
@@ -20,6 +21,7 @@ import { PriceOracleService } from './services/price-oracle.service';
     PrismaModule,
     AuthModule,
     FortuneRateModule,
+    NotificationsModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [DepositsController, WebhooksController],
