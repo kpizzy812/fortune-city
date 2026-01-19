@@ -33,6 +33,7 @@ import { useDepositsStore } from '@/stores/deposits.store';
 import { useWithdrawalsStore } from '@/stores/withdrawals.store';
 import { useOnDepositCredited } from '@/hooks/useDepositsSocket';
 import { OtherCryptoModal } from '@/components/shop/OtherCryptoModal';
+import { CurrencyIcon } from '@/components/ui/CurrencyIcon';
 import type { DepositCurrency } from '@/lib/api';
 
 // Token mints (mainnet)
@@ -43,10 +44,10 @@ type MainTabType = 'deposit' | 'withdraw';
 type DepositTabType = 'wallet' | 'address';
 type WithdrawTabType = 'wallet' | 'address';
 
-const CURRENCIES: { id: DepositCurrency; label: string; icon: string }[] = [
-  { id: 'SOL', label: 'SOL', icon: '◎' },
-  { id: 'USDT_SOL', label: 'USDT', icon: '$' },
-  { id: 'FORTUNE', label: 'FORTUNE', icon: '🎰' },
+const CURRENCIES: { id: DepositCurrency; label: string }[] = [
+  { id: 'SOL', label: 'SOL' },
+  { id: 'USDT_SOL', label: 'USDT' },
+  { id: 'FORTUNE', label: 'FORTUNE' },
 ];
 
 export default function CashPage() {
@@ -581,13 +582,15 @@ export default function CashPage() {
                           <button
                             key={currency.id}
                             onClick={() => setSelectedCurrency(currency.id)}
-                            className={`relative p-4 rounded-xl border-2 transition-all ${
+                            className={`relative p-4 rounded-xl border-2 transition-all flex flex-col items-center ${
                               selectedCurrency === currency.id
                                 ? 'border-[#ff2d95] bg-[#ff2d95]/10'
                                 : 'border-transparent bg-[#0d0416] hover:border-[#ff2d95]/30'
                             }`}
                           >
-                            <div className="text-2xl mb-2">{currency.icon}</div>
+                            <div className="mb-2">
+                              <CurrencyIcon currency={currency.id} size="md" />
+                            </div>
                             <div className="font-medium text-white text-sm">
                               {currency.label}
                             </div>

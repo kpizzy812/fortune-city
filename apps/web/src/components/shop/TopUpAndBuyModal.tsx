@@ -20,6 +20,7 @@ import { Wallet, ArrowRight, AlertCircle, QrCode, Copy, CheckCircle } from 'luci
 import type { TierInfo } from '@/types';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { CurrencyIcon } from '@/components/ui/CurrencyIcon';
 import { useDepositsStore } from '@/stores/deposits.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useOnDepositCredited, type DepositCreditedEvent } from '@/hooks/useDepositsSocket';
@@ -29,10 +30,10 @@ import type { DepositCurrency } from '@/lib/api';
 const USDT_MINT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
 const FORTUNE_MINT = process.env.NEXT_PUBLIC_FORTUNE_MINT_ADDRESS;
 
-const CURRENCIES: { id: DepositCurrency; label: string; icon: string }[] = [
-  { id: 'SOL', label: 'SOL', icon: '◎' },
-  { id: 'USDT_SOL', label: 'USDT', icon: '$' },
-  { id: 'FORTUNE', label: 'FORTUNE', icon: '🎰' },
+const CURRENCIES: { id: DepositCurrency; label: string }[] = [
+  { id: 'SOL', label: 'SOL' },
+  { id: 'USDT_SOL', label: 'USDT' },
+  { id: 'FORTUNE', label: 'FORTUNE' },
 ];
 
 interface TopUpAndBuyModalProps {
@@ -358,7 +359,7 @@ export function TopUpAndBuyModal({
                     onClick={() => setSelectedCurrency(currency.id)}
                     disabled={isLoading}
                     className={`
-                      py-2 px-2 rounded-lg border transition-all text-center
+                      py-2 px-2 rounded-lg border transition-all text-center flex flex-col items-center gap-1.5
                       ${
                         selectedCurrency === currency.id
                           ? 'border-[#00d4ff] bg-[#00d4ff]/10 text-white'
@@ -367,7 +368,7 @@ export function TopUpAndBuyModal({
                       ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
                     `}
                   >
-                    <span className="text-base">{currency.icon}</span>
+                    <CurrencyIcon currency={currency.id} size="sm" />
                     <p className="text-xs">{currency.label}</p>
                   </button>
                 ))}
