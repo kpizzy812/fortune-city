@@ -12,16 +12,18 @@ import {
   Network,
   Copy,
   Check,
+  Settings,
 } from 'lucide-react';
 import { useAdminUsersStore } from '@/stores/admin/admin-users.store';
 import { ReferralTree } from './ReferralTree';
+import { ManageUserActions } from './ManageUserActions';
 
 interface UserDetailModalProps {
   userId: string;
   onClose: () => void;
 }
 
-type Tab = 'info' | 'referrals';
+type Tab = 'info' | 'referrals' | 'management';
 
 export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
   const {
@@ -190,6 +192,20 @@ export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
           >
             <Network className="w-4 h-4 inline mr-2" />
             Referral Tree
+          </button>
+          <button
+            onClick={() => setActiveTab('management')}
+            className={`
+              flex-1 px-4 py-3 text-sm font-medium
+              transition-colors
+              ${activeTab === 'management'
+                ? 'text-amber-400 border-b-2 border-amber-400'
+                : 'text-slate-400 hover:text-white'
+              }
+            `}
+          >
+            <Settings className="w-4 h-4 inline mr-2" />
+            Management
           </button>
         </div>
 
@@ -477,6 +493,8 @@ export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
             </div>
           ) : activeTab === 'referrals' ? (
             <ReferralTree userId={userId} />
+          ) : activeTab === 'management' && selectedUser ? (
+            <ManageUserActions user={selectedUser} />
           ) : null}
         </div>
       </div>

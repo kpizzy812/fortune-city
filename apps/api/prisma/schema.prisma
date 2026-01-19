@@ -258,6 +258,19 @@ model Deposit {
   creditedAt   DateTime?     @map("credited_at")
   errorMessage String?       @map("error_message")
 
+  // ===== Other Crypto support =====
+  otherCryptoNetwork  String?   @map("other_crypto_network")  // "BEP20" | "TON"
+  otherCryptoToken    String?   @map("other_crypto_token")    // "USDT" | "BNB" | "TON"
+
+  // Admin approval fields
+  adminNotes         String?    @map("admin_notes")
+  processedBy        String?    @map("processed_by")          // admin username
+  processedAt        DateTime?  @map("processed_at")
+  rejectionReason    String?    @map("rejection_reason")
+
+  // Claimed amount (may differ from actual)
+  claimedAmount      Decimal?   @map("claimed_amount") @db.Decimal(20, 8)
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -270,6 +283,7 @@ model Deposit {
 enum DepositMethod {
   wallet_connect
   deposit_address
+  other_crypto     // Manual approval through admin panel
 }
 
 enum DepositCurrency {
@@ -283,6 +297,7 @@ enum DepositStatus {
   confirmed   // Finalized on chain
   credited    // Balance updated
   failed      // Error during processing
+  rejected    // Rejected by admin
 }
 
 // ============== WALLET CONNECTIONS ==============

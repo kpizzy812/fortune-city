@@ -42,6 +42,44 @@ interface AdminUsersState {
   banUser: (userId: string, reason: string) => Promise<AdminUserDetail>;
   unbanUser: (userId: string, note?: string) => Promise<AdminUserDetail>;
 
+  // User management actions
+  updateBalance: (
+    userId: string,
+    fortuneBalance?: number,
+    referralBalance?: number,
+  ) => Promise<AdminUserDetail>;
+  adjustBalance: (
+    userId: string,
+    operation: 'add' | 'subtract' | 'set',
+    fortuneAmount?: number,
+    referralAmount?: number,
+    reason?: string,
+  ) => Promise<AdminUserDetail>;
+  updateReferrer: (
+    userId: string,
+    referredById?: string | null,
+  ) => Promise<AdminUserDetail>;
+  updateFreeSpins: (userId: string, freeSpinsRemaining: number) => Promise<AdminUserDetail>;
+
+  // Machine management actions
+  addMachine: (
+    userId: string,
+    tier: number,
+    reinvestRound?: number,
+    reason?: string,
+  ) => Promise<AdminUserDetail>;
+  deleteMachine: (
+    userId: string,
+    machineId: string,
+    reason?: string,
+  ) => Promise<AdminUserDetail>;
+  extendMachineLifespan: (
+    userId: string,
+    machineId: string,
+    daysToAdd: number,
+    reason?: string,
+  ) => Promise<AdminUserDetail>;
+
   // Filter actions
   setSearch: (search: string) => void;
   setIsBanned: (isBanned: boolean | undefined) => void;
@@ -222,6 +260,241 @@ export const useAdminUsersStore = create<AdminUsersState>((set, get) => ({
       return updated;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to unban user';
+      set({ error: message, isLoadingUser: false });
+      throw error;
+    }
+  },
+
+  // Update user balance (set exact value)
+  updateBalance: async (
+    userId: string,
+    fortuneBalance?: number,
+    referralBalance?: number,
+  ) => {
+    const token = useAdminAuthStore.getState().token;
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    set({ isLoadingUser: true, error: null });
+    try {
+      const updated = await api.adminUpdateBalance(token, userId, {
+        fortuneBalance,
+        referralBalance,
+      });
+
+      // Update user in list and selectedUser
+      set((state) => ({
+        users: state.users.map((u) =>
+          u.id === userId
+            ? {
+                ...u,
+                fortuneBalance: updated.fortuneBalance,
+                referralBalance: updated.referralBalance,
+              }
+            : u,
+        ),
+        selectedUser: state.selectedUser?.id === userId ? updated : state.selectedUser,
+        isLoadingUser: false,
+      }));
+
+      return updated;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update balance';
+      set({ error: message, isLoadingUser: false });
+      throw error;
+    }
+  },
+
+  // Adjust user balance (add/subtract/set)
+  adjustBalance: async (
+    userId: string,
+    operation: 'add' | 'subtract' | 'set',
+    fortuneAmount?: number,
+    referralAmount?: number,
+    reason?: string,
+  ) => {
+    const token = useAdminAuthStore.getState().token;
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    set({ isLoadingUser: true, error: null });
+    try {
+      const updated = await api.adminAdjustBalance(token, userId, {
+        operation,
+        fortuneAmount,
+        referralAmount,
+        reason,
+      });
+
+      // Update user in list and selectedUser
+      set((state) => ({
+        users: state.users.map((u) =>
+          u.id === userId
+            ? {
+                ...u,
+                fortuneBalance: updated.fortuneBalance,
+                referralBalance: updated.referralBalance,
+              }
+            : u,
+        ),
+        selectedUser: state.selectedUser?.id === userId ? updated : state.selectedUser,
+        isLoadingUser: false,
+      }));
+
+      return updated;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to adjust balance';
+      set({ error: message, isLoadingUser: false });
+      throw error;
+    }
+  },
+
+  // Update user referrer
+  updateReferrer: async (userId: string, referredById?: string | null) => {
+    const token = useAdminAuthStore.getState().token;
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    set({ isLoadingUser: true, error: null });
+    try {
+      const updated = await api.adminUpdateReferrer(token, userId, { referredById });
+
+      // Update selectedUser
+      set((state) => ({
+        selectedUser: state.selectedUser?.id === userId ? updated : state.selectedUser,
+        isLoadingUser: false,
+      }));
+
+      return updated;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update referrer';
+      set({ error: message, isLoadingUser: false });
+      throw error;
+    }
+  },
+
+  // Update user free spins
+  updateFreeSpins: async (userId: string, freeSpinsRemaining: number) => {
+    const token = useAdminAuthStore.getState().token;
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    set({ isLoadingUser: true, error: null });
+    try {
+      const updated = await api.adminUpdateFreeSpins(token, userId, { freeSpinsRemaining });
+
+      // Update selectedUser
+      set((state) => ({
+        selectedUser: state.selectedUser?.id === userId ? updated : state.selectedUser,
+        isLoadingUser: false,
+      }));
+
+      return updated;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update free spins';
+      set({ error: message, isLoadingUser: false });
+      throw error;
+    }
+  },
+
+  // Add machine to user
+  addMachine: async (
+    userId: string,
+    tier: number,
+    reinvestRound?: number,
+    reason?: string,
+  ) => {
+    const token = useAdminAuthStore.getState().token;
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    set({ isLoadingUser: true, error: null });
+    try {
+      const updated = await api.adminAddMachine(token, userId, {
+        tier,
+        reinvestRound,
+        reason,
+      });
+
+      // Update user in list and selectedUser
+      set((state) => ({
+        users: state.users.map((u) =>
+          u.id === userId ? { ...u, machinesCount: updated.machinesCount } : u,
+        ),
+        selectedUser: state.selectedUser?.id === userId ? updated : state.selectedUser,
+        isLoadingUser: false,
+      }));
+
+      return updated;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to add machine';
+      set({ error: message, isLoadingUser: false });
+      throw error;
+    }
+  },
+
+  // Delete machine
+  deleteMachine: async (userId: string, machineId: string, reason?: string) => {
+    const token = useAdminAuthStore.getState().token;
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    set({ isLoadingUser: true, error: null });
+    try {
+      const updated = await api.adminDeleteMachine(token, userId, machineId, { reason });
+
+      // Update user in list and selectedUser
+      set((state) => ({
+        users: state.users.map((u) =>
+          u.id === userId ? { ...u, machinesCount: updated.machinesCount } : u,
+        ),
+        selectedUser: state.selectedUser?.id === userId ? updated : state.selectedUser,
+        isLoadingUser: false,
+      }));
+
+      return updated;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete machine';
+      set({ error: message, isLoadingUser: false });
+      throw error;
+    }
+  },
+
+  // Extend machine lifespan
+  extendMachineLifespan: async (
+    userId: string,
+    machineId: string,
+    daysToAdd: number,
+    reason?: string,
+  ) => {
+    const token = useAdminAuthStore.getState().token;
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    set({ isLoadingUser: true, error: null });
+    try {
+      const updated = await api.adminExtendMachineLifespan(token, userId, machineId, {
+        daysToAdd,
+        reason,
+      });
+
+      // Update selectedUser
+      set((state) => ({
+        selectedUser: state.selectedUser?.id === userId ? updated : state.selectedUser,
+        isLoadingUser: false,
+      }));
+
+      return updated;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to extend machine lifespan';
       set({ error: message, isLoadingUser: false });
       throw error;
     }
