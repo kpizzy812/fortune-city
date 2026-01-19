@@ -371,8 +371,8 @@ export default function Home() {
         <TelegramConnectionBanner />
 
         {/* User Stats Card - visible only on mobile (on desktop it's in sidebar) */}
-        <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#ff2d95]/30 mb-6 lg:hidden">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#ff2d95]/30 mb-6 lg:hidden max-h-[850px]:p-2 max-h-[850px]:mb-3">
+          <div className="flex items-center gap-3 mb-4 max-h-[850px]:gap-2 max-h-[850px]:mb-2">
             <button
               onClick={() => setIsProfileOpen(true)}
               className="w-12 h-12 rounded-full bg-gradient-to-br from-[#ff2d95] to-[#00d4ff] flex items-center justify-center text-xl font-bold hover:shadow-[0_0_15px_rgba(255,45,149,0.5)] transition-shadow"
@@ -394,33 +394,33 @@ export default function Home() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="relative bg-[#1a0a2e]/80 backdrop-blur-lg rounded-xl p-3 text-center border border-[#ff2d95]/20 overflow-hidden">
+          <div className="grid grid-cols-3 gap-2 max-h-[850px]:gap-1">
+            <div className="relative bg-[#1a0a2e]/80 backdrop-blur-lg rounded-xl p-3 text-center border border-[#ff2d95]/20 overflow-hidden max-h-[850px]:p-2">
               <div className="absolute inset-0 bg-gradient-to-br from-[#ff2d95]/5 to-transparent" />
               <div className="relative">
-                <Gamepad2 className="w-4 h-4 text-[#ff2d95] mx-auto mb-1" />
-                <p className="text-[10px] text-[#b0b0b0]">{tDashboard('machines')}</p>
-                <p className="text-lg font-mono font-bold text-white">{machines.length}</p>
+                <Gamepad2 className="w-4 h-4 text-[#ff2d95] mx-auto mb-1 max-h-[850px]:w-3 max-h-[850px]:h-3 max-h-[850px]:mb-0" />
+                <p className="text-[10px] text-[#b0b0b0] max-h-[850px]:text-[8px]">{tDashboard('machines')}</p>
+                <p className="text-lg font-mono font-bold text-white max-h-[850px]:text-base">{machines.length}</p>
               </div>
             </div>
-            <div className="relative bg-[#1a0a2e]/80 backdrop-blur-lg rounded-xl p-3 text-center border border-[#ffd700]/20 overflow-hidden">
+            <div className="relative bg-[#1a0a2e]/80 backdrop-blur-lg rounded-xl p-3 text-center border border-[#ffd700]/20 overflow-hidden max-h-[850px]:p-2">
               <div className="absolute inset-0 bg-gradient-to-br from-[#ffd700]/5 to-transparent" />
               <div className="relative">
-                <Trophy className="w-4 h-4 text-[#ffd700] mx-auto mb-1" />
-                <p className="text-[10px] text-[#b0b0b0]">{tDashboard('maxTier')}</p>
-                <p className="text-lg font-mono font-bold text-[#ffd700]">
+                <Trophy className="w-4 h-4 text-[#ffd700] mx-auto mb-1 max-h-[850px]:w-3 max-h-[850px]:h-3 max-h-[850px]:mb-0" />
+                <p className="text-[10px] text-[#b0b0b0] max-h-[850px]:text-[8px]">{tDashboard('maxTier')}</p>
+                <p className="text-lg font-mono font-bold text-[#ffd700] max-h-[850px]:text-base">
                   {user.maxTierReached || '-'}
                 </p>
               </div>
             </div>
-            <div className="relative bg-[#1a0a2e]/80 backdrop-blur-lg rounded-xl p-3 text-center border border-[#a855f7]/20 overflow-hidden">
+            <div className="relative bg-[#1a0a2e]/80 backdrop-blur-lg rounded-xl p-3 text-center border border-[#a855f7]/20 overflow-hidden max-h-[850px]:p-2">
               <div className="absolute inset-0 bg-gradient-to-br from-[#a855f7]/5 to-transparent" />
               <div className="relative">
-                <Percent className="w-4 h-4 text-[#a855f7] mx-auto mb-1" />
+                <Percent className="w-4 h-4 text-[#a855f7] mx-auto mb-1 max-h-[850px]:w-3 max-h-[850px]:h-3 max-h-[850px]:mb-0" />
                 <Tooltip content={tDashboard('taxTooltip')} position="top" showIcon={false}>
-                  <p className="text-[10px] text-[#b0b0b0] underline decoration-dotted cursor-help">{tDashboard('tax')}</p>
+                  <p className="text-[10px] text-[#b0b0b0] underline decoration-dotted cursor-help max-h-[850px]:text-[8px]">{tDashboard('tax')}</p>
                 </Tooltip>
-                <p className="text-lg font-mono font-bold text-white">
+                <p className="text-lg font-mono font-bold text-white max-h-[850px]:text-base">
                   {(parseFloat(user.currentTaxRate) * 100).toFixed(0)}%
                 </p>
               </div>

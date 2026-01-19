@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import {
@@ -534,8 +535,18 @@ export default function CashPage() {
               "
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                  <span className="text-xl">🌐</span>
+                <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center relative overflow-visible">
+                  {/* Overlapping BSC and TON logos */}
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    {/* BSC logo - background */}
+                    <div className="absolute left-0 w-6 h-6 rounded-full overflow-hidden border border-yellow-400/30 shadow-sm bg-white">
+                      <Image src="/bsc.png" alt="BSC" width={24} height={24} className="w-full h-full object-cover" />
+                    </div>
+                    {/* TON logo - foreground, overlapping */}
+                    <div className="absolute right-0 w-6 h-6 rounded-full overflow-hidden border border-blue-400/30 shadow-sm bg-white">
+                      <Image src="/ton.png" alt="TON" width={24} height={24} className="w-full h-full object-cover" />
+                    </div>
+                  </div>
                 </div>
                 <div className="text-left">
                   <div className="text-white font-medium">
