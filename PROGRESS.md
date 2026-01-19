@@ -495,6 +495,91 @@ User → Other Crypto Modal → Backend (pending) → Admin Panel → Approve/Re
 
 ---
 
+## Phase 12: Notification System (COMPLETED)
+
+**Goal:** Реализовать полную систему уведомлений с Telegram ботом и in-app notifications
+
+### 12.1 Backend (COMPLETED)
+- [x] Prisma schema:
+  - User: telegramChatId, telegramNotificationsEnabled, telegramBotConnectedAt
+  - Notification model: 12 типов уведомлений (deposits, withdrawals, machines, wheel, referrals)
+  - NotificationType enum
+- [x] TelegramBotModule:
+  - telegram-bot.service.ts — обработка webhook, команды (/start, /help, /notifications, /disconnect)
+  - Deep linking: /start connect_USER_ID для подключения бота
+  - telegram-bot.controller.ts — POST /telegram-bot/webhook
+  - Rate limiting: 25 сообщений, затем пауза 1с
+- [x] NotificationsModule:
+  - notifications.service.ts — унифицированная отправка (in-app + Telegram)
+  - notifications.gateway.ts — WebSocket namespace /notifications
+  - notifications.controller.ts — REST API (GET /notifications, POST /notifications/:id/read, POST /notifications/read-all)
+  - Multi-channel delivery с error tracking
+- [x] Интеграция триггеров:
+  - DepositProcessorService: deposit_credited, deposit_rejected
+  - AdminWithdrawalsService: withdrawal_approved, withdrawal_completed, withdrawal_rejected
+- [x] WebSocket Events:
+  - notification:new — новое уведомление
+  - notification:read — пометка прочитанным
+  - notification:all_read — все прочитаны
+
+### 12.2 Frontend (COMPLETED)
+- [x] Types: Notification, NotificationType, GetNotificationsResponse
+- [x] API Client (lib/api.ts):
+  - getNotifications(token, filters)
+  - getUnreadCount(token)
+  - markNotificationAsRead(token, notificationId)
+  - markAllNotificationsAsRead(token)
+- [x] notifications.store.ts (Zustand):
+  - fetchNotifications, markAsRead, markAllAsRead
+  - addNotification (WebSocket), updateNotificationReadStatus
+- [x] useNotificationsSocket.tsx:
+  - Подключение к /notifications namespace
+  - Обработка events, toast notifications с иконками
+  - Интеграция в AuthenticatedLayout
+- [x] NotificationBell.tsx:
+  - Иконка колокольчика с badge (unread count)
+  - Dropdown toggle для NotificationCenter
+  - Интеграция в SidebarNavigation
+- [x] NotificationCenter.tsx:
+  - Dropdown с последними 10 уведомлениями
+  - Клик для пометки прочитанным
+  - Кнопка "Mark all as read"
+  - Relative timestamps (date-fns)
+- [x] TelegramConnectionBanner.tsx:
+  - Компактный баннер для подключения Telegram бота
+  - Deep link кнопка с user.id
+  - Dismissable с localStorage
+  - Официальный Telegram логотип SVG
+  - Отображается в dashboard (не в sidebar для mobile)
+
+### 12.3 Architecture (COMPLETED)
+- [x] Deep Linking Flow:
+  1. User логинится через Telegram Login Widget → получает telegramId
+  2. Banner в dashboard показывает "Connect Telegram Bot"
+  3. Deep link: https://t.me/BOT_USERNAME?start=connect_USER_ID
+  4. User кликает → отправляет /start connect_USER_ID боту
+  5. Bot извлекает USER_ID, обновляет User.telegramChatId
+  6. Теперь bot может отправлять сообщения через telegramChatId
+- [x] Notification Delivery:
+  - In-app: WebSocket gateway → instant UI updates
+  - Telegram: Bot API → messages to telegramChatId
+  - Error tracking: sentToTelegramAt, telegramError fields
+- [x] Module Dependencies:
+  - DepositsModule imports NotificationsModule
+  - AdminModule imports NotificationsModule
+
+### Особенности
+- **Билингва**: Сообщения на EN/RU
+- **12 типов уведомлений**: deposits, withdrawals, machines (expired/coin box), referrals, wheel jackpots
+- **Multi-channel**: In-app (WebSocket) + Telegram Bot
+- **Read status sync**: Синхронизация между клиентами через WebSocket
+- **Rate limiting**: Telegram Bot API ограничения (25 msg burst, 1s pause)
+- **Deep linking**: Безопасное подключение бота к аккаунту пользователя
+
+**Build Status:** API и Web собираются успешно
+
+---
+
 ## Notes
 
 - Используем существующие паттерны из auth, machines, economy модулей

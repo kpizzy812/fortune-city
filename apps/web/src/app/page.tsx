@@ -19,6 +19,7 @@ import { useInterval } from '@/hooks/useInterval';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { ProfileModal } from '@/components/profile/ProfileModal';
 import { TelegramConnectionBanner } from '@/components/notifications/TelegramConnectionBanner';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { formatUserDisplayName, getUserInitial } from '@/lib/utils';
 import type { GambleInfo, AutoCollectInfo } from '@/types';
 
@@ -354,6 +355,7 @@ export default function Home() {
                 </p>
               )}
             </div>
+            <NotificationBell />
             <LanguageSwitcher />
             <button
               onClick={() => setIsProfileOpen(true)}
