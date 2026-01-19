@@ -135,7 +135,7 @@ export function SidebarNavigation() {
             )}
           </div>
           {sidebarCollapsed && (
-            <div className="mt-2">
+            <div className="mt-2 flex justify-center">
               <NotificationBell />
             </div>
           )}
