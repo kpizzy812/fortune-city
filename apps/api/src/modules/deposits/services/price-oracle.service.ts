@@ -111,11 +111,16 @@ export class PriceOracleService {
       this.priceCache.set(ticker, { price, timestamp: Date.now() });
       return price;
     } catch (error) {
-      this.logger.error(`Failed to fetch ${ticker} price from CoinGecko`, error);
+      this.logger.error(
+        `Failed to fetch ${ticker} price from CoinGecko`,
+        error,
+      );
 
       // Return cached value if available (even if expired)
       if (cached) {
-        this.logger.warn(`Using expired cache for ${ticker} price: ${cached.price}`);
+        this.logger.warn(
+          `Using expired cache for ${ticker} price: ${cached.price}`,
+        );
         return cached.price;
       }
 
@@ -126,7 +131,9 @@ export class PriceOracleService {
   /**
    * Fetch price from CoinGecko API
    */
-  private async fetchPriceFromCoinGecko(ticker: 'BNB' | 'TON'): Promise<number> {
+  private async fetchPriceFromCoinGecko(
+    ticker: 'BNB' | 'TON',
+  ): Promise<number> {
     const coinGeckoIds: Record<string, string> = {
       BNB: 'binancecoin',
       TON: 'the-open-network',
@@ -142,7 +149,9 @@ export class PriceOracleService {
     const response = await fetch(url);
 
     if (!response.ok) {
-      throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `CoinGecko API error: ${response.status} ${response.statusText}`,
+      );
     }
 
     const data = await response.json();

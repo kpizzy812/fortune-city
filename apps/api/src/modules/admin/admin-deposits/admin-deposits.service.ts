@@ -20,10 +20,7 @@ import {
 } from './dto/deposit.dto';
 import { PriceOracleService } from '../../deposits/services/price-oracle.service';
 import { DepositsGateway } from '../../deposits/deposits.gateway';
-import {
-  OtherCryptoToken,
-  OtherCryptoNetwork,
-} from '../../deposits/constants/other-crypto';
+import { OtherCryptoToken } from '../../deposits/constants/other-crypto';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -457,7 +454,9 @@ export class AdminDepositsService {
       // Other crypto fields
       otherCryptoNetwork: deposit.otherCryptoNetwork,
       otherCryptoToken: deposit.otherCryptoToken,
-      claimedAmount: deposit.claimedAmount ? Number(deposit.claimedAmount) : null,
+      claimedAmount: deposit.claimedAmount
+        ? Number(deposit.claimedAmount)
+        : null,
       adminNotes: deposit.adminNotes,
       processedBy: deposit.processedBy,
       processedAt: deposit.processedAt?.toISOString() || null,
@@ -520,19 +519,20 @@ export class AdminDepositsService {
       throw new BadRequestException('Deposit is not pending');
     }
 
-    const token = deposit.otherCryptoToken as OtherCryptoToken;
+    const token = deposit.otherCryptoToken as string;
 
     // Get USD conversion rate
     let amountUsd: number;
     let rateToUsd: number;
 
-    if (token === 'USDT') {
+    if (token === OtherCryptoToken.USDT) {
       amountUsd = dto.actualAmount;
       rateToUsd = 1;
     } else {
       // Get price for BNB or TON
-      const ticker = token === 'BNB' ? 'BNB' : 'TON';
-      const rate = await this.priceOracle.getPrice(ticker as 'BNB' | 'TON');
+      const ticker =
+        token === OtherCryptoToken.BNB ? ('BNB' as const) : ('TON' as const);
+      const rate = await this.priceOracle.getPrice(ticker);
       amountUsd = dto.actualAmount * rate;
       rateToUsd = rate;
     }
@@ -663,7 +663,12 @@ export class AdminDepositsService {
    */
   private async processReferralBonuses(
     tx: Prisma.TransactionClient,
-    user: { id: string; referredById: string | null; username: string | null; firstName: string | null },
+    user: {
+      id: string;
+      referredById: string | null;
+      username: string | null;
+      firstName: string | null;
+    },
     depositAmountUsd: number,
   ): Promise<void> {
     if (!user.referredById) return;

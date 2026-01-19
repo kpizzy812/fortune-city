@@ -6,8 +6,6 @@ import {
   IsArray,
   ValidateNested,
   Min,
-  MaxLength,
-  IsUrl,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { DepositCurrency } from '@prisma/client';

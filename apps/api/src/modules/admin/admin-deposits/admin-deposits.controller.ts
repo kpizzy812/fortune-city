@@ -9,10 +9,13 @@ import {
 } from '@nestjs/common';
 import { AdminDepositsService } from './admin-deposits.service';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import {
   DepositsFilterDto,
   ManualCreditDto,
   RetryDepositDto,
+  ApproveOtherCryptoDepositDto,
+  RejectOtherCryptoDepositDto,
 } from './dto/deposit.dto';
 
 @Controller('admin/deposits')
@@ -63,5 +66,39 @@ export class AdminDepositsController {
   @Post(':id/retry')
   async retryDeposit(@Param('id') id: string, @Body() dto: RetryDepositDto) {
     return this.depositsService.retryDeposit(id, dto.note);
+  }
+
+  /**
+   * POST /admin/deposits/:id/approve-other-crypto
+   * Approve other crypto deposit with actual amount
+   */
+  @Post(':id/approve-other-crypto')
+  async approveOtherCrypto(
+    @Param('id') id: string,
+    @Body() dto: ApproveOtherCryptoDepositDto,
+    @CurrentUser() admin: { username: string },
+  ) {
+    return this.depositsService.approveOtherCryptoDeposit(
+      id,
+      dto,
+      admin.username,
+    );
+  }
+
+  /**
+   * POST /admin/deposits/:id/reject-other-crypto
+   * Reject other crypto deposit with reason
+   */
+  @Post(':id/reject-other-crypto')
+  async rejectOtherCrypto(
+    @Param('id') id: string,
+    @Body() dto: RejectOtherCryptoDepositDto,
+    @CurrentUser() admin: { username: string },
+  ) {
+    return this.depositsService.rejectOtherCryptoDeposit(
+      id,
+      dto,
+      admin.username,
+    );
   }
 }

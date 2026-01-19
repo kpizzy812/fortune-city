@@ -433,13 +433,13 @@ export class DepositsService {
   /**
    * Get instructions for other crypto deposits (BEP20/TON)
    */
-  async getOtherCryptoInstructions(
+  getOtherCryptoInstructions(
     network: OtherCryptoNetwork,
-  ): Promise<OtherCryptoInstructionsDto> {
+  ): OtherCryptoInstructionsDto {
     const config = OTHER_CRYPTO_CONFIG[network];
 
     const addressEnvKey =
-      network === 'BEP20'
+      network === OtherCryptoNetwork.BEP20
         ? 'OTHER_CRYPTO_BEP20_ADDRESS'
         : 'OTHER_CRYPTO_TON_ADDRESS';
 
@@ -450,7 +450,7 @@ export class DepositsService {
     }
 
     const instructions =
-      network === 'BEP20'
+      network === OtherCryptoNetwork.BEP20
         ? 'Send USDT or BNB to the address below. Manual processing: up to 24 hours after verification.'
         : 'Send USDT or TON to the address below. Manual processing: up to 24 hours after verification.';
 
@@ -493,7 +493,7 @@ export class DepositsService {
       data: {
         userId,
         method: DepositMethod.other_crypto,
-        chain: dto.network === 'BEP20' ? 'bsc' : 'ton',
+        chain: dto.network === OtherCryptoNetwork.BEP20 ? 'bsc' : 'ton',
         currency: 'USDT_SOL', // Convert all to internal USDT currency
         txSignature: `other_crypto_${nanoid(16)}`, // Unique ID
         amount: dto.claimedAmount,

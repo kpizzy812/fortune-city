@@ -622,7 +622,9 @@ export class AdminUsersService {
       machinesCount: user._count.machines,
       createdAt: user.createdAt.toISOString(),
       referrer: user.referredBy,
-      machines: user.machines ? user.machines.map((m) => this.formatMachine(m)) : [],
+      machines: user.machines
+        ? user.machines.map((m) => this.formatMachine(m))
+        : [],
       stats,
     };
   }
