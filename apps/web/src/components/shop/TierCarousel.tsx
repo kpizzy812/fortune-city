@@ -37,7 +37,6 @@ interface TierCardTranslations {
   duration: string;
   yield: string;
   profit: string;
-  dailyReturn: (params: { rate: string }) => string;
   reachTierFirst: (params: { tier: number }) => string;
   needMore: (params: { amount: string }) => string;
   purchasing: string;
@@ -76,7 +75,6 @@ function TierCard({
   const isAffordable = canAfford?.canAfford ?? false;
   const canBuy = !isLocked && !hasActiveMachine && isAffordable && !isPurchasing;
   const baseProfit = tier.price * (tier.yieldPercent / 100 - 1);
-  const dailyRate = (tier.yieldPercent - 100) / tier.lifespanDays;
 
   // Reinvest penalty info - показываем только когда нет активной машины
   const reductionRate = canAfford?.nextProfitReduction ?? 0;
@@ -196,11 +194,6 @@ function TierCard({
             </div>
           </div>
         </div>
-
-        {/* Daily rate */}
-        <p className="text-[10px] text-[#b0b0b0] text-center mb-2">
-          {t.dailyReturn({ rate: dailyRate.toFixed(2) })}
-        </p>
 
         {/* Button */}
         {isLocked ? (
@@ -326,7 +319,6 @@ export function TierCarousel({
     duration: tShop('duration'),
     yield: tShop('yield'),
     profit: tShop('profit'),
-    dailyReturn: (params) => tShop('dailyReturn', params),
     reachTierFirst: (params) => tShop('reachTierFirst', params),
     needMore: (params) => tShop('needMore', params),
     purchasing: tShop('purchasing'),
