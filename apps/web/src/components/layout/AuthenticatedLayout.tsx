@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useUIStore } from '@/stores/ui.store';
 import { useDepositsSocket } from '@/hooks/useDepositsSocket';
 import { useWheelSocket } from '@/hooks/useWheelSocket';
+import { useNotificationsSocket } from '@/hooks/useNotificationsSocket';
 import { BottomNavigation } from './BottomNavigation';
 import { SidebarNavigation } from './SidebarNavigation';
 
@@ -19,6 +20,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   // Global WebSocket listeners for real-time notifications
   useDepositsSocket();
   useWheelSocket(user?.id);
+  useNotificationsSocket();
 
   // Show navigation only for authenticated users
   if (!user) {

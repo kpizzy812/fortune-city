@@ -55,8 +55,9 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
         total: response.total,
         isLoading: false,
       });
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch notifications';
+      set({ error: message, isLoading: false });
       console.error('[Notifications] Fetch error:', error);
     }
   },
@@ -65,7 +66,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     try {
       const response = await api.getUnreadCount(token);
       set({ unreadCount: response.count });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Notifications] Fetch unread count error:', error);
     }
   },
@@ -81,7 +82,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       const unreadCount = Math.max(0, get().unreadCount - 1);
 
       set({ notifications, unreadCount });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Notifications] Mark as read error:', error);
     }
   },
@@ -98,7 +99,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       }));
 
       set({ notifications, unreadCount: 0 });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Notifications] Mark all as read error:', error);
     }
   },

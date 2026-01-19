@@ -18,6 +18,7 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { useInterval } from '@/hooks/useInterval';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { ProfileModal } from '@/components/profile/ProfileModal';
+import { TelegramConnectionBanner } from '@/components/notifications/TelegramConnectionBanner';
 import { formatUserDisplayName, getUserInitial } from '@/lib/utils';
 import type { GambleInfo, AutoCollectInfo } from '@/types';
 
@@ -369,6 +370,9 @@ export default function Home() {
           <h2 className="text-2xl lg:text-3xl font-bold text-[#00d4ff]">{tDashboard('title')}</h2>
           <p className="text-sm text-[#b0b0b0]">{tDashboard('subtitle')}</p>
         </div>
+
+        {/* Telegram Connection Banner */}
+        <TelegramConnectionBanner />
 
         {/* User Stats Card - visible only on mobile (on desktop it's in sidebar) */}
         <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#ff2d95]/30 mb-6 lg:hidden">

@@ -12,6 +12,7 @@ import { useUIStore } from '@/stores/ui.store';
 import { useFortuneRateStore } from '@/stores/fortune-rate.store';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ProfileModal } from '@/components/profile/ProfileModal';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { formatUserDisplayName, getUserInitial } from '@/lib/utils';
 
 interface NavItem {
@@ -117,19 +118,27 @@ export function SidebarNavigation() {
               {userInitial}
             </button>
             {!sidebarCollapsed && (
-              <button
-                onClick={() => setIsProfileOpen(true)}
-                className="overflow-hidden text-left hover:opacity-80 transition-opacity"
-              >
-                <p className="font-medium text-white text-sm truncate">
-                  {displayName}
-                </p>
-                {user.username && (
-                  <p className="text-xs text-[#00d4ff] truncate">@{user.username}</p>
-                )}
-              </button>
+              <>
+                <button
+                  onClick={() => setIsProfileOpen(true)}
+                  className="overflow-hidden text-left hover:opacity-80 transition-opacity flex-1"
+                >
+                  <p className="font-medium text-white text-sm truncate">
+                    {displayName}
+                  </p>
+                  {user.username && (
+                    <p className="text-xs text-[#00d4ff] truncate">@{user.username}</p>
+                  )}
+                </button>
+                <NotificationBell />
+              </>
             )}
           </div>
+          {sidebarCollapsed && (
+            <div className="mt-2">
+              <NotificationBell />
+            </div>
+          )}
           {!sidebarCollapsed && (
             <div className="mt-3 bg-[#2a1a4e] rounded-lg p-3">
               <p className="text-xs text-[#b0b0b0]">{tBrand('currency')}</p>

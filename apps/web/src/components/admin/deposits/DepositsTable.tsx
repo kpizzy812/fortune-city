@@ -405,7 +405,10 @@ export function DepositsTable({ onViewDeposit }: DepositsTableProps) {
                           {getUserDisplayName(deposit)}
                         </span>
                         <span className="text-xs text-slate-500">
-                          {deposit.method}
+                          {deposit.method === 'other_crypto'
+                            ? `${deposit.otherCryptoNetwork || 'N/A'} • ${deposit.otherCryptoToken || 'N/A'}`
+                            : deposit.method
+                          }
                         </span>
                       </div>
                     </td>
@@ -423,9 +426,20 @@ export function DepositsTable({ onViewDeposit }: DepositsTableProps) {
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-slate-300 font-mono text-sm">
-                        {truncateSignature(deposit.txSignature)}
-                      </span>
+                      {deposit.method === 'other_crypto' ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-amber-400 text-xs">
+                            🌐 {deposit.otherCryptoNetwork}
+                          </span>
+                          <span className="text-slate-400 text-xs">
+                            Claimed: {deposit.claimedAmount ? formatAmount(deposit.claimedAmount) : 'N/A'}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-300 font-mono text-sm">
+                          {truncateSignature(deposit.txSignature)}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-4 text-center">
                       {getStatusBadge(deposit.status)}

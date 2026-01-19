@@ -1853,6 +1853,13 @@ export interface AdminDepositListItem {
   creditedAt: string | null;
   errorMessage: string | null;
   createdAt: string;
+  otherCryptoNetwork: string | null;
+  otherCryptoToken: string | null;
+  claimedAmount: number | null;
+  rejectionReason: string | null;
+  processedBy: string | null;
+  processedAt: string | null;
+  adminNotes: string | null;
 }
 
 export interface AdminDepositDetail extends AdminDepositListItem {

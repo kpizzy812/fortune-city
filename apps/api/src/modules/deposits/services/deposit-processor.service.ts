@@ -2,6 +2,7 @@ import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PriceOracleService } from './price-oracle.service';
 import { DepositsGateway } from '../deposits.gateway';
+import { NotificationsService } from '../../notifications/notifications.service';
 import {
   Deposit,
   DepositCurrency,
@@ -21,6 +22,7 @@ export class DepositProcessorService {
     private priceOracle: PriceOracleService,
     @Inject(forwardRef(() => DepositsGateway))
     private depositsGateway: DepositsGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -113,6 +115,21 @@ export class DepositProcessorService {
       timestamp: new Date().toISOString(),
     });
 
+    // Send notification
+    await this.notificationsService.notify({
+      userId: deposit.userId,
+      type: 'deposit_credited',
+      title: 'Deposit Credited',
+      message: `Your deposit of $${usdAmount.toFixed(2)} has been credited to your account`,
+      data: {
+        depositId: deposit.id,
+        amount: Number(deposit.amount),
+        currency: deposit.currency,
+        amountUsd: usdAmount,
+      },
+      channels: ['in_app', 'telegram'],
+    });
+
     return updatedDeposit.updated;
   }
 
@@ -197,13 +214,28 @@ export class DepositProcessorService {
     depositId: string,
     errorMessage: string,
   ): Promise<Deposit> {
-    return this.prisma.deposit.update({
+    const deposit = await this.prisma.deposit.update({
       where: { id: depositId },
       data: {
         status: DepositStatus.failed,
         errorMessage,
       },
     });
+
+    // Send notification
+    await this.notificationsService.notify({
+      userId: deposit.userId,
+      type: 'deposit_rejected',
+      title: 'Deposit Failed',
+      message: `Your deposit was not processed: ${errorMessage}`,
+      data: {
+        depositId: deposit.id,
+        reason: errorMessage,
+      },
+      channels: ['in_app', 'telegram'],
+    });
+
+    return deposit;
   }
 
   /**
