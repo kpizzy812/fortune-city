@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Body,
   Param,
   Query,
@@ -18,6 +19,9 @@ import {
   AdjustBalanceDto,
   UpdateReferrerDto,
   UpdateFreeSpinsDto,
+  AddMachineDto,
+  DeleteMachineDto,
+  ExtendMachineLifespanDto,
 } from './dto/user.dto';
 
 @Controller('admin/users')
@@ -119,5 +123,40 @@ export class AdminUsersController {
     @Body() dto: UpdateFreeSpinsDto,
   ) {
     return this.usersService.updateFreeSpins(id, dto);
+  }
+
+  /**
+   * POST /admin/users/:id/machines
+   * Add machine to user (admin gift/compensation)
+   */
+  @Post(':id/machines')
+  async addMachine(@Param('id') id: string, @Body() dto: AddMachineDto) {
+    return this.usersService.adminAddMachine(id, dto);
+  }
+
+  /**
+   * DELETE /admin/users/:id/machines/:machineId
+   * Delete machine (without returning coinBox balance)
+   */
+  @Delete(':id/machines/:machineId')
+  async deleteMachine(
+    @Param('id') id: string,
+    @Param('machineId') machineId: string,
+    @Body() dto: DeleteMachineDto,
+  ) {
+    return this.usersService.adminDeleteMachine(id, machineId, dto);
+  }
+
+  /**
+   * PUT /admin/users/:id/machines/:machineId/extend
+   * Extend machine lifespan
+   */
+  @Put(':id/machines/:machineId/extend')
+  async extendMachineLifespan(
+    @Param('id') id: string,
+    @Param('machineId') machineId: string,
+    @Body() dto: ExtendMachineLifespanDto,
+  ) {
+    return this.usersService.adminExtendMachineLifespan(id, machineId, dto);
   }
 }

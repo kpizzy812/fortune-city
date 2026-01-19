@@ -162,6 +162,50 @@ export class UpdateFreeSpinsDto {
 }
 
 // ============================================
+// Machine Management DTOs
+// ============================================
+
+export class AddMachineDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(10, { message: 'Tier must be between 1 and 10' })
+  tier: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(7, { message: 'Reinvest round must be between 1 and 7' })
+  reinvestRound?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}
+
+export class DeleteMachineDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}
+
+export class ExtendMachineLifespanDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(365, { message: 'Cannot extend more than 365 days at once' })
+  daysToAdd: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  reason?: string;
+}
+
+// ============================================
 // Response Types
 // ============================================
 

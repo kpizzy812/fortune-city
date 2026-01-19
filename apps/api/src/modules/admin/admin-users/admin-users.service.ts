@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import {
@@ -16,11 +21,19 @@ import {
   BalanceOperation,
   UpdateReferrerDto,
   UpdateFreeSpinsDto,
+  AddMachineDto,
+  DeleteMachineDto,
+  ExtendMachineLifespanDto,
 } from './dto/user.dto';
+import { MachinesService } from '../../machines/machines.service';
 
 @Injectable()
 export class AdminUsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => MachinesService))
+    private readonly machinesService: MachinesService,
+  ) {}
 
   /**
    * Get paginated list of users with filters
@@ -882,6 +895,236 @@ export class AdminUsersService {
 
       const stats = await this.getUserStats(userId);
       return this.formatUserDetail(updated, stats);
+    });
+  }
+
+  /**
+   * Add machine to user (admin gift/compensation)
+   */
+  async adminAddMachine(
+    userId: string,
+    dto: AddMachineDto,
+  ): Promise<UserDetailResponse> {
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        throw new NotFoundException(`User ${userId} not found`);
+      }
+
+      // Create machine using MachinesService
+      const machine = await this.machinesService.create(userId, {
+        tier: dto.tier,
+        reinvestRound: dto.reinvestRound ?? 1,
+      });
+
+      // Note: No FundSource is created since this is an admin gift
+      // The machine is created with default fund tracking
+
+      await this.logAction(
+        'machine_added_by_admin',
+        'machine',
+        machine.id,
+        null,
+        {
+          userId,
+          tier: dto.tier,
+          reinvestRound: dto.reinvestRound ?? 1,
+          reason: dto.reason,
+          machineId: machine.id,
+        },
+      );
+
+      // Return updated user detail
+      const updatedUser = await tx.user.findUnique({
+        where: { id: userId },
+        include: {
+          referredBy: {
+            select: {
+              id: true,
+              username: true,
+              telegramId: true,
+            },
+          },
+          _count: {
+            select: {
+              referrals: true,
+              machines: true,
+            },
+          },
+        },
+      });
+
+      if (!updatedUser) {
+        throw new NotFoundException(
+          `User ${userId} not found after machine creation`,
+        );
+      }
+
+      const stats = await this.getUserStats(userId);
+      return this.formatUserDetail(updatedUser, stats);
+    });
+  }
+
+  /**
+   * Delete machine (without returning coinBox balance)
+   */
+  async adminDeleteMachine(
+    userId: string,
+    machineId: string,
+    dto: DeleteMachineDto,
+  ): Promise<UserDetailResponse> {
+    return this.prisma.$transaction(async (tx) => {
+      const machine = await tx.machine.findUnique({
+        where: { id: machineId },
+      });
+
+      if (!machine) {
+        throw new NotFoundException(`Machine ${machineId} not found`);
+      }
+
+      if (machine.userId !== userId) {
+        throw new Error('Machine does not belong to this user');
+      }
+
+      // Calculate current income for logging
+      const incomeState = await this.machinesService.calculateIncome(machineId);
+
+      // Update machine: set status to sold_pawnshop, clear coinBox
+      const updated = await tx.machine.update({
+        where: { id: machineId },
+        data: {
+          status: 'sold_pawnshop',
+          coinBoxCurrent: 0,
+          lastCalculatedAt: new Date(),
+        },
+      });
+
+      await this.logAction(
+        'machine_deleted_by_admin',
+        'machine',
+        machineId,
+        {
+          status: machine.status,
+          coinBoxCurrent: Number(machine.coinBoxCurrent),
+        },
+        {
+          status: updated.status,
+          coinBoxCurrent: 0,
+          reason: dto.reason,
+          coinBoxLost: incomeState.coinBoxCurrent,
+        },
+      );
+
+      // Return updated user detail
+      const updatedUser = await tx.user.findUnique({
+        where: { id: userId },
+        include: {
+          referredBy: {
+            select: {
+              id: true,
+              username: true,
+              telegramId: true,
+            },
+          },
+          _count: {
+            select: {
+              referrals: true,
+              machines: true,
+            },
+          },
+        },
+      });
+
+      if (!updatedUser) {
+        throw new NotFoundException(`User ${userId} not found`);
+      }
+
+      const stats = await this.getUserStats(userId);
+      return this.formatUserDetail(updatedUser, stats);
+    });
+  }
+
+  /**
+   * Extend machine lifespan
+   */
+  async adminExtendMachineLifespan(
+    userId: string,
+    machineId: string,
+    dto: ExtendMachineLifespanDto,
+  ): Promise<UserDetailResponse> {
+    return this.prisma.$transaction(async (tx) => {
+      const machine = await tx.machine.findUnique({
+        where: { id: machineId },
+      });
+
+      if (!machine) {
+        throw new NotFoundException(`Machine ${machineId} not found`);
+      }
+
+      if (machine.userId !== userId) {
+        throw new Error('Machine does not belong to this user');
+      }
+
+      const oldExpiresAt = new Date(machine.expiresAt);
+      const newExpiresAt = new Date(
+        oldExpiresAt.getTime() + dto.daysToAdd * 24 * 60 * 60 * 1000,
+      );
+
+      // Update machine expiresAt
+      const updated = await tx.machine.update({
+        where: { id: machineId },
+        data: {
+          expiresAt: newExpiresAt,
+          // If machine was expired, reactivate it
+          status: machine.status === 'expired' ? 'active' : machine.status,
+        },
+      });
+
+      await this.logAction(
+        'machine_lifespan_extended',
+        'machine',
+        machineId,
+        {
+          expiresAt: oldExpiresAt.toISOString(),
+          status: machine.status,
+        },
+        {
+          expiresAt: newExpiresAt.toISOString(),
+          status: updated.status,
+          daysAdded: dto.daysToAdd,
+          reason: dto.reason,
+        },
+      );
+
+      // Return updated user detail
+      const updatedUser = await tx.user.findUnique({
+        where: { id: userId },
+        include: {
+          referredBy: {
+            select: {
+              id: true,
+              username: true,
+              telegramId: true,
+            },
+          },
+          _count: {
+            select: {
+              referrals: true,
+              machines: true,
+            },
+          },
+        },
+      });
+
+      if (!updatedUser) {
+        throw new NotFoundException(`User ${userId} not found`);
+      }
+
+      const stats = await this.getUserStats(userId);
+      return this.formatUserDetail(updatedUser, stats);
     });
   }
 

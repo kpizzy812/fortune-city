@@ -820,6 +820,53 @@ class ApiClient {
     });
   }
 
+  /**
+   * Add machine to user (admin gift/compensation)
+   */
+  async adminAddMachine(
+    token: string,
+    userId: string,
+    data: { tier: number; reinvestRound?: number; reason?: string },
+  ): Promise<AdminUserDetail> {
+    return this.request<AdminUserDetail>(`/admin/users/${userId}/machines`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Delete machine (without returning coinBox balance)
+   */
+  async adminDeleteMachine(
+    token: string,
+    userId: string,
+    machineId: string,
+    data?: { reason?: string },
+  ): Promise<AdminUserDetail> {
+    return this.request<AdminUserDetail>(`/admin/users/${userId}/machines/${machineId}`, {
+      method: 'DELETE',
+      token,
+      body: JSON.stringify(data || {}),
+    });
+  }
+
+  /**
+   * Extend machine lifespan
+   */
+  async adminExtendMachineLifespan(
+    token: string,
+    userId: string,
+    machineId: string,
+    data: { daysToAdd: number; reason?: string },
+  ): Promise<AdminUserDetail> {
+    return this.request<AdminUserDetail>(`/admin/users/${userId}/machines/${machineId}/extend`, {
+      method: 'PUT',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
   // ============================================
   // Admin Withdrawals endpoints
   // ============================================
