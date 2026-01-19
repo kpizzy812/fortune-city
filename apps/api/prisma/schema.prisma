@@ -53,6 +53,11 @@ model User {
   bannedAt     DateTime? @map("banned_at")
   bannedReason String?   @map("banned_reason")
 
+  // Telegram Bot connection (for notifications)
+  telegramChatId               String?   @map("telegram_chat_id")
+  telegramNotificationsEnabled Boolean   @default(false) @map("telegram_notifications_enabled")
+  telegramBotConnectedAt       DateTime? @map("telegram_bot_connected_at")
+
   // Relations
   machines          Machine[]
   transactions      Transaction[]
@@ -62,6 +67,7 @@ model User {
   walletConnections WalletConnection[]
   referralBonuses   ReferralBonus[]    @relation("ReferralReceiver")
   referralBonusesSent ReferralBonus[]  @relation("ReferralSource")
+  notifications     Notification[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -701,4 +707,47 @@ model AdminRefreshToken {
   @@index([token])
   @@index([expiresAt])
   @@map("admin_refresh_tokens")
+}
+
+// ============== NOTIFICATIONS ==============
+
+model Notification {
+  id        String @id @default(cuid())
+  userId    String @map("user_id")
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?    // Additional metadata (e.g., machineId, amount, etc.)
+
+  // Delivery channels attempted
+  channels  Json     @default("[]")  // ["in_app", "telegram"]
+
+  // Delivery status
+  readAt           DateTime? @map("read_at")
+  sentToTelegramAt DateTime? @map("sent_to_telegram_at")
+  telegramError    String?   @map("telegram_error")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([type])
+  @@index([readAt])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  machine_expired_soon    // Machine expires in 24h
+  machine_expired         // Machine has expired
+  coin_box_full          // Coin box is full (100%)
+  coin_box_almost_full   // Coin box is almost full (90%)
+  referral_joined        // New referral signed up
+  deposit_credited       // Deposit was credited
+  deposit_rejected       // Deposit was rejected by admin
+  wheel_jackpot_won      // User won the jackpot
+  wheel_jackpot_alert    // Someone else won the jackpot
+  withdrawal_approved    // Withdrawal was approved
+  withdrawal_completed   // Withdrawal was completed
+  withdrawal_rejected    // Withdrawal was rejected
 }

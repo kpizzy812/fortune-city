@@ -16,6 +16,8 @@ import { DepositsModule } from './modules/deposits/deposits.module';
 import { WithdrawalsModule } from './modules/withdrawals/withdrawals.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { WheelModule } from './modules/wheel/wheel.module';
+import { TelegramBotModule } from './modules/telegram-bot/telegram-bot.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { WheelModule } from './modules/wheel/wheel.module';
     WithdrawalsModule,
     AdminModule,
     WheelModule,
+    TelegramBotModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
