@@ -7,7 +7,9 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import { AdminSettingsService } from './admin-settings.service';
 import { UpdateAllSettingsDto, SettingsResponse } from './dto/settings.dto';
@@ -33,8 +35,10 @@ export class AdminSettingsController {
   @Put()
   async updateSettings(
     @Body() dto: UpdateAllSettingsDto,
+    @Req() req: Request,
   ): Promise<SettingsResponse> {
-    return this.settingsService.updateSettings(dto);
+    const adminUser = req.adminUser?.username ?? 'unknown';
+    return this.settingsService.updateSettings(dto, adminUser);
   }
 
   /**
@@ -43,7 +47,8 @@ export class AdminSettingsController {
    */
   @Post('reset')
   @HttpCode(HttpStatus.OK)
-  async resetToDefaults(): Promise<SettingsResponse> {
-    return this.settingsService.resetToDefaults();
+  async resetToDefaults(@Req() req: Request): Promise<SettingsResponse> {
+    const adminUser = req.adminUser?.username ?? 'unknown';
+    return this.settingsService.resetToDefaults(adminUser);
   }
 }

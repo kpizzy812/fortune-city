@@ -9,11 +9,11 @@ import {
   Percent,
   Users,
   Gamepad2,
-  Box,
   AlertCircle,
   Save,
   RotateCcw,
   RefreshCw,
+  Box,
 } from 'lucide-react';
 
 function settingsToFormData(settings: AdminSettingsResponse | null): UpdateSettingsRequest {
@@ -32,8 +32,9 @@ function settingsToFormData(settings: AdminSettingsResponse | null): UpdateSetti
     gambleWinMultiplier: settings.gambleWinMultiplier,
     gambleLoseMultiplier: settings.gambleLoseMultiplier,
     gambleLevels: settings.gambleLevels,
-    coinBoxLevels: settings.coinBoxLevels,
-    autoCollectCostPercent: settings.autoCollectCostPercent,
+    coinBoxCapacityHours: settings.coinBoxCapacityHours,
+    collectorHireCost: settings.collectorHireCost,
+    collectorSalaryPercent: settings.collectorSalaryPercent,
   };
 }
 
@@ -205,15 +206,6 @@ function SettingsForm({ settings, isSaving, error, onSave, onReset, onRefresh, o
             max={10}
             hint="Maximum tier available without progression"
           />
-          <InputField
-            label="Auto Collect Cost %"
-            value={formData.autoCollectCostPercent ?? 15}
-            onChange={(v) => handleInputChange('autoCollectCostPercent', v)}
-            type="number"
-            min={0}
-            max={100}
-            hint="Cost as % of machine price"
-          />
         </SettingsCard>
 
         {/* Deposit/Withdrawal Settings */}
@@ -346,20 +338,45 @@ function SettingsForm({ settings, isSaving, error, onSave, onReset, onRefresh, o
           />
         </SettingsCard>
 
-        {/* Coin Box Settings */}
+        {/* Coin Box & Collector Settings */}
         <SettingsCard
           icon={Box}
-          title="Coin Box"
-          description="Storage upgrade levels"
+          title="Coin Box & Collector"
+          description="Machine earnings storage and auto-collect"
         >
-          <JsonField
-            label="Coin Box Levels"
-            value={formData.coinBoxLevels}
-            onChange={(v) => handleJsonChange('coinBoxLevels', v)}
-            hint='[{"level": 1, "capacityHours": 2, "costPercent": 0}, ...]'
-            rows={8}
+          <InputField
+            label="Coin Box Capacity"
+            value={formData.coinBoxCapacityHours ?? 12}
+            onChange={(v) => handleInputChange('coinBoxCapacityHours', v)}
+            type="number"
+            min={1}
+            max={168}
+            suffix="hours"
+            hint="How long before coin box is full (default: 12h)"
+          />
+          <InputField
+            label="Collector Hire Cost"
+            value={formData.collectorHireCost ?? 5}
+            onChange={(v) => handleInputChange('collectorHireCost', v)}
+            type="number"
+            min={0}
+            step={0.01}
+            prefix="$"
+            hint="One-time cost to hire collector (default: $5)"
+          />
+          <InputField
+            label="Collector Salary"
+            value={formData.collectorSalaryPercent ?? 5}
+            onChange={(v) => handleInputChange('collectorSalaryPercent', v)}
+            type="number"
+            min={0}
+            max={100}
+            step={0.1}
+            suffix="%"
+            hint="Percentage of each collect (default: 5%)"
           />
         </SettingsCard>
+
       </div>
 
       {/* Last Updated */}

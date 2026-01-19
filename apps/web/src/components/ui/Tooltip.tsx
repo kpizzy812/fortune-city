@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Info } from 'lucide-react';
 
 interface TooltipProps {
@@ -17,8 +18,47 @@ export function Tooltip({
   showIcon = true,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const [mounted, setMounted] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
+
+  // Wait for client-side mount for portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Calculate tooltip position
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+
+    const rect = triggerRef.current.getBoundingClientRect();
+    const scrollY = window.scrollY;
+    const scrollX = window.scrollX;
+
+    let top = 0;
+    let left = 0;
+
+    switch (position) {
+      case 'top':
+        top = rect.top + scrollY - 8;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'bottom':
+        top = rect.bottom + scrollY + 8;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.left + scrollX - 8;
+        break;
+      case 'right':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.right + scrollX + 8;
+        break;
+    }
+
+    setTooltipPosition({ top, left });
+  }, [position]);
 
   // Close tooltip when clicking outside
   useEffect(() => {
@@ -26,8 +66,6 @@ export function Tooltip({
 
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (
-        tooltipRef.current &&
-        !tooltipRef.current.contains(e.target as Node) &&
         triggerRef.current &&
         !triggerRef.current.contains(e.target as Node)
       ) {
@@ -35,32 +73,75 @@ export function Tooltip({
       }
     };
 
+    const handleScroll = () => {
+      updatePosition();
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('touchstart', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', updatePosition);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', updatePosition);
     };
-  }, [isVisible]);
+  }, [isVisible, updatePosition]);
 
   const handleToggle = useCallback(() => {
+    if (!isVisible) {
+      updatePosition();
+    }
     setIsVisible((prev) => !prev);
-  }, []);
+  }, [isVisible, updatePosition]);
 
   const handleMouseEnter = useCallback(() => {
+    updatePosition();
     setIsVisible(true);
-  }, []);
+  }, [updatePosition]);
 
   const handleMouseLeave = useCallback(() => {
     setIsVisible(false);
   }, []);
 
-  const positionClasses = {
-    top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-    left: 'right-full top-1/2 -translate-y-1/2 mr-2',
-    right: 'left-full top-1/2 -translate-y-1/2 ml-2',
+  const getTooltipStyles = (): React.CSSProperties => {
+    const base: React.CSSProperties = {
+      position: 'absolute',
+      zIndex: 9999,
+    };
+
+    switch (position) {
+      case 'top':
+        return {
+          ...base,
+          top: tooltipPosition.top,
+          left: tooltipPosition.left,
+          transform: 'translate(-50%, -100%)',
+        };
+      case 'bottom':
+        return {
+          ...base,
+          top: tooltipPosition.top,
+          left: tooltipPosition.left,
+          transform: 'translate(-50%, 0)',
+        };
+      case 'left':
+        return {
+          ...base,
+          top: tooltipPosition.top,
+          left: tooltipPosition.left,
+          transform: 'translate(-100%, -50%)',
+        };
+      case 'right':
+        return {
+          ...base,
+          top: tooltipPosition.top,
+          left: tooltipPosition.left,
+          transform: 'translate(0, -50%)',
+        };
+    }
   };
 
   const arrowClasses = {
@@ -70,8 +151,21 @@ export function Tooltip({
     right: 'right-full top-1/2 -translate-y-1/2 border-r-[#2a1a4e] border-y-transparent border-l-transparent',
   };
 
+  const tooltipContent = isVisible && mounted && (
+    <div
+      style={getTooltipStyles()}
+      className="px-3 py-2 text-xs text-white bg-[#2a1a4e] border border-[#ff2d95]/30 rounded-lg shadow-xl min-w-[200px] max-w-[280px] whitespace-normal pointer-events-none"
+    >
+      {content}
+      {/* Arrow */}
+      <div
+        className={`absolute w-0 h-0 border-[6px] ${arrowClasses[position]}`}
+      />
+    </div>
+  );
+
   return (
-    <div className="relative inline-flex items-center">
+    <>
       {/* Trigger */}
       <div
         ref={triggerRef}
@@ -86,24 +180,8 @@ export function Tooltip({
         )}
       </div>
 
-      {/* Tooltip */}
-      {isVisible && (
-        <div
-          ref={tooltipRef}
-          className={`
-            absolute z-50 px-3 py-2 text-xs text-white
-            bg-[#2a1a4e] border border-[#ff2d95]/30 rounded-lg shadow-lg
-            min-w-[200px] max-w-[280px] whitespace-normal
-            ${positionClasses[position]}
-          `}
-        >
-          {content}
-          {/* Arrow */}
-          <div
-            className={`absolute w-0 h-0 border-[6px] ${arrowClasses[position]}`}
-          />
-        </div>
-      )}
-    </div>
+      {/* Portal tooltip */}
+      {mounted && typeof document !== 'undefined' && createPortal(tooltipContent, document.body)}
+    </>
   );
 }

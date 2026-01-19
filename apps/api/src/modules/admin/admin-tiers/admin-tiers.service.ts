@@ -44,7 +44,7 @@ export class AdminTiersService {
   /**
    * Create a new tier
    */
-  async createTier(dto: CreateTierDto): Promise<TierResponse> {
+  async createTier(dto: CreateTierDto, adminUser: string): Promise<TierResponse> {
     // Check if tier number already exists
     const existing = await this.prisma.tierConfig.findUnique({
       where: { tier: dto.tier },
@@ -70,7 +70,7 @@ export class AdminTiersService {
     });
 
     // Log action
-    await this.logAction('tier_created', 'tier', String(dto.tier), null, tier);
+    await this.logAction('tier_created', 'tier', String(dto.tier), null, tier, adminUser);
 
     // Invalidate cache immediately
     await this.tierCacheService.invalidateCache();
@@ -84,6 +84,7 @@ export class AdminTiersService {
   async updateTier(
     tierNumber: number,
     dto: UpdateTierDto,
+    adminUser: string,
   ): Promise<TierResponse> {
     const existing = await this.prisma.tierConfig.findUnique({
       where: { tier: tierNumber },
@@ -121,6 +122,7 @@ export class AdminTiersService {
       String(tierNumber),
       existing,
       updated,
+      adminUser,
     );
 
     // Invalidate cache immediately
@@ -134,6 +136,7 @@ export class AdminTiersService {
    */
   async deleteTier(
     tierNumber: number,
+    adminUser: string,
   ): Promise<{ success: boolean; message: string }> {
     const existing = await this.prisma.tierConfig.findUnique({
       where: { tier: tierNumber },
@@ -161,6 +164,7 @@ export class AdminTiersService {
         String(tierNumber),
         existing,
         { ...existing, isVisible: false },
+        adminUser,
       );
 
       // Invalidate cache immediately
@@ -183,6 +187,7 @@ export class AdminTiersService {
       String(tierNumber),
       existing,
       null,
+      adminUser,
     );
 
     // Invalidate cache immediately
@@ -200,6 +205,7 @@ export class AdminTiersService {
   async updateVisibility(
     tierNumber: number,
     isVisible: boolean,
+    adminUser: string,
   ): Promise<TierResponse> {
     const existing = await this.prisma.tierConfig.findUnique({
       where: { tier: tierNumber },
@@ -220,6 +226,7 @@ export class AdminTiersService {
       String(tierNumber),
       { isVisible: existing.isVisible },
       { isVisible },
+      adminUser,
     );
 
     // Invalidate cache immediately
@@ -234,6 +241,7 @@ export class AdminTiersService {
   async updateAvailability(
     tierNumber: number,
     isPubliclyAvailable: boolean,
+    adminUser: string,
   ): Promise<TierResponse> {
     const existing = await this.prisma.tierConfig.findUnique({
       where: { tier: tierNumber },
@@ -254,6 +262,7 @@ export class AdminTiersService {
       String(tierNumber),
       { isPubliclyAvailable: existing.isPubliclyAvailable },
       { isPubliclyAvailable },
+      adminUser,
     );
 
     // Invalidate cache immediately
@@ -329,6 +338,7 @@ export class AdminTiersService {
     resourceId: string,
     oldValue: unknown,
     newValue: unknown,
+    adminUser: string,
   ): Promise<void> {
     await this.prisma.auditLog.create({
       data: {
@@ -337,7 +347,7 @@ export class AdminTiersService {
         resourceId,
         oldValue: oldValue ? JSON.parse(JSON.stringify(oldValue)) : null,
         newValue: newValue ? JSON.parse(JSON.stringify(newValue)) : null,
-        adminUser: 'admin', // TODO: Get from request context
+        adminUser,
       },
     });
   }

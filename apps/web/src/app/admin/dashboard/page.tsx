@@ -357,7 +357,7 @@ export default function AdminDashboardPage() {
                   stroke="#64748b"
                   fontSize={12}
                 />
-                <YAxis stroke="#64748b" fontSize={12} />
+                <YAxis stroke="#64748b" fontSize={12} allowDecimals={false} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                   labelFormatter={formatDate}
@@ -469,7 +469,7 @@ export default function AdminDashboardPage() {
                 stroke="#64748b"
                 fontSize={12}
               />
-              <YAxis stroke="#64748b" fontSize={12} />
+              <YAxis stroke="#64748b" fontSize={12} allowDecimals={false} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
                 labelFormatter={formatDate}

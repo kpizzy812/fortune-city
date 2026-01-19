@@ -388,7 +388,7 @@ model SystemSettings {
   referralRates       Json @default("{\"1\":0.05,\"2\":0.03,\"3\":0.01}") @map("referral_rates")
 
   // Reinvest reduction by round (JSON: {round: rate})
-  reinvestReduction   Json @default("{\"1\":0,\"2\":0.05,\"3\":0.10,\"4\":0.15,\"5\":0.23,\"6\":0.33,\"7\":0.45,\"8\":0.58,\"9\":0.70,\"10\":0.80,\"11\":0.85}") @map("reinvest_reduction")
+  reinvestReduction   Json @default("{\"1\":0,\"2\":0.35,\"3\":0.50,\"4\":0.60,\"5\":0.70,\"6\":0.80,\"7\":0.90}") @map("reinvest_reduction")
 
   // Auction commissions by wear% (JSON: {wearPercent: commission})
   auctionCommissions  Json @default("{\"20\":0.10,\"40\":0.20,\"60\":0.35,\"80\":0.55,\"100\":0.75}") @map("auction_commissions")
@@ -401,11 +401,12 @@ model SystemSettings {
   gambleLoseMultiplier Decimal @default(0.5) @map("gamble_lose_multiplier") @db.Decimal(5, 2)
   gambleLevels         Json @default("[{\"level\":0,\"winChance\":0.1333,\"costPercent\":0},{\"level\":1,\"winChance\":0.1533,\"costPercent\":3},{\"level\":2,\"winChance\":0.1733,\"costPercent\":6},{\"level\":3,\"winChance\":0.1867,\"costPercent\":10}]") @map("gamble_levels")
 
-  // Coin Box levels
-  coinBoxLevels        Json @default("[{\"level\":1,\"capacityHours\":2,\"costPercent\":0},{\"level\":2,\"capacityHours\":6,\"costPercent\":5},{\"level\":3,\"capacityHours\":12,\"costPercent\":10},{\"level\":4,\"capacityHours\":24,\"costPercent\":20},{\"level\":5,\"capacityHours\":48,\"costPercent\":35}]") @map("coin_box_levels")
+  // Coin Box - fixed capacity for all machines
+  coinBoxCapacityHours Int @default(12) @map("coin_box_capacity_hours")
 
-  // Auto Collect cost
-  autoCollectCostPercent Int @default(15) @map("auto_collect_cost_percent")
+  // Collector (Auto Collect) - hire cost + salary
+  collectorHireCost      Decimal @default(5) @map("collector_hire_cost") @db.Decimal(10, 2) // $5 to hire
+  collectorSalaryPercent Decimal @default(5) @map("collector_salary_percent") @db.Decimal(5, 2) // 5% of each collect
 
   // Fortune Wheel settings
   wheelBetAmount     Decimal @default(1) @map("wheel_bet_amount") @db.Decimal(10, 2)  // $1 per spin

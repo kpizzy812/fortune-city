@@ -5,6 +5,7 @@ import {
   Min,
   Max,
   ValidateNested,
+  IsArray,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -95,32 +96,6 @@ export class UpdateGambleSettingsDto {
   gambleLevels?: GambleLevelDto[];
 }
 
-export class CoinBoxLevelDto {
-  @IsNumber()
-  level: number;
-
-  @IsNumber()
-  @Min(0)
-  capacityHours: number;
-
-  @IsNumber()
-  @Min(0)
-  costPercent: number;
-}
-
-export class UpdateCoinBoxSettingsDto {
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => CoinBoxLevelDto)
-  coinBoxLevels?: CoinBoxLevelDto[];
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(100)
-  autoCollectCostPercent?: number;
-}
-
 // Unified update for all settings at once
 export class UpdateAllSettingsDto {
   @IsOptional()
@@ -180,16 +155,29 @@ export class UpdateAllSettingsDto {
   gambleLoseMultiplier?: number;
 
   @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GambleLevelDto)
   gambleLevels?: GambleLevelDto[];
 
+  // Coin Box - fixed capacity for all machines
   @IsOptional()
-  coinBoxLevels?: CoinBoxLevelDto[];
+  @IsNumber()
+  @Min(1)
+  @Max(168) // max 7 days
+  coinBoxCapacityHours?: number;
+
+  // Collector (Auto Collect)
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  collectorHireCost?: number; // $5 default
 
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(100)
-  autoCollectCostPercent?: number;
+  collectorSalaryPercent?: number; // 5% default
 }
 
 // ============== Response DTOs ==============
@@ -197,12 +185,6 @@ export class UpdateAllSettingsDto {
 export interface GambleLevel {
   level: number;
   winChance: number;
-  costPercent: number;
-}
-
-export interface CoinBoxLevel {
-  level: number;
-  capacityHours: number;
   costPercent: number;
 }
 
@@ -221,8 +203,10 @@ export interface SettingsResponse {
   gambleWinMultiplier: number;
   gambleLoseMultiplier: number;
   gambleLevels: GambleLevel[];
-  coinBoxLevels: CoinBoxLevel[];
-  autoCollectCostPercent: number;
+  // Coin Box & Collector
+  coinBoxCapacityHours: number;
+  collectorHireCost: number;
+  collectorSalaryPercent: number;
   createdAt: string;
   updatedAt: string;
 }

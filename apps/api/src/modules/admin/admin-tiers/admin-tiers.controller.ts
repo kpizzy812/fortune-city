@@ -8,7 +8,9 @@ import {
   Param,
   UseGuards,
   ParseIntPipe,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { AdminTiersService } from './admin-tiers.service';
 import { AdminJwtGuard } from '../guards/admin-jwt.guard';
 import {
@@ -55,8 +57,9 @@ export class AdminTiersController {
    * Create a new tier
    */
   @Post()
-  async createTier(@Body() dto: CreateTierDto) {
-    return this.tiersService.createTier(dto);
+  async createTier(@Body() dto: CreateTierDto, @Req() req: Request) {
+    const adminUser = req.adminUser?.username ?? 'unknown';
+    return this.tiersService.createTier(dto, adminUser);
   }
 
   /**
@@ -67,8 +70,10 @@ export class AdminTiersController {
   async updateTier(
     @Param('tier', ParseIntPipe) tier: number,
     @Body() dto: UpdateTierDto,
+    @Req() req: Request,
   ) {
-    return this.tiersService.updateTier(tier, dto);
+    const adminUser = req.adminUser?.username ?? 'unknown';
+    return this.tiersService.updateTier(tier, dto, adminUser);
   }
 
   /**
@@ -76,8 +81,9 @@ export class AdminTiersController {
    * Delete a tier (soft delete if machines exist)
    */
   @Delete(':tier')
-  async deleteTier(@Param('tier', ParseIntPipe) tier: number) {
-    return this.tiersService.deleteTier(tier);
+  async deleteTier(@Param('tier', ParseIntPipe) tier: number, @Req() req: Request) {
+    const adminUser = req.adminUser?.username ?? 'unknown';
+    return this.tiersService.deleteTier(tier, adminUser);
   }
 
   /**
@@ -88,8 +94,10 @@ export class AdminTiersController {
   async updateVisibility(
     @Param('tier', ParseIntPipe) tier: number,
     @Body() dto: UpdateVisibilityDto,
+    @Req() req: Request,
   ) {
-    return this.tiersService.updateVisibility(tier, dto.isVisible);
+    const adminUser = req.adminUser?.username ?? 'unknown';
+    return this.tiersService.updateVisibility(tier, dto.isVisible, adminUser);
   }
 
   /**
@@ -100,7 +108,9 @@ export class AdminTiersController {
   async updateAvailability(
     @Param('tier', ParseIntPipe) tier: number,
     @Body() dto: UpdateAvailabilityDto,
+    @Req() req: Request,
   ) {
-    return this.tiersService.updateAvailability(tier, dto.isPubliclyAvailable);
+    const adminUser = req.adminUser?.username ?? 'unknown';
+    return this.tiersService.updateAvailability(tier, dto.isPubliclyAvailable, adminUser);
   }
 }

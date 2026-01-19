@@ -5,7 +5,6 @@ import {
   UpdateAllSettingsDto,
   SettingsResponse,
   GambleLevel,
-  CoinBoxLevel,
 } from './dto/settings.dto';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -36,7 +35,10 @@ export class AdminSettingsService {
   /**
    * Update settings
    */
-  async updateSettings(dto: UpdateAllSettingsDto): Promise<SettingsResponse> {
+  async updateSettings(
+    dto: UpdateAllSettingsDto,
+    adminUser: string,
+  ): Promise<SettingsResponse> {
     const existing = await this.prisma.systemSettings.findUnique({
       where: { id: DEFAULT_SETTINGS_ID },
     });
@@ -66,9 +68,6 @@ export class AdminSettingsService {
     if (dto.gambleLoseMultiplier !== undefined) {
       updateData.gambleLoseMultiplier = dto.gambleLoseMultiplier;
     }
-    if (dto.autoCollectCostPercent !== undefined) {
-      updateData.autoCollectCostPercent = dto.autoCollectCostPercent;
-    }
 
     // JSON fields
     if (dto.minDepositAmounts !== undefined) {
@@ -92,8 +91,16 @@ export class AdminSettingsService {
     if (dto.gambleLevels !== undefined) {
       updateData.gambleLevels = dto.gambleLevels;
     }
-    if (dto.coinBoxLevels !== undefined) {
-      updateData.coinBoxLevels = dto.coinBoxLevels;
+
+    // Coin Box & Collector
+    if (dto.coinBoxCapacityHours !== undefined) {
+      updateData.coinBoxCapacityHours = dto.coinBoxCapacityHours;
+    }
+    if (dto.collectorHireCost !== undefined) {
+      updateData.collectorHireCost = dto.collectorHireCost;
+    }
+    if (dto.collectorSalaryPercent !== undefined) {
+      updateData.collectorSalaryPercent = dto.collectorSalaryPercent;
     }
 
     const updated = await this.prisma.systemSettings.update({
@@ -102,7 +109,7 @@ export class AdminSettingsService {
     });
 
     // Log action
-    await this.logAction('settings_updated', existing, updated);
+    await this.logAction('settings_updated', existing, updated, adminUser);
 
     // Invalidate cache in SettingsService
     this.settingsService.invalidateCache();
@@ -113,7 +120,7 @@ export class AdminSettingsService {
   /**
    * Reset settings to defaults
    */
-  async resetToDefaults(): Promise<SettingsResponse> {
+  async resetToDefaults(adminUser: string): Promise<SettingsResponse> {
     const existing = await this.prisma.systemSettings.findUnique({
       where: { id: DEFAULT_SETTINGS_ID },
     });
@@ -136,7 +143,7 @@ export class AdminSettingsService {
     });
 
     // Log action
-    await this.logAction('settings_reset', existing, created);
+    await this.logAction('settings_reset', existing, created, adminUser);
 
     // Invalidate cache
     this.settingsService.invalidateCache();
@@ -162,8 +169,9 @@ export class AdminSettingsService {
     gambleWinMultiplier: Decimal;
     gambleLoseMultiplier: Decimal;
     gambleLevels: unknown;
-    coinBoxLevels: unknown;
-    autoCollectCostPercent: number;
+    coinBoxCapacityHours: number;
+    collectorHireCost: Decimal;
+    collectorSalaryPercent: Decimal;
     createdAt: Date;
     updatedAt: Date;
   }): SettingsResponse {
@@ -185,8 +193,9 @@ export class AdminSettingsService {
       gambleWinMultiplier: Number(settings.gambleWinMultiplier),
       gambleLoseMultiplier: Number(settings.gambleLoseMultiplier),
       gambleLevels: settings.gambleLevels as GambleLevel[],
-      coinBoxLevels: settings.coinBoxLevels as CoinBoxLevel[],
-      autoCollectCostPercent: settings.autoCollectCostPercent,
+      coinBoxCapacityHours: settings.coinBoxCapacityHours,
+      collectorHireCost: Number(settings.collectorHireCost),
+      collectorSalaryPercent: Number(settings.collectorSalaryPercent),
       createdAt: settings.createdAt.toISOString(),
       updatedAt: settings.updatedAt.toISOString(),
     };
@@ -199,6 +208,7 @@ export class AdminSettingsService {
     action: string,
     oldValue: unknown,
     newValue: unknown,
+    adminUser: string,
   ): Promise<void> {
     await this.prisma.auditLog.create({
       data: {
@@ -207,7 +217,7 @@ export class AdminSettingsService {
         resourceId: DEFAULT_SETTINGS_ID,
         oldValue: oldValue ? JSON.parse(JSON.stringify(oldValue)) : null,
         newValue: newValue ? JSON.parse(JSON.stringify(newValue)) : null,
-        adminUser: 'admin', // TODO: Get from request context
+        adminUser,
       },
     });
   }

@@ -9,6 +9,7 @@ import { useTelegramWebApp } from '@/providers/TelegramProvider';
 import { TelegramLoginButton } from '@/components/auth/TelegramLoginButton';
 import { EmailLoginForm } from '@/components/auth/EmailLoginForm';
 import { SolanaLoginButton } from '@/components/auth/SolanaLoginButton';
+import { Gamepad2, Trophy, Percent, Zap } from 'lucide-react';
 import { MachineGrid } from '@/components/machines/MachineGrid';
 import { RiskyCollectModal } from '@/components/machines/RiskyCollectModal';
 import { GambleResultAnimation } from '@/components/machines/GambleResultAnimation';
@@ -393,51 +394,104 @@ export default function Home() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-[#1a0a2e] rounded-lg p-3 text-center">
-              <p className="text-xs text-[#b0b0b0]">{tDashboard('machines')}</p>
-              <p className="text-lg font-mono text-white">{machines.length}</p>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="relative bg-[#1a0a2e]/80 backdrop-blur-lg rounded-xl p-3 text-center border border-[#ff2d95]/20 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#ff2d95]/5 to-transparent" />
+              <div className="relative">
+                <Gamepad2 className="w-4 h-4 text-[#ff2d95] mx-auto mb-1" />
+                <p className="text-[10px] text-[#b0b0b0]">{tDashboard('machines')}</p>
+                <p className="text-lg font-mono font-bold text-white">{machines.length}</p>
+              </div>
             </div>
-            <div className="bg-[#1a0a2e] rounded-lg p-3 text-center">
-              <p className="text-xs text-[#b0b0b0]">{tDashboard('maxTier')}</p>
-              <p className="text-lg font-mono text-[#ff2d95]">
-                {user.maxTierReached || '-'}
-              </p>
+            <div className="relative bg-[#1a0a2e]/80 backdrop-blur-lg rounded-xl p-3 text-center border border-[#ffd700]/20 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#ffd700]/5 to-transparent" />
+              <div className="relative">
+                <Trophy className="w-4 h-4 text-[#ffd700] mx-auto mb-1" />
+                <p className="text-[10px] text-[#b0b0b0]">{tDashboard('maxTier')}</p>
+                <p className="text-lg font-mono font-bold text-[#ffd700]">
+                  {user.maxTierReached || '-'}
+                </p>
+              </div>
             </div>
-            <div className="bg-[#1a0a2e] rounded-lg p-3 text-center">
-              <Tooltip content={tDashboard('taxTooltip')} position="top">
-                <p className="text-xs text-[#b0b0b0]">{tDashboard('tax')}</p>
-              </Tooltip>
-              <p className="text-lg font-mono text-white">
-                {(parseFloat(user.currentTaxRate) * 100).toFixed(0)}%
-              </p>
+            <div className="relative bg-[#1a0a2e]/80 backdrop-blur-lg rounded-xl p-3 text-center border border-[#a855f7]/20 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#a855f7]/5 to-transparent" />
+              <div className="relative">
+                <Percent className="w-4 h-4 text-[#a855f7] mx-auto mb-1" />
+                <Tooltip content={tDashboard('taxTooltip')} position="top" showIcon={false}>
+                  <p className="text-[10px] text-[#b0b0b0] underline decoration-dotted cursor-help">{tDashboard('tax')}</p>
+                </Tooltip>
+                <p className="text-lg font-mono font-bold text-white">
+                  {(parseFloat(user.currentTaxRate) * 100).toFixed(0)}%
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Desktop Stats Bar */}
         <div className="hidden lg:grid lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#ff2d95]/30">
-            <p className="text-sm text-[#b0b0b0] mb-1">{tDashboard('totalMachines')}</p>
-            <p className="text-2xl font-mono font-bold text-white">{machines.length}</p>
+          {/* Total Machines */}
+          <div className="group relative bg-[#1a0a2e]/60 backdrop-blur-xl rounded-2xl p-5 border border-[#ff2d95]/20 hover:border-[#ff2d95]/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,45,149,0.15)] overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#ff2d95]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex items-start justify-between">
+              <div>
+                <p className="text-sm text-[#b0b0b0] mb-2">{tDashboard('totalMachines')}</p>
+                <p className="text-3xl font-mono font-bold text-white tracking-tight">{machines.length}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#ff2d95]/20 to-[#ff2d95]/5 flex items-center justify-center border border-[#ff2d95]/20 group-hover:shadow-[0_0_20px_rgba(255,45,149,0.3)] transition-shadow duration-300">
+                <Gamepad2 className="w-6 h-6 text-[#ff2d95]" />
+              </div>
+            </div>
           </div>
-          <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#ff2d95]/30">
-            <p className="text-sm text-[#b0b0b0] mb-1">{tDashboard('maxTierReached')}</p>
-            <p className="text-2xl font-mono font-bold text-[#ff2d95]">{user.maxTierReached || '-'}</p>
+
+          {/* Max Tier Reached */}
+          <div className="group relative bg-[#1a0a2e]/60 backdrop-blur-xl rounded-2xl p-5 border border-[#ffd700]/20 hover:border-[#ffd700]/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,215,0,0.15)] overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#ffd700]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex items-start justify-between">
+              <div>
+                <p className="text-sm text-[#b0b0b0] mb-2">{tDashboard('maxTierReached')}</p>
+                <p className="text-3xl font-mono font-bold text-[#ffd700] tracking-tight">{user.maxTierReached || '-'}</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#ffd700]/20 to-[#ffd700]/5 flex items-center justify-center border border-[#ffd700]/20 group-hover:shadow-[0_0_20px_rgba(255,215,0,0.3)] transition-shadow duration-300">
+                <Trophy className="w-6 h-6 text-[#ffd700]" />
+              </div>
+            </div>
           </div>
-          <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#ff2d95]/30">
-            <Tooltip content={tDashboard('taxTooltip')} position="bottom">
-              <p className="text-sm text-[#b0b0b0] mb-1">{tDashboard('currentTaxRate')}</p>
-            </Tooltip>
-            <p className="text-2xl font-mono font-bold text-white">
-              {(parseFloat(user.currentTaxRate) * 100).toFixed(0)}%
-            </p>
+
+          {/* Tax Rate */}
+          <div className="group relative bg-[#1a0a2e]/60 backdrop-blur-xl rounded-2xl p-5 border border-[#a855f7]/20 hover:border-[#a855f7]/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#a855f7]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex items-start justify-between">
+              <div>
+                <div className="mb-2">
+                  <Tooltip content={tDashboard('taxTooltip')} position="bottom">
+                    <span className="text-sm text-[#b0b0b0]">{tDashboard('currentTaxRate')}</span>
+                  </Tooltip>
+                </div>
+                <p className="text-3xl font-mono font-bold text-white tracking-tight">
+                  {(parseFloat(user.currentTaxRate) * 100).toFixed(0)}%
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#a855f7]/20 to-[#a855f7]/5 flex items-center justify-center border border-[#a855f7]/20 group-hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-shadow duration-300">
+                <Percent className="w-6 h-6 text-[#a855f7]" />
+              </div>
+            </div>
           </div>
-          <div className="bg-[#2a1a4e] rounded-xl p-4 border border-[#00d4ff]/30">
-            <p className="text-sm text-[#b0b0b0] mb-1">{tDashboard('activeMachines')}</p>
-            <p className="text-2xl font-mono font-bold text-[#00d4ff]">
-              {machines.filter(m => m.status === 'active').length}
-            </p>
+
+          {/* Active Machines */}
+          <div className="group relative bg-[#1a0a2e]/60 backdrop-blur-xl rounded-2xl p-5 border border-[#00d4ff]/20 hover:border-[#00d4ff]/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,212,255,0.15)] overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#00d4ff]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex items-start justify-between">
+              <div>
+                <p className="text-sm text-[#b0b0b0] mb-2">{tDashboard('activeMachines')}</p>
+                <p className="text-3xl font-mono font-bold text-[#00d4ff] tracking-tight">
+                  {machines.filter(m => m.status === 'active').length}
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00d4ff]/20 to-[#00d4ff]/5 flex items-center justify-center border border-[#00d4ff]/20 group-hover:shadow-[0_0_20px_rgba(0,212,255,0.3)] transition-shadow duration-300">
+                <Zap className="w-6 h-6 text-[#00d4ff]" />
+              </div>
+            </div>
           </div>
         </div>
 

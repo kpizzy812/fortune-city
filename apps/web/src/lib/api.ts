@@ -1283,12 +1283,6 @@ export interface GambleLevel {
   costPercent: number;
 }
 
-export interface CoinBoxLevel {
-  level: number;
-  capacityHours: number;
-  costPercent: number;
-}
-
 export interface AdminSettingsResponse {
   id: string;
   maxGlobalTier: number;
@@ -1304,8 +1298,10 @@ export interface AdminSettingsResponse {
   gambleWinMultiplier: number;
   gambleLoseMultiplier: number;
   gambleLevels: GambleLevel[];
-  coinBoxLevels: CoinBoxLevel[];
-  autoCollectCostPercent: number;
+  // Coin Box & Collector
+  coinBoxCapacityHours: number;
+  collectorHireCost: number;
+  collectorSalaryPercent: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -1324,8 +1320,10 @@ export interface UpdateSettingsRequest {
   gambleWinMultiplier?: number;
   gambleLoseMultiplier?: number;
   gambleLevels?: GambleLevel[];
-  coinBoxLevels?: CoinBoxLevel[];
-  autoCollectCostPercent?: number;
+  // Coin Box & Collector
+  coinBoxCapacityHours?: number;
+  collectorHireCost?: number;
+  collectorSalaryPercent?: number;
 }
 
 // ============================================
