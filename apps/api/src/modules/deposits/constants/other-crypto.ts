@@ -11,7 +11,15 @@ export enum OtherCryptoToken {
   TON = 'TON',
 }
 
-export const OTHER_CRYPTO_CONFIG = {
+export const OTHER_CRYPTO_CONFIG: Record<
+  OtherCryptoNetwork,
+  {
+    tokens: OtherCryptoToken[];
+    minAmounts: Record<string, number>;
+    blockExplorerTx: string;
+    blockExplorerAddress: string;
+  }
+> = {
   BEP20: {
     tokens: [OtherCryptoToken.USDT, OtherCryptoToken.BNB],
     minAmounts: {
@@ -30,7 +38,7 @@ export const OTHER_CRYPTO_CONFIG = {
     blockExplorerTx: 'https://tonscan.org/tx/',
     blockExplorerAddress: 'https://tonscan.org/address/',
   },
-} as const;
+};
 
 // Maximum pending other_crypto deposits per user
 export const MAX_PENDING_OTHER_CRYPTO_DEPOSITS = 3;

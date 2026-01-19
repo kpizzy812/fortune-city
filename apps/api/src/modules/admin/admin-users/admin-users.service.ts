@@ -799,6 +799,11 @@ export class AdminUsersService {
               telegramId: true,
             },
           },
+          machines: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
           _count: {
             select: {
               referrals: true,
@@ -877,6 +882,11 @@ export class AdminUsersService {
               telegramId: true,
             },
           },
+          machines: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
           _count: {
             select: {
               referrals: true,
@@ -926,6 +936,11 @@ export class AdminUsersService {
               id: true,
               username: true,
               telegramId: true,
+            },
+          },
+          machines: {
+            orderBy: {
+              createdAt: 'desc',
             },
           },
           _count: {
@@ -998,6 +1013,11 @@ export class AdminUsersService {
               id: true,
               username: true,
               telegramId: true,
+            },
+          },
+          machines: {
+            orderBy: {
+              createdAt: 'desc',
             },
           },
           _count: {
@@ -1081,6 +1101,11 @@ export class AdminUsersService {
               telegramId: true,
             },
           },
+          machines: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
           _count: {
             select: {
               referrals: true,
@@ -1160,6 +1185,11 @@ export class AdminUsersService {
               id: true,
               username: true,
               telegramId: true,
+            },
+          },
+          machines: {
+            orderBy: {
+              createdAt: 'desc',
             },
           },
           _count: {

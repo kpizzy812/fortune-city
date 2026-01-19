@@ -1515,6 +1515,31 @@ export interface AdminUserListItem {
   createdAt: string;
 }
 
+export interface MachineItem {
+  id: string;
+  tier: number;
+  purchasePrice: number;
+  totalYield: number;
+  profitAmount: number;
+  lifespanDays: number;
+  startedAt: string;
+  expiresAt: string;
+  ratePerSecond: number;
+  accumulatedIncome: number;
+  lastCalculatedAt: string;
+  profitPaidOut: number;
+  principalPaidOut: number;
+  reinvestRound: number;
+  profitReductionRate: number;
+  coinBoxLevel: number;
+  coinBoxCapacity: number;
+  coinBoxCurrent: number;
+  fortuneGambleLevel: number;
+  autoCollectEnabled: boolean;
+  status: string;
+  createdAt: string;
+}
+
 export interface AdminUserDetail extends AdminUserListItem {
   totalFreshDeposits: number;
   totalProfitCollected: number;
@@ -1526,6 +1551,7 @@ export interface AdminUserDetail extends AdminUserListItem {
     username: string | null;
     telegramId: string;
   } | null;
+  machines: MachineItem[];
   stats: {
     totalDeposits: number;
     totalDepositsAmount: number;
