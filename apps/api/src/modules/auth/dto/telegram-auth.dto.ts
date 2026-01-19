@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsBoolean } from 'class-validator';
 
 /**
  * DTO для авторизации через Telegram Mini App (initData)
@@ -11,6 +11,10 @@ export class TelegramInitDataDto {
   @IsString()
   @IsOptional()
   referralCode?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  rememberMe?: boolean;
 }
 
 /**
@@ -46,6 +50,10 @@ export class TelegramLoginWidgetDto {
   @IsString()
   @IsOptional()
   referralCode?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  rememberMe?: boolean;
 }
 
 /**
@@ -59,6 +67,10 @@ export class SupabaseAuthDto {
   @IsString()
   @IsOptional()
   referralCode?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  rememberMe?: boolean;
 }
 
 /**
@@ -66,6 +78,7 @@ export class SupabaseAuthDto {
  */
 export class AuthResponseDto {
   accessToken: string;
+  refreshToken?: string; // Present only when rememberMe is true
   user: {
     id: string;
     telegramId: string | null;
@@ -80,4 +93,13 @@ export class AuthResponseDto {
     currentTaxRate: string;
     referralCode: string;
   };
+}
+
+/**
+ * DTO для обновления access token через refresh token
+ */
+export class RefreshTokenDto {
+  @IsString()
+  @IsNotEmpty()
+  refreshToken: string;
 }

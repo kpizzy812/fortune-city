@@ -19,6 +19,7 @@ import {
 } from './dto/telegram-auth.dto';
 import { User } from '@prisma/client';
 import { SupabaseAuthService } from './supabase-auth.service';
+import { RefreshTokenService, RefreshTokenMetadata } from './refresh-token.service';
 
 export interface JwtPayload {
   sub: string; // user.id
@@ -38,6 +39,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
     private readonly supabaseAuthService: SupabaseAuthService,
+    private readonly refreshTokenService: RefreshTokenService,
   ) {
     this.botToken = this.configService.getOrThrow<string>('TELEGRAM_BOT_TOKEN');
     this.jwtExpiresIn = this.configService.get<string>('JWT_EXPIRES_IN', '7d');
@@ -49,6 +51,8 @@ export class AuthService {
   async authWithInitData(
     initData: string,
     referralCode?: string,
+    rememberMe?: boolean,
+    metadata?: RefreshTokenMetadata,
   ): Promise<AuthResponseDto> {
     try {
       // Валидация initData
@@ -71,7 +75,7 @@ export class AuthService {
         last_name: user.lastName as string | undefined,
       };
 
-      return this.authenticateUser(telegramUser, referralCode);
+      return this.authenticateUser(telegramUser, referralCode, rememberMe, metadata);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`InitData validation failed: ${message}`);
@@ -86,6 +90,8 @@ export class AuthService {
   async authWithLoginWidget(
     data: TelegramLoginWidgetDto,
     referralCode?: string,
+    rememberMe?: boolean,
+    metadata?: RefreshTokenMetadata,
   ): Promise<AuthResponseDto> {
     // Проверка времени авторизации (не старше 1 дня)
     const authDate = data.auth_date;
@@ -109,7 +115,7 @@ export class AuthService {
       last_name: data.last_name,
     };
 
-    return this.authenticateUser(telegramUser, referralCode);
+    return this.authenticateUser(telegramUser, referralCode, rememberMe, metadata);
   }
 
   /**
@@ -152,6 +158,8 @@ export class AuthService {
   private async authenticateUser(
     telegramUser: TelegramUserData,
     referralCode?: string,
+    rememberMe?: boolean,
+    metadata?: RefreshTokenMetadata,
   ): Promise<AuthResponseDto> {
     // Найти или создать пользователя (referralCode применяется только для новых)
     const { user } = await this.usersService.findOrCreateFromTelegram(
@@ -168,8 +176,18 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
 
+    // Создать refresh token если rememberMe = true
+    let refreshToken: string | undefined;
+    if (rememberMe) {
+      refreshToken = await this.refreshTokenService.createRefreshToken(
+        user.id,
+        metadata,
+      );
+    }
+
     return {
       accessToken,
+      refreshToken,
       user: this.formatUserResponse(user),
     };
   }
@@ -449,5 +467,50 @@ export class AuthService {
       accessToken,
       user: this.formatUserResponse(user),
     };
+  }
+
+  /**
+   * Обновление access token через refresh token
+   */
+  async refreshAccessToken(
+    refreshToken: string,
+    metadata?: RefreshTokenMetadata,
+  ): Promise<AuthResponseDto> {
+    // Валидируем и ротируем refresh token
+    const { userId, newToken } =
+      await this.refreshTokenService.validateAndRotateToken(
+        refreshToken,
+        metadata,
+      );
+
+    // Получаем пользователя
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Создаём новый access token
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email ?? undefined,
+      telegramId: user.telegramId ?? undefined,
+      username: user.username ?? undefined,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      refreshToken: newToken,
+      user: this.formatUserResponse(user),
+    };
+  }
+
+  /**
+   * Выход из системы (отзыв всех refresh токенов пользователя)
+   */
+  async logout(userId: string): Promise<void> {
+    await this.refreshTokenService.revokeAllUserTokens(userId);
+    this.logger.log(`User ${userId} logged out`);
   }
 }

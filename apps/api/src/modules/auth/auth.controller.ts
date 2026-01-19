@@ -17,6 +17,7 @@ import {
   TelegramLoginWidgetDto,
   AuthResponseDto,
   SupabaseAuthDto,
+  RefreshTokenDto,
 } from './dto/telegram-auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { SupabaseAuthService } from './supabase-auth.service';
@@ -37,8 +38,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async authWithInitData(
     @Body() dto: TelegramInitDataDto,
+    @Req() req: Request,
   ): Promise<AuthResponseDto> {
-    return this.authService.authWithInitData(dto.initData, dto.referralCode);
+    return this.authService.authWithInitData(
+      dto.initData,
+      dto.referralCode,
+      dto.rememberMe,
+      {
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+      },
+    );
   }
 
   /**
@@ -49,8 +59,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async authWithLoginWidget(
     @Body() dto: TelegramLoginWidgetDto,
+    @Req() req: Request,
   ): Promise<AuthResponseDto> {
-    return this.authService.authWithLoginWidget(dto, dto.referralCode);
+    return this.authService.authWithLoginWidget(
+      dto,
+      dto.referralCode,
+      dto.rememberMe,
+      {
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+      },
+    );
   }
 
   /**
@@ -150,6 +169,35 @@ export class AuthController {
   ): Promise<AuthResponseDto> {
     const payload = req.user as JwtPayload;
     return this.authService.linkWeb3(payload.sub, dto.accessToken);
+  }
+
+  /**
+   * POST /auth/refresh
+   * Обновление access token через refresh token
+   */
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(
+    @Body() dto: RefreshTokenDto,
+    @Req() req: Request,
+  ): Promise<AuthResponseDto> {
+    return this.authService.refreshAccessToken(dto.refreshToken, {
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+  }
+
+  /**
+   * POST /auth/logout
+   * Выход из системы (отзыв refresh токенов)
+   */
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async logout(@Req() req: Request): Promise<{ success: boolean }> {
+    const payload = req.user as JwtPayload;
+    await this.authService.logout(payload.sub);
+    return { success: true };
   }
 
   /**

@@ -640,3 +640,50 @@ model WheelJackpot {
 
   @@map("wheel_jackpot")
 }
+
+// ============== REFRESH TOKENS ==============
+// For "Remember Me" functionality with 30-day sessions
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique // Hashed refresh token
+
+  // Security metadata
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+
+  // Expiration
+  expiresAt DateTime @map("expires_at")
+
+  // Tracking
+  createdAt DateTime @default(now()) @map("created_at")
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model AdminRefreshToken {
+  id        String   @id @default(cuid())
+  username  String   // Admin username (not FK, since admin is not in DB)
+  token     String   @unique // Hashed refresh token
+
+  // Security metadata
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+
+  // Expiration
+  expiresAt DateTime @map("expires_at")
+
+  // Tracking
+  createdAt DateTime @default(now()) @map("created_at")
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+
+  @@index([username])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("admin_refresh_tokens")
+}

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { AdminLoginDto, AdminAuthResponseDto } from '../dto/admin-auth.dto';
+import { AdminRefreshTokenService, RefreshTokenMetadata } from './admin-refresh-token.service';
 
 export interface AdminJwtPayload {
   sub: string; // 'admin'
@@ -21,6 +22,7 @@ export class AdminAuthService {
   constructor(
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly refreshTokenService: AdminRefreshTokenService,
   ) {
     this.adminUser = this.configService.getOrThrow<string>('ADMIN_USER');
     this.adminPass = this.configService.getOrThrow<string>('ADMIN_PASS');
@@ -61,8 +63,11 @@ export class AdminAuthService {
   /**
    * Аутентификация админа по логину/паролю
    */
-  async login(dto: AdminLoginDto): Promise<AdminAuthResponseDto> {
-    const { username, password } = dto;
+  async login(
+    dto: AdminLoginDto,
+    metadata?: RefreshTokenMetadata,
+  ): Promise<AdminAuthResponseDto> {
+    const { username, password, rememberMe } = dto;
 
     // Проверка credentials
     if (!this.verifyCredentials(username, password)) {
@@ -86,8 +91,18 @@ export class AdminAuthService {
 
     const accessToken = this.jwtService.sign(payload, signOptions);
 
+    // Создать refresh token если rememberMe = true
+    let refreshToken: string | undefined;
+    if (rememberMe) {
+      refreshToken = await this.refreshTokenService.createRefreshToken(
+        this.adminUser,
+        metadata,
+      );
+    }
+
     return {
       accessToken,
+      refreshToken,
       admin: {
         username: this.adminUser,
       },
@@ -143,5 +158,50 @@ export class AdminAuthService {
     } catch {
       throw new UnauthorizedException('Invalid admin token');
     }
+  }
+
+  /**
+   * Обновление access token через refresh token
+   */
+  async refreshAccessToken(
+    refreshToken: string,
+    metadata?: RefreshTokenMetadata,
+  ): Promise<AdminAuthResponseDto> {
+    // Валидируем и ротируем refresh token
+    const { username, newToken } =
+      await this.refreshTokenService.validateAndRotateToken(
+        refreshToken,
+        metadata,
+      );
+
+    // Создаём новый access token
+    const payload = {
+      sub: 'admin',
+      username,
+      isAdmin: true as const,
+    };
+
+    const signOptions: JwtSignOptions = {
+      secret: this.jwtSecret,
+      expiresIn: this.jwtExpiresInMs,
+    };
+
+    const accessToken = this.jwtService.sign(payload, signOptions);
+
+    return {
+      accessToken,
+      refreshToken: newToken,
+      admin: {
+        username,
+      },
+    };
+  }
+
+  /**
+   * Выход из системы (отзыв всех refresh токенов админа)
+   */
+  async logout(username: string): Promise<void> {
+    await this.refreshTokenService.revokeAllAdminTokens(username);
+    this.logger.log(`Admin ${username} logged out`);
   }
 }

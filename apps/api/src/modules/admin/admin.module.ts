@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { AdminAuthController } from './admin-auth/admin-auth.controller';
 import { AdminAuthService } from './admin-auth/admin-auth.service';
+import { AdminRefreshTokenService } from './admin-auth/admin-refresh-token.service';
 import { AdminDashboardController } from './admin-dashboard/admin-dashboard.controller';
 import { AdminDashboardService } from './admin-dashboard/admin-dashboard.service';
 import { AdminTiersController } from './admin-tiers/admin-tiers.controller';
@@ -40,6 +41,7 @@ import { MachinesModule } from '../machines/machines.module';
   ],
   providers: [
     AdminAuthService,
+    AdminRefreshTokenService,
     AdminDashboardService,
     AdminTiersService,
     AdminSettingsService,
@@ -49,6 +51,6 @@ import { MachinesModule } from '../machines/machines.module';
     AdminAuditService,
     AdminJwtGuard,
   ],
-  exports: [AdminAuthService, AdminJwtGuard],
+  exports: [AdminAuthService, AdminRefreshTokenService, AdminJwtGuard],
 })
 export class AdminModule {}
