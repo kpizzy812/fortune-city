@@ -22,6 +22,7 @@ import { AdminJwtGuard } from './guards/admin-jwt.guard';
 import { PrismaModule } from '../prisma/prisma.module';
 import { MachinesModule } from '../machines/machines.module';
 import { DepositsModule } from '../deposits/deposits.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { DepositsModule } from '../deposits/deposits.module';
     PrismaModule,
     MachinesModule,
     DepositsModule,
+    NotificationsModule,
     JwtModule.register({}), // Используем динамическую конфигурацию в сервисе
   ],
   controllers: [

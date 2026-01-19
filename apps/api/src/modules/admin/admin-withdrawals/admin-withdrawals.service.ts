@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../../notifications/notifications.service';
 import { Prisma, WithdrawalStatus } from '@prisma/client';
 import {
   WithdrawalsFilterDto,
@@ -18,7 +19,10 @@ import {
 
 @Injectable()
 export class AdminWithdrawalsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Get paginated list of withdrawals with filters
@@ -184,6 +188,20 @@ export class AdminWithdrawalsService {
       { status: 'processing', note },
     );
 
+    // Send notification
+    await this.notificationsService.notify({
+      userId: withdrawal.userId,
+      type: 'withdrawal_approved',
+      title: 'Withdrawal Approved',
+      message: `Your withdrawal request for $${withdrawal.netAmount.toFixed(2)} has been approved and is being processed`,
+      data: {
+        withdrawalId: id,
+        netAmount: Number(withdrawal.netAmount),
+        chain: withdrawal.chain,
+      },
+      channels: ['in_app', 'telegram'],
+    });
+
     return this.formatWithdrawalDetail(updated);
   }
 
@@ -239,6 +257,21 @@ export class AdminWithdrawalsService {
       { status: withdrawal.status },
       { status: 'completed', txSignature, note },
     );
+
+    // Send notification
+    await this.notificationsService.notify({
+      userId: withdrawal.userId,
+      type: 'withdrawal_completed',
+      title: 'Withdrawal Completed',
+      message: `Your withdrawal of $${withdrawal.netAmount.toFixed(2)} has been completed successfully`,
+      data: {
+        withdrawalId: id,
+        netAmount: Number(withdrawal.netAmount),
+        txSignature,
+        chain: withdrawal.chain,
+      },
+      channels: ['in_app', 'telegram'],
+    });
 
     return this.formatWithdrawalDetail(updated);
   }
@@ -320,6 +353,20 @@ export class AdminWithdrawalsService {
         refundedAmount: Number(withdrawal.requestedAmount),
       },
     );
+
+    // Send notification
+    await this.notificationsService.notify({
+      userId: withdrawal.userId,
+      type: 'withdrawal_rejected',
+      title: 'Withdrawal Rejected',
+      message: `Your withdrawal request was rejected: ${reason}. The amount has been refunded to your balance`,
+      data: {
+        withdrawalId: id,
+        reason,
+        refundedAmount: Number(withdrawal.requestedAmount),
+      },
+      channels: ['in_app', 'telegram'],
+    });
 
     return this.formatWithdrawalDetail(updated);
   }
