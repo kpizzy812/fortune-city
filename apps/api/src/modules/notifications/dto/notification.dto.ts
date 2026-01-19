@@ -1,4 +1,14 @@
-import { IsEnum, IsString, IsOptional, IsObject, IsArray, IsInt, Min, Max } from 'class-validator';
+import {
+  IsEnum,
+  IsString,
+  IsOptional,
+  IsObject,
+  IsArray,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { NotificationType } from '@prisma/client';
 
 export class CreateNotificationDto {
@@ -24,12 +34,14 @@ export class CreateNotificationDto {
 }
 
 export class GetNotificationsQueryDto {
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
   @IsOptional()
   limit?: number = 20;
 
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   @IsOptional()
