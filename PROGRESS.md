@@ -437,6 +437,64 @@ Frontend → window.solana.connect() → Supabase Web3 Auth → Backend JWT
 
 ---
 
+## Phase 11: Other Crypto Deposits (BEP20/TON) (IN PROGRESS - Backend COMPLETED)
+
+**Started:** 2026-01-19
+**Концепция:** Ручные депозиты через BEP20 (USDT/BNB) и TON (USDT/TON) с одобрением админа
+
+### Архитектура
+```
+User → Other Crypto Modal → Backend (pending) → Admin Panel → Approve/Reject → Credit Balance + Referral Bonuses
+```
+
+### 11.1 Backend (COMPLETED)
+- [x] Prisma schema: добавлены поля для other crypto в модель Deposit
+  - otherCryptoNetwork, otherCryptoToken, claimedAmount
+  - adminNotes, processedBy, processedAt, rejectionReason
+  - Добавлен DepositStatus.rejected
+- [x] Constants: other-crypto.ts с конфигурацией BEP20/TON
+- [x] DTOs: InitiateOtherCryptoDepositDto, ApproveOtherCryptoDepositDto, RejectOtherCryptoDepositDto
+- [x] DepositsService:
+  - getOtherCryptoInstructions(network) — получить инструкции и адрес
+  - initiateOtherCryptoDeposit(userId, dto) — создать pending депозит
+- [x] AdminDepositsService:
+  - approveOtherCryptoDeposit() — одобрить с actual amount, конверсия в USD, реферальные бонусы
+  - rejectOtherCryptoDeposit() — отклонить с причиной
+  - processReferralBonuses() — начисление бонусов 3 уровня (5%, 3%, 1%)
+- [x] PriceOracleService: getPrice(ticker) для BNB/TON через CoinGecko API
+- [x] Controllers:
+  - DepositsController: GET /deposits/other-crypto/instructions/:network, POST /deposits/other-crypto
+  - AdminDepositsController: POST /admin/deposits/:id/approve-other-crypto, POST /admin/deposits/:id/reject-other-crypto
+- [x] Environment Variables:
+  - OTHER_CRYPTO_BEP20_ADDRESS
+  - OTHER_CRYPTO_TON_ADDRESS
+  - COINGECKO_API_KEY (optional)
+
+### 11.2 Frontend (NOT STARTED)
+- [ ] Types: OtherCryptoNetwork, OtherCryptoToken, interfaces
+- [ ] API Client: методы в depositsApi и adminDepositsApi
+- [ ] Stores: deposits.store.ts, admin-deposits.store.ts
+- [ ] OtherCryptoModal.tsx — 4-step wizard (network → token → instructions → confirm)
+- [ ] Cash page: кнопка "Other Networks" внизу страницы пополнения
+- [ ] Admin DepositDetailModal: UI для approve/reject other crypto депозитов
+- [ ] DepositsTable: отображение network/token для other_crypto депозитов
+- [ ] Localization: ru.json, en.json
+
+### 11.3 Testing (NOT STARTED)
+- [ ] Backend тесты: approveOtherCryptoDeposit, rejectOtherCryptoDeposit
+- [ ] E2E flow: create → approve → check balance + referral bonuses
+
+### Особенности
+- **Ручная обработка**: Админ проверяет блокчейн вручную через block explorer
+- **Конверсия курсов**: USDT 1:1, BNB/TON через CoinGecko API с кэшированием (5 мин TTL)
+- **Реферальные бонусы**: Автоматически начисляются при approve (3 уровня)
+- **WebSocket уведомления**: Пользователь получает уведомление при approve/reject
+- **Audit Log**: Все действия админа логируются
+
+**Build Status:** API собирается успешно, Frontend не начат
+
+---
+
 ## Notes
 
 - Используем существующие паттерны из auth, machines, economy модулей
