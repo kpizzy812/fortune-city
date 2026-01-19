@@ -580,6 +580,37 @@ User → Other Crypto Modal → Backend (pending) → Admin Panel → Approve/Re
 
 ---
 
+---
+
+## UI/UX Improvements
+
+### Mobile Optimization - Cash Page (COMPLETED)
+
+**Date:** 2026-01-19
+**Goal:** Радикальная оптимизация страницы /cash для мобильных экранов - все ключевые действия без скролла
+
+#### Изменения:
+- [x] Компактный хедер с балансом (уменьшены padding и font size)
+- [x] Кнопка Wallet Provider перемещена вправо от баланса после подключения
+- [x] Сворачиваемый выбор валюты с кнопкой "Изменить" после выбора
+- [x] Горизонтальная раскладка QR кода (QR слева, адрес и кнопка справа)
+- [x] Информационные блоки перемещены под кнопки вывода (CTA первым, пояснения вторыми):
+  - Wallet Connect Withdrawal: Info block под кнопкой
+  - Manual Address Withdrawal: Info block под кнопкой
+- [x] Упрощены технические описания (более user-friendly формулировки)
+- [x] Добавлена локализация "change" / "Изменить"
+
+#### Технические детали:
+- Responsive классы: `text-xs md:text-sm`, `p-3 md:p-4`, `w-20 sm:w-28 md:w-32`
+- State management: `isCurrencySelected` для collapsible currency selector
+- QR layout: `flex gap-3 items-start` для horizontal расположения
+- Высота header: сокращена с ~80px до ~50px
+
+**Build Status:** API и Web собираются успешно
+**Commit:** e9cc7da
+
+---
+
 ## Notes
 
 - Используем существующие паттерны из auth, machines, economy модулей
