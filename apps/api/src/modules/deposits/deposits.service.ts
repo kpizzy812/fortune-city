@@ -17,6 +17,9 @@ import {
   DepositAddressResponseDto,
   ParsedDeposit,
   HeliusWebhookPayload,
+  InitiateOtherCryptoDepositDto,
+  OtherCryptoDepositResponseDto,
+  OtherCryptoInstructionsDto,
 } from './dto';
 import {
   Deposit,
@@ -28,6 +31,10 @@ import {
 import { nanoid } from 'nanoid';
 import * as QRCode from 'qrcode';
 import { MIN_DEPOSIT } from './constants/tokens';
+import {
+  OtherCryptoNetwork,
+  OTHER_CRYPTO_CONFIG,
+} from './constants/other-crypto';
 
 @Injectable()
 export class DepositsService {
@@ -418,6 +425,99 @@ export class DepositsService {
       sol: rates.sol,
       fortune: rates.fortune ?? 0, // Возвращаем 0 если rate недоступен
       usdt: rates.usdt,
+    };
+  }
+
+  // ============== OTHER CRYPTO ==============
+
+  /**
+   * Get instructions for other crypto deposits (BEP20/TON)
+   */
+  async getOtherCryptoInstructions(
+    network: OtherCryptoNetwork,
+  ): Promise<OtherCryptoInstructionsDto> {
+    const config = OTHER_CRYPTO_CONFIG[network];
+
+    const addressEnvKey =
+      network === 'BEP20'
+        ? 'OTHER_CRYPTO_BEP20_ADDRESS'
+        : 'OTHER_CRYPTO_TON_ADDRESS';
+
+    const address = this.config.get<string>(addressEnvKey);
+
+    if (!address) {
+      throw new BadRequestException(`${network} address not configured`);
+    }
+
+    const instructions =
+      network === 'BEP20'
+        ? 'Send USDT or BNB to the address below. Manual processing: up to 24 hours after verification.'
+        : 'Send USDT or TON to the address below. Manual processing: up to 24 hours after verification.';
+
+    return {
+      network,
+      depositAddress: address,
+      supportedTokens: config.tokens,
+      minAmounts: config.minAmounts,
+      blockExplorer: config.blockExplorerAddress + address,
+      instructions,
+    };
+  }
+
+  /**
+   * Initiate other crypto deposit (user claims they sent funds)
+   */
+  async initiateOtherCryptoDeposit(
+    userId: string,
+    dto: InitiateOtherCryptoDepositDto,
+  ): Promise<OtherCryptoDepositResponseDto> {
+    // Validate minimum amount
+    const config = OTHER_CRYPTO_CONFIG[dto.network];
+    const minAmount = config.minAmounts[dto.token];
+
+    if (dto.claimedAmount < minAmount) {
+      throw new BadRequestException(
+        `Minimum ${dto.token} deposit is ${minAmount}`,
+      );
+    }
+
+    // Validate token is supported on this network
+    if (!config.tokens.includes(dto.token)) {
+      throw new BadRequestException(
+        `${dto.token} is not supported on ${dto.network}`,
+      );
+    }
+
+    // Create pending deposit (awaits manual admin approval)
+    const deposit = await this.prisma.deposit.create({
+      data: {
+        userId,
+        method: DepositMethod.other_crypto,
+        chain: dto.network === 'BEP20' ? 'bsc' : 'ton',
+        currency: 'USDT_SOL', // Convert all to internal USDT currency
+        txSignature: `other_crypto_${nanoid(16)}`, // Unique ID
+        amount: dto.claimedAmount,
+        amountUsd: 0, // Will be filled on approval
+        rateToUsd: null,
+        otherCryptoNetwork: dto.network,
+        otherCryptoToken: dto.token,
+        claimedAmount: dto.claimedAmount,
+        status: DepositStatus.pending,
+      },
+    });
+
+    this.logger.log(
+      `Created other_crypto deposit: ${deposit.id}, claimed ${dto.claimedAmount} ${dto.token} on ${dto.network}`,
+    );
+
+    return {
+      depositId: deposit.id,
+      network: dto.network,
+      token: dto.token,
+      claimedAmount: dto.claimedAmount,
+      status: 'pending',
+      message:
+        'Your deposit request has been submitted. We will verify and credit your balance within 24 hours.',
     };
   }
 }

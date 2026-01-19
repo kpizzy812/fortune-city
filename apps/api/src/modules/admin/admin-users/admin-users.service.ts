@@ -133,6 +133,11 @@ export class AdminUsersService {
             telegramId: true,
           },
         },
+        machines: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
         _count: {
           select: {
             referrals: true,
@@ -177,6 +182,11 @@ export class AdminUsersService {
             id: true,
             username: true,
             telegramId: true,
+          },
+        },
+        machines: {
+          orderBy: {
+            createdAt: 'desc',
           },
         },
         _count: {
@@ -226,6 +236,11 @@ export class AdminUsersService {
             id: true,
             username: true,
             telegramId: true,
+          },
+        },
+        machines: {
+          orderBy: {
+            createdAt: 'desc',
           },
         },
         _count: {
@@ -505,6 +520,36 @@ export class AdminUsersService {
     };
   }
 
+  /**
+   * Format machine response
+   */
+  private formatMachine(machine: any): any {
+    return {
+      id: machine.id,
+      tier: machine.tier,
+      purchasePrice: Number(machine.purchasePrice),
+      totalYield: Number(machine.totalYield),
+      profitAmount: Number(machine.profitAmount),
+      lifespanDays: machine.lifespanDays,
+      startedAt: machine.startedAt.toISOString(),
+      expiresAt: machine.expiresAt.toISOString(),
+      ratePerSecond: Number(machine.ratePerSecond),
+      accumulatedIncome: Number(machine.accumulatedIncome),
+      lastCalculatedAt: machine.lastCalculatedAt.toISOString(),
+      profitPaidOut: Number(machine.profitPaidOut),
+      principalPaidOut: Number(machine.principalPaidOut),
+      reinvestRound: machine.reinvestRound,
+      profitReductionRate: Number(machine.profitReductionRate),
+      coinBoxLevel: machine.coinBoxLevel,
+      coinBoxCapacity: Number(machine.coinBoxCapacity),
+      coinBoxCurrent: Number(machine.coinBoxCurrent),
+      fortuneGambleLevel: machine.fortuneGambleLevel,
+      autoCollectEnabled: machine.autoCollectEnabled,
+      status: machine.status,
+      createdAt: machine.createdAt.toISOString(),
+    };
+  }
+
   private formatUserDetail(
     user: {
       id: string;
@@ -534,6 +579,7 @@ export class AdminUsersService {
         username: string | null;
         telegramId: string | null;
       } | null;
+      machines?: any[];
       _count: {
         referrals: number;
         machines: number;
@@ -576,6 +622,7 @@ export class AdminUsersService {
       machinesCount: user._count.machines,
       createdAt: user.createdAt.toISOString(),
       referrer: user.referredBy,
+      machines: user.machines ? user.machines.map((m) => this.formatMachine(m)) : [],
       stats,
     };
   }
@@ -630,6 +677,11 @@ export class AdminUsersService {
               id: true,
               username: true,
               telegramId: true,
+            },
+          },
+          machines: {
+            orderBy: {
+              createdAt: 'desc',
             },
           },
           _count: {

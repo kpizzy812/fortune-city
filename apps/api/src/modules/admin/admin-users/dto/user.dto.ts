@@ -231,6 +231,31 @@ export interface UserListItemResponse {
   createdAt: string;
 }
 
+export interface MachineItemResponse {
+  id: string;
+  tier: number;
+  purchasePrice: number;
+  totalYield: number;
+  profitAmount: number;
+  lifespanDays: number;
+  startedAt: string;
+  expiresAt: string;
+  ratePerSecond: number;
+  accumulatedIncome: number;
+  lastCalculatedAt: string;
+  profitPaidOut: number;
+  principalPaidOut: number;
+  reinvestRound: number;
+  profitReductionRate: number;
+  coinBoxLevel: number;
+  coinBoxCapacity: number;
+  coinBoxCurrent: number;
+  fortuneGambleLevel: number;
+  autoCollectEnabled: boolean;
+  status: string;
+  createdAt: string;
+}
+
 export interface UserDetailResponse extends UserListItemResponse {
   totalFreshDeposits: number;
   totalProfitCollected: number;
@@ -242,6 +267,7 @@ export interface UserDetailResponse extends UserListItemResponse {
     username: string | null;
     telegramId: string | null;
   } | null;
+  machines: MachineItemResponse[];
   stats: {
     totalDeposits: number;
     totalDepositsAmount: number;

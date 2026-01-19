@@ -6,9 +6,15 @@ import {
   IsArray,
   ValidateNested,
   Min,
+  MaxLength,
+  IsUrl,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { DepositCurrency } from '@prisma/client';
+import {
+  OtherCryptoNetwork,
+  OtherCryptoToken,
+} from '../constants/other-crypto';
 
 // ============== WALLET CONNECT ==============
 
@@ -135,4 +141,36 @@ export interface ParsedDeposit {
   signature: string;
   slot: number;
   mint?: string;
+}
+
+// ============== OTHER CRYPTO ==============
+
+export class InitiateOtherCryptoDepositDto {
+  @IsEnum(OtherCryptoNetwork)
+  network: OtherCryptoNetwork;
+
+  @IsEnum(OtherCryptoToken)
+  token: OtherCryptoToken;
+
+  @IsNumber()
+  @Min(0.000001)
+  claimedAmount: number; // Amount user claims to have sent
+}
+
+export class OtherCryptoDepositResponseDto {
+  depositId: string;
+  network: OtherCryptoNetwork;
+  token: OtherCryptoToken;
+  claimedAmount: number;
+  status: 'pending';
+  message: string;
+}
+
+export class OtherCryptoInstructionsDto {
+  network: OtherCryptoNetwork;
+  depositAddress: string;
+  supportedTokens: OtherCryptoToken[];
+  minAmounts: Record<string, number>;
+  blockExplorer: string;
+  instructions: string;
 }

@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsEnum,
   IsInt,
+  IsNumber,
   Min,
   Max,
   MaxLength,
@@ -30,6 +31,7 @@ export enum DepositStatusFilter {
   confirmed = 'confirmed',
   credited = 'credited',
   failed = 'failed',
+  rejected = 'rejected',
 }
 
 // ============================================
@@ -110,6 +112,27 @@ export class RetryDepositDto {
 }
 
 // ============================================
+// Other Crypto Action DTOs
+// ============================================
+
+export class ApproveOtherCryptoDepositDto {
+  @IsNumber()
+  @Min(0.000001)
+  actualAmount: number; // Actual amount admin verified on blockchain
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  notes?: string; // Optional admin notes
+}
+
+export class RejectOtherCryptoDepositDto {
+  @IsString()
+  @MaxLength(500)
+  reason: string; // Required rejection reason
+}
+
+// ============================================
 // Response Types
 // ============================================
 
@@ -145,6 +168,15 @@ export interface DepositDetailResponse extends DepositListItemResponse {
     maxTierReached: number;
     isBanned: boolean;
   };
+
+  // Other crypto fields
+  otherCryptoNetwork?: string | null;
+  otherCryptoToken?: string | null;
+  claimedAmount?: number | null;
+  adminNotes?: string | null;
+  processedBy?: string | null;
+  processedAt?: string | null;
+  rejectionReason?: string | null;
 }
 
 export interface DepositsListResponse {
