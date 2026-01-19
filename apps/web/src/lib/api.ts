@@ -61,17 +61,17 @@ class ApiClient {
   // Auth endpoints
   // ============================================
 
-  async authWithInitData(initData: string, referralCode?: string) {
+  async authWithInitData(initData: string, referralCode?: string, rememberMe?: boolean) {
     return this.request<AuthResponse>('/auth/telegram/init-data', {
       method: 'POST',
-      body: JSON.stringify({ initData, referralCode }),
+      body: JSON.stringify({ initData, referralCode, rememberMe }),
     });
   }
 
-  async authWithLoginWidget(data: TelegramLoginWidgetData, referralCode?: string) {
+  async authWithLoginWidget(data: TelegramLoginWidgetData, referralCode?: string, rememberMe?: boolean) {
     return this.request<AuthResponse>('/auth/telegram/login-widget', {
       method: 'POST',
-      body: JSON.stringify({ ...data, referralCode }),
+      body: JSON.stringify({ ...data, referralCode, rememberMe }),
     });
   }
 
@@ -85,10 +85,24 @@ class ApiClient {
     });
   }
 
-  async authWithSupabase(accessToken: string, referralCode?: string) {
+  async authWithSupabase(accessToken: string, referralCode?: string, rememberMe?: boolean) {
     return this.request<AuthResponse>('/auth/supabase', {
       method: 'POST',
-      body: JSON.stringify({ accessToken, referralCode }),
+      body: JSON.stringify({ accessToken, referralCode, rememberMe }),
+    });
+  }
+
+  async refreshToken(refreshToken: string) {
+    return this.request<AuthResponse>('/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    });
+  }
+
+  async logout(token: string) {
+    return this.request<{ success: boolean }>('/auth/logout', {
+      method: 'POST',
+      token,
     });
   }
 
@@ -108,10 +122,10 @@ class ApiClient {
     });
   }
 
-  async authWithWeb3(accessToken: string, referralCode?: string) {
+  async authWithWeb3(accessToken: string, referralCode?: string, rememberMe?: boolean) {
     return this.request<AuthResponse>('/auth/web3', {
       method: 'POST',
-      body: JSON.stringify({ accessToken, referralCode }),
+      body: JSON.stringify({ accessToken, referralCode, rememberMe }),
     });
   }
 
@@ -474,10 +488,10 @@ class ApiClient {
   /**
    * Admin login with username/password
    */
-  async adminLogin(username: string, password: string): Promise<AdminAuthResponse> {
+  async adminLogin(username: string, password: string, rememberMe?: boolean): Promise<AdminAuthResponse> {
     return this.request<AdminAuthResponse>('/admin/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, rememberMe }),
     });
   }
 
@@ -486,6 +500,26 @@ class ApiClient {
    */
   async adminGetMe(token: string): Promise<AdminMeResponse> {
     return this.request<AdminMeResponse>('/admin/auth/me', { token });
+  }
+
+  /**
+   * Admin refresh token
+   */
+  async adminRefreshToken(refreshToken: string): Promise<AdminAuthResponse> {
+    return this.request<AdminAuthResponse>('/admin/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    });
+  }
+
+  /**
+   * Admin logout
+   */
+  async adminLogout(token: string): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>('/admin/auth/logout', {
+      method: 'POST',
+      token,
+    });
   }
 
   /**
@@ -1011,6 +1045,7 @@ export interface WithdrawReferralResult {
 
 export interface AuthResponse {
   accessToken: string;
+  refreshToken?: string;
   user: UserData;
 }
 
@@ -1169,6 +1204,7 @@ export interface InstantWithdrawalData {
 
 export interface AdminAuthResponse {
   accessToken: string;
+  refreshToken?: string;
   admin: {
     username: string;
   };

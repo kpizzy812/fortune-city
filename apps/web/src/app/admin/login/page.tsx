@@ -11,6 +11,7 @@ export default function AdminLoginPage() {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -24,7 +25,7 @@ export default function AdminLoginPage() {
     }
 
     try {
-      await login(username.trim(), password);
+      await login(username.trim(), password, rememberMe);
       router.replace('/admin/dashboard');
     } catch {
       // Error is already set in store
@@ -134,6 +135,30 @@ export default function AdminLoginPage() {
                 )}
               </button>
             </div>
+          </div>
+
+          {/* Remember Me */}
+          <div className="flex items-center">
+            <input
+              id="rememberMe"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="
+                w-4 h-4 rounded
+                bg-slate-800 border-slate-600
+                text-amber-500
+                focus:ring-2 focus:ring-amber-500 focus:ring-offset-0
+                transition-colors
+              "
+              disabled={isLoading}
+            />
+            <label
+              htmlFor="rememberMe"
+              className="ml-2 text-sm text-slate-300 cursor-pointer select-none"
+            >
+              Remember me for 30 days
+            </label>
           </div>
 
           {/* Submit Button */}
