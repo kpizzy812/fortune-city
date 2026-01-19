@@ -7,9 +7,9 @@ interface CurrencyIconProps {
 }
 
 const SIZE_MAP = {
-  sm: { icon: 24, badge: 12 },
-  md: { icon: 32, badge: 14 },
-  lg: { icon: 40, badge: 16 },
+  sm: { icon: 24, badge: 8 },
+  md: { icon: 32, badge: 10 },
+  lg: { icon: 40, badge: 12 },
 };
 
 export function CurrencyIcon({ currency, size = 'md', className = '' }: CurrencyIconProps) {
