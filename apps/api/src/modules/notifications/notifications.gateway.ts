@@ -53,7 +53,9 @@ export class NotificationsGateway
     }
 
     this.userSockets.get(userId)!.add(client.id);
-    this.logger.log(`Client ${client.id} subscribed to notifications for user ${userId}`);
+    this.logger.log(
+      `Client ${client.id} subscribed to notifications for user ${userId}`,
+    );
 
     client.emit('subscribed', { userId, success: true });
   }
@@ -98,7 +100,9 @@ export class NotificationsGateway
       this.server.to(socketId).emit('notification:new', payload);
     });
 
-    this.logger.log(`Emitted notification to ${sockets.size} client(s) for user ${userId}`);
+    this.logger.log(
+      `Emitted notification to ${sockets.size} client(s) for user ${userId}`,
+    );
   }
 
   /**

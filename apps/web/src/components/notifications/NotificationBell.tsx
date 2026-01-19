@@ -1,15 +1,23 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationsStore } from '@/stores/notifications.store';
 import { NotificationCenter } from './NotificationCenter';
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { token, user } = useAuthStore();
   const { unreadCount, fetchUnreadCount } = useNotificationsStore();
+
+  // Track if component is mounted (for portal)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Fetch unread count on mount
   useEffect(() => {
@@ -21,7 +29,12 @@ export function NotificationBell() {
   // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
@@ -37,10 +50,54 @@ export function NotificationBell() {
 
   if (!user) return null;
 
+  // Calculate dropdown position
+  const getDropdownStyle = (): React.CSSProperties => {
+    if (!buttonRef.current) return {};
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const isMobile = window.innerWidth < 640; // sm breakpoint
+    const dropdownWidth = 384; // 24rem (w-96)
+
+    if (isMobile) {
+      // On mobile, center dropdown with margin from edges
+      return {
+        position: 'fixed',
+        top: `${rect.bottom + 8}px`,
+        left: '1rem',
+        right: '1rem',
+        maxWidth: 'calc(100vw - 2rem)',
+      };
+    } else {
+      // On desktop, check if button is on the left side (sidebar)
+      const isLeftSide = rect.left < window.innerWidth / 2;
+
+      if (isLeftSide) {
+        // Button is on left side (sidebar) - position dropdown to the right
+        return {
+          position: 'fixed',
+          top: `${rect.bottom + 8}px`,
+          left: `${rect.left}px`,
+          width: '24rem', // w-96
+          maxWidth: '28rem', // max-w-md
+        };
+      } else {
+        // Button is on right side (header) - align to right of button
+        return {
+          position: 'fixed',
+          top: `${rect.bottom + 8}px`,
+          right: `${window.innerWidth - rect.right}px`,
+          width: '24rem', // w-96
+          maxWidth: '28rem', // max-w-md
+        };
+      }
+    }
+  };
+
   return (
-    <div className="relative" ref={dropdownRef}>
+    <>
       {/* Bell Icon Button */}
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-gray-400 hover:text-white transition-colors"
         aria-label="Notifications"
@@ -68,12 +125,19 @@ export function NotificationBell() {
         )}
       </button>
 
-      {/* Dropdown */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-[#1a1a2e] border border-gray-700 rounded-lg shadow-2xl z-50">
-          <NotificationCenter onClose={() => setIsOpen(false)} />
-        </div>
-      )}
-    </div>
+      {/* Dropdown Portal */}
+      {isMounted &&
+        isOpen &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            style={getDropdownStyle()}
+            className="bg-[#1a0a2e]/95 backdrop-blur-xl border border-[#ff2d95]/20 rounded-xl shadow-[0_0_30px_rgba(255,45,149,0.2)] z-[9999]"
+          >
+            <NotificationCenter onClose={() => setIsOpen(false)} />
+          </div>,
+          document.body
+        )}
+    </>
   );
 }

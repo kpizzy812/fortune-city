@@ -54,14 +54,17 @@ export class NotificationsService {
 
     // 3. Send via Telegram - non-blocking
     if (channels.includes('telegram')) {
-      this.sendToTelegram(notification.id, dto.userId, dto.title, dto.message).catch(
-        (error) => {
-          this.logger.error(
-            `Failed to send Telegram notification: ${error.message}`,
-            error,
-          );
-        },
-      );
+      this.sendToTelegram(
+        notification.id,
+        dto.userId,
+        dto.title,
+        dto.message,
+      ).catch((error) => {
+        this.logger.error(
+          `Failed to send Telegram notification: ${error.message}`,
+          error,
+        );
+      });
     }
 
     return response;
@@ -86,11 +89,7 @@ export class NotificationsService {
         },
       });
 
-      if (
-        !user ||
-        !user.telegramNotificationsEnabled ||
-        !user.telegramChatId
-      ) {
+      if (!user || !user.telegramNotificationsEnabled || !user.telegramChatId) {
         this.logger.debug(
           `User ${userId} does not have Telegram notifications enabled`,
         );
@@ -324,7 +323,9 @@ export class NotificationsService {
       title: notification.title,
       message: notification.message,
       data: notification.data || null,
-      channels: Array.isArray(notification.channels) ? notification.channels : [],
+      channels: Array.isArray(notification.channels)
+        ? notification.channels
+        : [],
       readAt: notification.readAt,
       sentToTelegramAt: notification.sentToTelegramAt,
       telegramError: notification.telegramError,

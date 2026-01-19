@@ -306,8 +306,12 @@ export class TelegramBotService {
       return;
     }
 
-    const status = user.telegramNotificationsEnabled ? 'Enabled ✅' : 'Disabled ❌';
-    const statusRu = user.telegramNotificationsEnabled ? 'Включены ✅' : 'Выключены ❌';
+    const status = user.telegramNotificationsEnabled
+      ? 'Enabled ✅'
+      : 'Disabled ❌';
+    const statusRu = user.telegramNotificationsEnabled
+      ? 'Включены ✅'
+      : 'Выключены ❌';
 
     await this.sendMessage(
       telegramChatId,
@@ -374,7 +378,9 @@ export class TelegramBotService {
         'Используйте /start для повторного подключения.',
     );
 
-    this.logger.log(`Disconnected Telegram chat ${telegramChatId} from user ${user.id}`);
+    this.logger.log(
+      `Disconnected Telegram chat ${telegramChatId} from user ${user.id}`,
+    );
   }
 
   /**
