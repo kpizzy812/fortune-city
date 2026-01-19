@@ -968,21 +968,6 @@ export default function CashPage() {
                       </div>
                     )}
 
-                    {/* Info */}
-                    <div className="bg-[#1a0a2e] rounded-xl p-3 border border-blue-500/20">
-                      <div className="flex gap-2">
-                        <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="font-medium text-blue-400 mb-1 text-xs">
-                            {t('atomicWithdrawal')}
-                          </h4>
-                          <p className="text-[10px] md:text-xs text-gray-400">
-                            {t('atomicDescription')}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Withdraw Button */}
                     <button
                       onClick={handleAtomicWithdrawal}
@@ -1005,6 +990,21 @@ export default function CashPage() {
                         t('enterAmount')
                       )}
                     </button>
+
+                    {/* Info */}
+                    <div className="bg-[#1a0a2e] rounded-xl p-3 border border-blue-500/20">
+                      <div className="flex gap-2">
+                        <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-blue-400 mb-1 text-xs">
+                            {t('atomicWithdrawal')}
+                          </h4>
+                          <p className="text-[10px] md:text-xs text-gray-400">
+                            {t('atomicDescription')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </>
                 )}
               </div>
@@ -1051,21 +1051,6 @@ export default function CashPage() {
                   <p className="mt-2 text-[10px] text-gray-500">
                     {t('makeAddressNote')}
                   </p>
-                </div>
-
-                {/* Info */}
-                <div className="bg-[#1a0a2e] rounded-xl p-3 border border-green-500/20">
-                  <div className="flex gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-medium text-green-400 mb-1 text-xs">
-                        {t('instantWithdrawal')}
-                      </h4>
-                      <p className="text-[10px] md:text-xs text-gray-400">
-                        {t('instantDescription')}
-                      </p>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Tax Breakdown */}
@@ -1122,6 +1107,21 @@ export default function CashPage() {
                     t('enterAmount')
                   )}
                 </button>
+
+                {/* Info */}
+                <div className="bg-[#1a0a2e] rounded-xl p-3 border border-green-500/20">
+                  <div className="flex gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-green-400 mb-1 text-xs">
+                        {t('instantWithdrawal')}
+                      </h4>
+                      <p className="text-[10px] md:text-xs text-gray-400">
+                        {t('instantDescription')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
