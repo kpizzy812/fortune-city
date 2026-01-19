@@ -108,7 +108,10 @@ export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
         ? `${selectedUser.firstName} ${selectedUser.lastName}`
         : selectedUser.firstName;
     }
-    return `ID: ${selectedUser.telegramId}`;
+    if (selectedUser.email) return selectedUser.email;
+    if (selectedUser.web3Address) return `${selectedUser.web3Address.slice(0, 4)}...${selectedUser.web3Address.slice(-4)}`;
+    if (selectedUser.telegramId) return `TG: ${selectedUser.telegramId}`;
+    return `ID: ${selectedUser.id.slice(0, 8)}`;
   };
 
   return (
@@ -312,10 +315,24 @@ export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
               <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
                 <h3 className="text-lg font-semibold text-white mb-4">Details</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-slate-400">Telegram ID</p>
-                    <p className="text-white">{selectedUser.telegramId}</p>
-                  </div>
+                  {selectedUser.telegramId && (
+                    <div>
+                      <p className="text-sm text-slate-400">Telegram ID</p>
+                      <p className="text-white">{selectedUser.telegramId}</p>
+                    </div>
+                  )}
+                  {selectedUser.email && (
+                    <div>
+                      <p className="text-sm text-slate-400">Email</p>
+                      <p className="text-white text-sm break-all">{selectedUser.email}</p>
+                    </div>
+                  )}
+                  {selectedUser.web3Address && (
+                    <div className="col-span-2">
+                      <p className="text-sm text-slate-400">Web3 Address</p>
+                      <p className="text-white text-sm font-mono break-all">{selectedUser.web3Address}</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm text-slate-400">Joined</p>
                     <p className="text-white">{formatDate(selectedUser.createdAt)}</p>
@@ -334,7 +351,9 @@ export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
                       {selectedUser.referrer
                         ? selectedUser.referrer.username
                           ? `@${selectedUser.referrer.username}`
-                          : `ID: ${selectedUser.referrer.telegramId}`
+                          : selectedUser.referrer.telegramId
+                            ? `TG: ${selectedUser.referrer.telegramId}`
+                            : `ID: ${selectedUser.referrer.id}`
                         : 'None'
                       }
                     </p>

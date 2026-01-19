@@ -108,7 +108,10 @@ export function UsersTable({ onViewUser }: UsersTableProps) {
         ? `${user.firstName} ${user.lastName}`
         : user.firstName;
     }
-    return `ID: ${user.telegramId}`;
+    if (user.email) return user.email;
+    if (user.web3Address) return `${user.web3Address.slice(0, 4)}...${user.web3Address.slice(-4)}`;
+    if (user.telegramId) return `TG: ${user.telegramId}`;
+    return `ID: ${user.id.slice(0, 8)}`;
   };
 
   const renderSortButton = (field: UserSortField, label: string) => (

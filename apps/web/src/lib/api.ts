@@ -755,6 +755,71 @@ class ApiClient {
     });
   }
 
+  /**
+   * Update user balance (set exact value)
+   */
+  async adminUpdateBalance(
+    token: string,
+    userId: string,
+    data: { fortuneBalance?: number; referralBalance?: number },
+  ): Promise<AdminUserDetail> {
+    return this.request<AdminUserDetail>(`/admin/users/${userId}/balance`, {
+      method: 'PUT',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Adjust user balance (add/subtract/set)
+   */
+  async adminAdjustBalance(
+    token: string,
+    userId: string,
+    data: {
+      operation: 'add' | 'subtract' | 'set';
+      fortuneAmount?: number;
+      referralAmount?: number;
+      reason?: string;
+    },
+  ): Promise<AdminUserDetail> {
+    return this.request<AdminUserDetail>(`/admin/users/${userId}/adjust-balance`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Update user referrer
+   */
+  async adminUpdateReferrer(
+    token: string,
+    userId: string,
+    data: { referredById?: string | null },
+  ): Promise<AdminUserDetail> {
+    return this.request<AdminUserDetail>(`/admin/users/${userId}/referrer`, {
+      method: 'PUT',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Update user free spins
+   */
+  async adminUpdateFreeSpins(
+    token: string,
+    userId: string,
+    data: { freeSpinsRemaining: number },
+  ): Promise<AdminUserDetail> {
+    return this.request<AdminUserDetail>(`/admin/users/${userId}/free-spins`, {
+      method: 'PUT',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
   // ============================================
   // Admin Withdrawals endpoints
   // ============================================
