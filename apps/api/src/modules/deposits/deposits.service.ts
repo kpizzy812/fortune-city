@@ -58,6 +58,24 @@ export class DepositsService {
     userId: string,
     walletAddress: string,
   ): Promise<WalletConnection> {
+    // Проверяем, не подключен ли этот кошелек к другому пользователю
+    const existingConnection = await this.prisma.walletConnection.findUnique({
+      where: {
+        walletAddress_chain: {
+          walletAddress,
+          chain: 'solana',
+        },
+      },
+    });
+
+    // Если кошелек уже подключен к другому пользователю - отклоняем
+    if (existingConnection && existingConnection.userId !== userId) {
+      throw new ConflictException(
+        'This wallet is already connected to another account',
+      );
+    }
+
+    // Если кошелек уже подключен к этому пользователю или не подключен вообще - создаем/обновляем
     return this.prisma.walletConnection.upsert({
       where: { userId_chain: { userId, chain: 'solana' } },
       update: { walletAddress, connectedAt: new Date() },
