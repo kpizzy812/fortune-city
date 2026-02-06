@@ -35,7 +35,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       {/* Main content area with dynamic margin */}
       <div
         className={`
-          pb-20 lg:pb-0
+          pb-20 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0
           transition-all duration-300 ease-in-out
           ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}
         `}

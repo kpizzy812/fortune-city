@@ -41,7 +41,7 @@ export function BottomNavigation() {
         fixed bottom-0 left-0 right-0
         bg-[#1a0a2e]/95 backdrop-blur-lg
         border-t border-[#ff2d95]/20
-        px-2 py-2 pb-[env(safe-area-inset-bottom)]
+        px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]
         z-50
       "
     >
