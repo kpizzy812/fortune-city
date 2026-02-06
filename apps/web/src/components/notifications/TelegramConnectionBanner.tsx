@@ -7,21 +7,13 @@ export function TelegramConnectionBanner() {
   const { user } = useAuthStore();
   const [isDismissed, setIsDismissed] = useState(false);
 
-  // Don't show if:
-  // - User is not logged in
-  // - Telegram notifications already enabled
-  // - User dismissed the banner
-  // - User doesn't have telegramId (email/web3 auth only)
-  if (
-    !user ||
-    user.telegramNotificationsEnabled ||
-    isDismissed ||
-    !user.telegramId
-  ) {
+  // Don't show if user is not logged in, already has notifications enabled, or dismissed
+  if (!user || (user.telegramId && user.telegramNotificationsEnabled) || isDismissed) {
     return null;
   }
 
-  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'FortuneCity_bot';
+  const hasTelegram = !!user.telegramId;
+  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'FortuneCityAppBot';
   const deepLink = `https://t.me/${botUsername}?start=connect_${user.id}`;
 
   return (
@@ -37,10 +29,10 @@ export function TelegramConnectionBanner() {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <p className="text-sm text-white font-medium mb-0.5 max-h-[850px]:text-xs max-h-[850px]:mb-0">
-            Enable Telegram Notifications
+            {hasTelegram ? 'Enable Telegram Notifications' : 'Connect Telegram'}
           </p>
           <p className="text-xs text-gray-400 max-h-[850px]:hidden">
-            Get instant updates in Telegram
+            {hasTelegram ? 'Get instant updates in Telegram' : 'Link your Telegram for notifications'}
           </p>
         </div>
 
@@ -51,7 +43,7 @@ export function TelegramConnectionBanner() {
           rel="noopener noreferrer"
           className="px-3 py-1.5 bg-[#0088cc] hover:bg-[#0088cc]/80 text-white rounded text-xs font-semibold transition-colors whitespace-nowrap max-h-[850px]:px-2 max-h-[850px]:py-1"
         >
-          Connect
+          {hasTelegram ? 'Enable' : 'Connect'}
         </a>
 
         {/* Close button */}
