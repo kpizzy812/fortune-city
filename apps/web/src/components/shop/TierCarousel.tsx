@@ -387,7 +387,7 @@ export function TierCarousel({
 
         <div
           ref={scrollContainerRef}
-          className="flex gap-5 overflow-x-auto snap-x snap-mandatory py-6 px-6 lg:px-10 max-lg:[scroll-padding-inline:calc(50%-140px)]"
+          className="flex gap-5 overflow-x-auto snap-x snap-mandatory py-2 px-6 lg:py-6 lg:px-10 max-lg:[scroll-padding-inline:calc(50%-140px)]"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',

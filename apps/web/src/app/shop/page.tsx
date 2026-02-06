@@ -237,14 +237,14 @@ export default function ShopPage() {
     <main className="min-h-screen p-4 lg:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Mobile Header */}
-        <header className="flex items-center justify-between mb-6 lg:hidden max-h-[700px]:mb-3">
+        <header className="flex items-center justify-between mb-3 lg:hidden max-h-[700px]:mb-2">
           <div>
-            <h1 className="text-2xl font-bold text-[#00d4ff]">{t('title')}</h1>
-            <p className="text-sm text-[#b0b0b0]">{t('subtitle')}</p>
+            <h1 className="text-xl font-bold text-[#00d4ff] max-h-[700px]:text-lg">{t('title')}</h1>
+            <p className="text-xs text-[#b0b0b0]">{t('subtitle')}</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-lg lg:text-xl text-[#ffd700] font-mono font-bold">
+              <p className="text-lg text-[#ffd700] font-mono font-bold">
                 ${userBalance.toFixed(2)}
               </p>
             </div>
@@ -266,18 +266,17 @@ export default function ShopPage() {
         </header>
 
         {/* Info card */}
-        <div className="bg-[#2a1a4e] rounded-xl p-4 lg:p-6 border border-[#00d4ff]/30 mb-6 lg:mb-8 max-h-[700px]:p-2 max-h-[700px]:mb-3">
-          <div className="flex items-start gap-3 lg:gap-4 max-h-[700px]:gap-2">
-            <span className="text-2xl lg:text-3xl max-h-[700px]:text-lg">💡</span>
-            <div className="text-sm lg:text-base text-[#b0b0b0] max-h-[700px]:text-xs">
-              <p className="mb-1 max-h-[700px]:mb-0">
-                <span className="text-white font-medium">{t('unlockHint')}</span>
-              </p>
-              <p className="max-h-[700px]:hidden">
+        <div className="bg-[#2a1a4e] rounded-lg p-2 lg:rounded-xl lg:p-6 border border-[#00d4ff]/30 mb-3 lg:mb-8">
+          <div className="flex items-center gap-2 lg:items-start lg:gap-4">
+            <span className="text-lg lg:text-3xl">💡</span>
+            <div className="text-xs lg:text-base text-[#b0b0b0]">
+              <span className="text-white font-medium">{t('unlockHint')}</span>
+              {' '}
+              <span className="max-h-[700px]:hidden">
                 {t('currentMaxTier')} <span className="text-[#ff2d95] font-mono font-bold">{user.maxTierReached || 0}</span>
                 {' '}&rarr;{' '}
                 {t('nextUnlock')} <span className="text-[#00ff88] font-mono font-bold">{t('tier')} {(user.maxTierReached || 0) + 1}</span>
-              </p>
+              </span>
             </div>
           </div>
         </div>
