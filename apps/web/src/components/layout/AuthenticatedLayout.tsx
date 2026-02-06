@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { useUIStore } from '@/stores/ui.store';
 import { useDepositsSocket } from '@/hooks/useDepositsSocket';
@@ -16,11 +17,19 @@ interface AuthenticatedLayoutProps {
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { user } = useAuthStore();
   const { sidebarCollapsed } = useUIStore();
+  const pathname = usePathname();
+
+  const isAdminRoute = pathname.startsWith('/admin');
 
   // Global WebSocket listeners for real-time notifications
   useDepositsSocket();
   useWheelSocket(user?.id);
   useNotificationsSocket();
+
+  // Admin pages have their own layout — skip main navigation
+  if (isAdminRoute) {
+    return <>{children}</>;
+  }
 
   // Show navigation only for authenticated users
   if (!user) {
