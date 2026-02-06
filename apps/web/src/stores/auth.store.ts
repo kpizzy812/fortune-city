@@ -166,10 +166,23 @@ export const useAuthStore = create<AuthState>()(
       handleSupabaseCallback: async (action?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const {
-            data: { session },
-            error,
-          } = await supabase.auth.getSession();
+          // Сначала пробуем getSession (работает если сессия уже обработана)
+          // eslint-disable-next-line prefer-const
+          let { data: { session }, error } = await supabase.auth.getSession();
+
+          // Если сессии нет — ждём onAuthStateChange (implicit flow обрабатывает hash асинхронно)
+          if (!session && !error) {
+            session = await new Promise<typeof session>((resolve, reject) => {
+              const timeout = setTimeout(() => reject(new Error('No session found')), 10000);
+              const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+                if (event === 'SIGNED_IN' && s) {
+                  clearTimeout(timeout);
+                  subscription.unsubscribe();
+                  resolve(s);
+                }
+              });
+            });
+          }
 
           if (error) throw error;
           if (!session) throw new Error('No session found');
