@@ -42,6 +42,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
+# sharp для Next.js image optimization (не попадает в standalone бандл)
+RUN npm install --prefix /app/sharp sharp && \
+    rm -rf /root/.npm
+ENV NEXT_SHARP_PATH=/app/sharp/node_modules/sharp
+
 COPY --from=build /app/apps/web/public ./apps/web/public
 COPY --from=build --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
