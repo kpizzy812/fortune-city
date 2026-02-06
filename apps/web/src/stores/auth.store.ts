@@ -172,7 +172,7 @@ export const useAuthStore = create<AuthState>()(
 
           // Если сессии нет — ждём onAuthStateChange (implicit flow обрабатывает hash асинхронно)
           if (!session && !error) {
-            session = await new Promise<typeof session>((resolve, reject) => {
+            session = await new Promise<Session>((resolve, reject) => {
               const timeout = setTimeout(() => reject(new Error('No session found')), 10000);
               const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
                 if (event === 'SIGNED_IN' && s) {
