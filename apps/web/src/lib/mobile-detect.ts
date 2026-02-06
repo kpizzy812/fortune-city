@@ -24,10 +24,12 @@ export function needsPhantomRedirect(): boolean {
   return isMobileBrowser() && !isSolanaProviderAvailable();
 }
 
-/** Генерирует Phantom universal link для открытия URL в in-app browser */
+/** Генерирует Phantom deep link для открытия URL в in-app browser.
+ *  phantom.app/ul/* теперь делает 301→phantom.com, что ломает Universal Links.
+ *  Используем custom protocol scheme phantom:// который работает напрямую. */
 export function getPhantomBrowseUrl(url?: string): string {
   const targetUrl = url ?? window.location.href;
-  return `https://phantom.app/ul/browse/${encodeURIComponent(targetUrl)}?ref=${encodeURIComponent(window.location.origin)}`;
+  return `phantom://browse/${encodeURIComponent(targetUrl)}?ref=${encodeURIComponent(window.location.origin)}`;
 }
 
 /** Открывает текущую страницу в Phantom in-app browser */
