@@ -43,7 +43,9 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 # sharp для Next.js image optimization (не попадает в standalone бандл)
-RUN npm install --prefix /app/sharp sharp && \
+RUN mkdir -p /app/sharp && \
+    echo '{"private":true}' > /app/sharp/package.json && \
+    npm install --prefix /app/sharp sharp && \
     rm -rf /root/.npm
 ENV NEXT_SHARP_PATH=/app/sharp/node_modules/sharp
 
