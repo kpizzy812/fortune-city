@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useTranslations } from 'next-intl';
+import { isMobileBrowser, openInPhantom } from '@/lib/mobile-detect';
 
 interface SolanaLoginButtonProps {
   onSuccess?: () => void;
@@ -16,6 +17,7 @@ export function SolanaLoginButton({
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isSolanaAvailable, setIsSolanaAvailable] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { signInWithWeb3, isLoading } = useAuthStore();
   const t = useTranslations('auth');
 
@@ -25,6 +27,7 @@ export function SolanaLoginButton({
     setIsSolanaAvailable(
       typeof window !== 'undefined' && window.solana !== undefined,
     );
+    setIsMobile(isMobileBrowser());
   }, []);
 
   const handleConnect = async () => {
@@ -83,6 +86,38 @@ export function SolanaLoginButton({
   }
 
   if (!isSolanaAvailable) {
+    // Мобильный — предлагаем открыть в Phantom + установить
+    if (isMobile) {
+      return (
+        <div className="space-y-3">
+          <button
+            onClick={() => openInPhantom()}
+            className="w-full py-3 bg-gradient-to-r from-[#AB9FF2] to-[#8b5cf6]
+                       text-white font-bold rounded-lg hover:opacity-90 transition
+                       flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 128 128" fill="none">
+              <circle cx="64" cy="64" r="64" fill="white" fillOpacity="0.15" />
+              <path d="M110.584 64.9142H99.142C99.142 41.7651 80.173 23 56.7724 23C33.6612 23 14.8716 41.3057 14.4118 64.0026C13.936 87.4478 33.5467 107.516 57.2037 107H62.1363C83.2743 107 110.584 89.1628 110.584 64.9142Z" fill="white" />
+              <circle cx="44.5" cy="57.5" r="5.5" fill="#AB9FF2" />
+              <circle cx="66.5" cy="57.5" r="5.5" fill="#AB9FF2" />
+            </svg>
+            {t('openInPhantom')}
+          </button>
+          <a
+            href="https://phantom.app/download"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full py-2.5 text-center bg-white/5 hover:bg-white/10 border border-white/10
+                       text-white/60 hover:text-white rounded-lg transition text-sm"
+          >
+            {t('installPhantom')}
+          </a>
+        </div>
+      );
+    }
+
+    // Десктоп — предлагаем установить расширение
     return (
       <div className="text-center py-4">
         <div className="text-4xl mb-3">🔒</div>

@@ -74,6 +74,8 @@
     "connecting": "Подключение...",
     "walletNotFound": "Solana кошелёк не найден",
     "installWallet": "Установите Solana кошелёк (Phantom, Backpack и др.)",
+    "openInPhantom": "Открыть в кошельке Phantom",
+    "installPhantom": "Нет Phantom? Скачать здесь",
     "or": "или",
     "emailPlaceholder": "you@example.com",
     "sendMagicLink": "Отправить ссылку",
