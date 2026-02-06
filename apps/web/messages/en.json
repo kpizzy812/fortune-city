@@ -328,6 +328,8 @@
     "connectWalletToDeposit": "Connect your Solana wallet to deposit",
     "walletConnectedWithdraw": "Wallet connected. Enter amount to withdraw.",
     "connectWalletToReceive": "Connect your Solana wallet to receive USDT",
+    "openInPhantom": "Open in Phantom",
+    "openInPhantomHint": "Open this page in Phantom app to connect your wallet",
     "selectCurrency": "Select Currency",
     "amount": "Amount",
     "amountUsd": "Amount (USD)",

@@ -328,6 +328,8 @@
     "connectWalletToDeposit": "Подключи Solana кошелёк для пополнения",
     "walletConnectedWithdraw": "Кошелёк подключен. Введи сумму для вывода.",
     "connectWalletToReceive": "Подключи Solana кошелёк для получения USDT",
+    "openInPhantom": "Открыть в Phantom",
+    "openInPhantomHint": "Открой эту страницу в Phantom для подключения кошелька",
     "selectCurrency": "Выбери валюту",
     "amount": "Сумма",
     "amountUsd": "Сумма (USD)",

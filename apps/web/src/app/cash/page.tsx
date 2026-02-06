@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { needsPhantomRedirect, openInPhantom } from '@/lib/mobile-detect';
 import {
   PublicKey,
   Transaction,
@@ -111,6 +112,7 @@ export default function CashPage() {
   const [isSending, setIsSending] = useState(false);
   const [isOtherCryptoModalOpen, setIsOtherCryptoModalOpen] = useState(false);
   const [isCurrencySelected, setIsCurrencySelected] = useState(false);
+  const [isMobileNoWallet, setIsMobileNoWallet] = useState(false);
 
   // Memoize wallet address to prevent re-renders
   const walletAddress = useMemo(
@@ -124,6 +126,15 @@ export default function CashPage() {
       router.push('/');
     }
   }, [token, router]);
+
+  // Detect mobile without wallet provider — default to address tabs
+  useEffect(() => {
+    if (needsPhantomRedirect()) {
+      setIsMobileNoWallet(true);
+      setDepositTab('address');
+      setWithdrawTab('address');
+    }
+  }, []);
 
   // Fetch initial data
   useEffect(() => {
@@ -473,7 +484,7 @@ export default function CashPage() {
             {/* Wallet button on the right - show when connected in wallet tabs */}
             {((mainTab === 'deposit' && depositTab === 'wallet') ||
               (mainTab === 'withdraw' && withdrawTab === 'wallet')) &&
-              connected && (
+              connected && !isMobileNoWallet && (
               <WalletMultiButton className="!bg-gradient-to-r !from-[#ff2d95] !to-[#8b5cf6] !rounded-lg !h-9 !text-xs !font-medium !px-3 !min-w-0" />
             )}
           </div>
@@ -585,10 +596,20 @@ export default function CashPage() {
                           {t('connectWallet')}
                         </h3>
                         <p className="text-xs text-gray-400">
-                          {t('connectWalletToDeposit')}
+                          {isMobileNoWallet ? t('openInPhantomHint') : t('connectWalletToDeposit')}
                         </p>
                       </div>
-                      <WalletMultiButton className="!bg-gradient-to-r !from-[#ff2d95] !to-[#8b5cf6] !rounded-lg !h-9 !text-xs !font-medium" />
+                      {isMobileNoWallet ? (
+                        <button
+                          onClick={() => openInPhantom()}
+                          className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#AB9FF2] to-[#8b5cf6] rounded-lg h-9 text-xs font-medium px-4 text-white whitespace-nowrap"
+                        >
+                          <Wallet className="w-4 h-4" />
+                          {t('openInPhantom')}
+                        </button>
+                      ) : (
+                        <WalletMultiButton className="!bg-gradient-to-r !from-[#ff2d95] !to-[#8b5cf6] !rounded-lg !h-9 !text-xs !font-medium" />
+                      )}
                     </div>
                   </div>
                 )}
@@ -894,10 +915,20 @@ export default function CashPage() {
                           {t('connectWallet')}
                         </h3>
                         <p className="text-xs text-gray-400">
-                          {t('connectWalletToReceive')}
+                          {isMobileNoWallet ? t('openInPhantomHint') : t('connectWalletToReceive')}
                         </p>
                       </div>
-                      <WalletMultiButton className="!bg-gradient-to-r !from-[#ff2d95] !to-[#8b5cf6] !rounded-lg !h-9 !text-xs !font-medium" />
+                      {isMobileNoWallet ? (
+                        <button
+                          onClick={() => openInPhantom()}
+                          className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#AB9FF2] to-[#8b5cf6] rounded-lg h-9 text-xs font-medium px-4 text-white whitespace-nowrap"
+                        >
+                          <Wallet className="w-4 h-4" />
+                          {t('openInPhantom')}
+                        </button>
+                      ) : (
+                        <WalletMultiButton className="!bg-gradient-to-r !from-[#ff2d95] !to-[#8b5cf6] !rounded-lg !h-9 !text-xs !font-medium" />
+                      )}
                     </div>
                   </div>
                 )}
