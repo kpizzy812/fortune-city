@@ -23,7 +23,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { formatUserDisplayName, getUserInitial } from '@/lib/utils';
 import type { GambleInfo, AutoCollectInfo } from '@/types';
 
-const TELEGRAM_BOT_NAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || 'FortuneCityBot';
+const TELEGRAM_BOT_NAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || 'FortuneCityAppBot';
 
 // Refresh server data every 30 seconds
 const SERVER_REFRESH_INTERVAL = 30000;
@@ -243,7 +243,12 @@ export default function Home() {
   // Show login page if not authenticated
   if (!user) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-6 lg:p-8">
+      <main className="flex min-h-screen flex-col items-center justify-center p-6 lg:p-8 relative">
+        {/* Language Switcher */}
+        <div className="absolute top-4 right-4">
+          <LanguageSwitcher />
+        </div>
+
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="text-center mb-10">
@@ -310,11 +315,7 @@ export default function Home() {
 
               {/* Telegram Login */}
               <div className="flex justify-center">
-                <TelegramLoginButton
-                  botName={TELEGRAM_BOT_NAME}
-                  onSuccess={() => console.log('Telegram login success')}
-                  onError={(err) => console.error('Telegram login error:', err)}
-                />
+                <TelegramLoginButton botName={TELEGRAM_BOT_NAME} />
               </div>
 
               {/* Dev Login - only in development */}

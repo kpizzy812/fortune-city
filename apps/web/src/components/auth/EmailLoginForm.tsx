@@ -111,7 +111,7 @@ export function EmailLoginForm({ onSuccess, onError }: EmailLoginFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label htmlFor="email" className="block text-sm text-[#b0b0b0] mb-2">
-          Email
+          {t('signInWithEmail')}
         </label>
         <input
           type="email"
