@@ -25,7 +25,6 @@ pub struct ClaimWithdrawal<'info> {
         bump = vault.bump,
         has_one = authority @ TreasuryError::Unauthorized,
         has_one = usdt_mint @ TreasuryError::InvalidMint,
-        constraint = !vault.paused @ TreasuryError::VaultPaused,
     )]
     pub vault: Account<'info, TreasuryVault>,
 

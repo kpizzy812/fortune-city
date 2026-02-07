@@ -706,55 +706,6 @@ export type TreasuryVault = {
         },
       ];
     },
-    {
-      name: 'setPaused';
-      docs: ['Emergency pause/unpause. Only authority can call.'];
-      discriminator: [91, 60, 125, 192, 176, 225, 166, 218];
-      accounts: [
-        {
-          name: 'authority';
-          signer: true;
-          relations: ['vault'];
-        },
-        {
-          name: 'vault';
-          writable: true;
-          pda: {
-            seeds: [
-              {
-                kind: 'const';
-                value: [
-                  116,
-                  114,
-                  101,
-                  97,
-                  115,
-                  117,
-                  114,
-                  121,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116,
-                ];
-              },
-              {
-                kind: 'account';
-                path: 'authority';
-              },
-            ];
-          };
-        },
-      ];
-      args: [
-        {
-          name: 'paused';
-          type: 'bool';
-        },
-      ];
-    },
   ];
   accounts: [
     {
@@ -778,10 +729,6 @@ export type TreasuryVault = {
     {
       name: 'vaultInitialized';
       discriminator: [180, 43, 207, 2, 18, 71, 3, 75];
-    },
-    {
-      name: 'vaultPausedEvent';
-      discriminator: [75, 189, 120, 167, 117, 229, 155, 60];
     },
     {
       name: 'withdrawalCancelledEvent';
@@ -819,31 +766,26 @@ export type TreasuryVault = {
     },
     {
       code: 6004;
-      name: 'vaultPaused';
-      msg: 'Vault is paused';
-    },
-    {
-      code: 6005;
       name: 'zeroAmount';
       msg: 'Amount must be greater than zero';
     },
     {
-      code: 6006;
+      code: 6005;
       name: 'insufficientBalance';
       msg: 'Insufficient vault balance for payout';
     },
     {
-      code: 6007;
+      code: 6006;
       name: 'overflow';
       msg: 'Arithmetic overflow';
     },
     {
-      code: 6008;
+      code: 6007;
       name: 'withdrawalExpired';
       msg: 'Withdrawal request has expired';
     },
     {
-      code: 6009;
+      code: 6008;
       name: 'withdrawalNotExpired';
       msg: 'Withdrawal has not expired yet, cannot cancel';
     },
@@ -973,11 +915,6 @@ export type TreasuryVault = {
             docs: ['PDA bump seed'];
             type: 'u8';
           },
-          {
-            name: 'paused';
-            docs: ['Emergency pause flag'];
-            type: 'bool';
-          },
         ];
       };
     },
@@ -1001,26 +938,6 @@ export type TreasuryVault = {
           {
             name: 'usdtMint';
             type: 'pubkey';
-          },
-          {
-            name: 'timestamp';
-            type: 'i64';
-          },
-        ];
-      };
-    },
-    {
-      name: 'vaultPausedEvent';
-      type: {
-        kind: 'struct';
-        fields: [
-          {
-            name: 'vault';
-            type: 'pubkey';
-          },
-          {
-            name: 'paused';
-            type: 'bool';
           },
           {
             name: 'timestamp';

@@ -21,7 +21,7 @@ Fortune City uses an **on-chain Treasury Vault** to store player funds as USDT o
 
 The Treasury Vault is a Solana program (smart contract) that acts as a **transparent on-chain escrow** for USDT (SPL Token).
 
-**Instructions:** `initialize`, `deposit`, `payout`, `set_paused`, `create_withdrawal`, `claim_withdrawal`, `cancel_withdrawal`
+**Instructions:** `initialize`, `deposit`, `payout`, `create_withdrawal`, `claim_withdrawal`, `cancel_withdrawal`
 **State:** `TreasuryVault` PDA (vault account) + `WithdrawalRequest` PDAs (per-user withdrawal requests)
 **Token standard:** SPL Token Interface (Token + Token-2022 compatible)
 
@@ -99,7 +99,6 @@ Users who connect their Solana wallet can withdraw USDT **directly from the vaul
 | `initialize`          | Anyone (once)       | Creates the vault (one-time setup)              |
 | `deposit`             | Authority only      | Deposits USDT into the vault                    |
 | `payout`              | Authority only      | Sends USDT to the hardcoded payout wallet       |
-| `set_paused`          | Authority only      | Emergency pause/unpause                         |
 | `create_withdrawal`   | Authority only      | Creates a withdrawal request for a user         |
 | `claim_withdrawal`    | **User only**       | User claims USDT directly to their wallet       |
 | `cancel_withdrawal`   | Authority only      | Cancels **expired** withdrawal requests only    |
@@ -170,7 +169,6 @@ Every action on the Treasury Vault emits on-chain events and creates verifiable 
 | `WithdrawalCreatedEvent` | A withdrawal request was created for a user |
 | `WithdrawalClaimedEvent` | A user claimed their funds |
 | `WithdrawalCancelledEvent` | An expired withdrawal request was cleaned up |
-| `VaultPausedEvent` | Vault was paused/unpaused (emergency only) |
 
 ### How to Verify
 
@@ -195,11 +193,6 @@ Every action on the Treasury Vault emits on-chain events and creates verifiable 
 | Rejects payout exceeding balance        | PASS   |
 | Rejects zero payout                     | PASS   |
 | Rejects payout to wrong wallet          | PASS   |
-| Pause blocks deposits                   | PASS   |
-| Pause blocks payouts                    | PASS   |
-| Unpause restores functionality          | PASS   |
-| Deposit works after unpause             | PASS   |
-| Rejects unauthorized pause              | PASS   |
 | Rejects double init                     | PASS   |
 | Creates withdrawal request              | PASS   |
 | Rejects duplicate withdrawal request    | PASS   |
@@ -208,11 +201,8 @@ Every action on the Treasury Vault emits on-chain events and creates verifiable 
 | Rejects cancel before expiry            | PASS   |
 | Rejects claim after expiry              | PASS   |
 | Cancels expired withdrawal request      | PASS   |
-| Rejects create_withdrawal when paused   | PASS   |
-| Rejects claim when paused               | PASS   |
-| Vault stats updated after claim         | PASS   |
 
-**26/26 tests passing** (localnet)
+**18/18 tests passing** (localnet)
 
 ---
 

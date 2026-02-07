@@ -14,9 +14,6 @@ pub enum TreasuryError {
     #[msg("Invalid payout wallet")]
     InvalidPayoutWallet,
 
-    #[msg("Vault is paused")]
-    VaultPaused,
-
     #[msg("Amount must be greater than zero")]
     ZeroAmount,
 

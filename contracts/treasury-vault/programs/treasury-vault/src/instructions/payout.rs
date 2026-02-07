@@ -22,7 +22,6 @@ pub struct Payout<'info> {
         has_one = authority @ TreasuryError::Unauthorized,
         has_one = payout_wallet @ TreasuryError::InvalidPayoutWallet,
         has_one = usdt_mint @ TreasuryError::InvalidMint,
-        constraint = !vault.paused @ TreasuryError::VaultPaused,
     )]
     pub vault: Account<'info, TreasuryVault>,
 

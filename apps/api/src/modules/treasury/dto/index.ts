@@ -13,7 +13,6 @@ export interface VaultInfoResponseDto {
   payoutCount: number;
   lastDepositAt: string | null;
   lastPayoutAt: string | null;
-  paused: boolean;
   solscanUrl: string;
 }
 

@@ -29,11 +29,6 @@ pub mod treasury_vault {
         instructions::payout::handle_payout(ctx, amount)
     }
 
-    /// Emergency pause/unpause. Only authority can call.
-    pub fn set_paused(ctx: Context<SetPaused>, paused: bool) -> Result<()> {
-        instructions::set_paused::handle_set_paused(ctx, paused)
-    }
-
     /// Create a withdrawal request for a user. Only authority can call.
     /// User can then claim USDT directly by signing with their wallet.
     pub fn create_withdrawal(

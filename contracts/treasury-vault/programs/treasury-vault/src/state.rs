@@ -57,7 +57,4 @@ pub struct TreasuryVault {
 
     /// PDA bump seed
     pub bump: u8,
-
-    /// Emergency pause flag
-    pub paused: bool,
 }

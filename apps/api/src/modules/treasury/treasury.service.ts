@@ -212,7 +212,6 @@ export class TreasuryService implements OnModuleInit {
         payoutCount: Number(vault.payoutCount),
         lastDepositAt: this.timestampToIso(vault.lastDepositAt),
         lastPayoutAt: this.timestampToIso(vault.lastPayoutAt),
-        paused: vault.paused,
         solscanUrl: `https://solscan.io/account/${this.vaultTokenAccount!.toBase58()}`,
       };
     } catch (error) {

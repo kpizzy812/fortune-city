@@ -57,7 +57,6 @@ pub fn handle_initialize(ctx: Context<Initialize>) -> Result<()> {
     vault.last_deposit_at = 0;
     vault.last_payout_at = 0;
     vault.bump = ctx.bumps.vault;
-    vault.paused = false;
 
     emit!(VaultInitialized {
         vault: vault.key(),

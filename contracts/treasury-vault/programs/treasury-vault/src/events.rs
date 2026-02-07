@@ -29,13 +29,6 @@ pub struct PayoutEvent {
 }
 
 #[event]
-pub struct VaultPausedEvent {
-    pub vault: Pubkey,
-    pub paused: bool,
-    pub timestamp: i64,
-}
-
-#[event]
 pub struct WithdrawalCreatedEvent {
     pub vault: Pubkey,
     pub user: Pubkey,

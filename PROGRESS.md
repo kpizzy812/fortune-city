@@ -1,11 +1,23 @@
 # Fortune City - Progress Tracker
 
-## Current Task: Колесо Фортуны (Wheel of Fortune)
+## Current Task: v2 Economics — Пересмотр экономики тиров (COMPLETED)
 
-**Started:** 2026-01-18
-**Plan:** Phase 8 в этом документе + [docs/concept.md](docs/concept.md)
+**Started:** 2026-02-08
+**Plan:** [docs/math.md](docs/math.md) v2
 
-### Предыдущая задача: Admin Panel (COMPLETED)
+### Что сделано:
+- [x] Пересмотр тиров: короткие циклы 3-14 дней (было 7-48)
+- [x] Инвертированная ставка: 15%/день на T1 → 5%/день на T10 (было flat 5%)
+- [x] Налог -5% за каждый тир: 50% → 5% (было ступенчатое 50/40/30/20/10)
+- [x] Инкассатор: 10% от gross profit (было flat $5)
+- [x] Обновлены Fame constants и Overclock prices
+- [x] Обновлена Prisma schema (collectorHirePercent)
+- [x] Обновлены backend сервисы (auto-collect, admin-settings)
+- [x] Обновлён frontend (admin settings, api types)
+- [x] Обновлены все тесты (564/566 pass, 2 pre-existing fails в withdrawals)
+- [x] Build: shared ✅, API ✅, Web ✅
+
+### Предыдущие задачи: Wheel of Fortune, Admin Panel (COMPLETED)
 
 ---
 

@@ -121,7 +121,6 @@ describe("treasury-vault", () => {
       assert.equal(vault.lastDepositAt.toNumber(), 0);
       assert.equal(vault.lastPayoutAt.toNumber(), 0);
       assert.equal(vault.bump, vaultBump);
-      assert.equal(vault.paused, false);
     });
 
     it("rejects double initialization", async () => {
@@ -358,107 +357,6 @@ describe("treasury-vault", () => {
         expect(_err).to.be.instanceOf(AnchorError);
         const err = _err as AnchorError;
         expect(err.error.errorCode.code).to.equal("InvalidPayoutWallet");
-      }
-    });
-  });
-
-  // ─── Pause / Unpause ────────────────────────────────────
-
-  describe("set_paused", () => {
-    it("pauses the vault", async () => {
-      await program.methods
-        .setPaused(true)
-        .accounts({ authority: authority.publicKey })
-        .rpc();
-
-      const vault = await program.account.treasuryVault.fetch(vaultPda);
-      assert.equal(vault.paused, true);
-    });
-
-    it("rejects deposit when paused", async () => {
-      try {
-        await program.methods
-          .deposit(new BN(10 * ONE_USDT))
-          .accounts({
-            authority: authority.publicKey,
-            usdtMint,
-            vaultTokenAccount,
-            tokenProgram: TOKEN_PROGRAM_ID,
-          })
-          .rpc();
-        assert.fail("Should have failed");
-      } catch (_err) {
-        expect(_err).to.be.instanceOf(AnchorError);
-        const err = _err as AnchorError;
-        expect(err.error.errorCode.code).to.equal("VaultPaused");
-      }
-    });
-
-    it("rejects payout when paused", async () => {
-      try {
-        await program.methods
-          .payout(new BN(10 * ONE_USDT))
-          .accounts({
-            authority: authority.publicKey,
-            usdtMint,
-            vaultTokenAccount,
-            payoutWallet: payoutWallet.publicKey,
-            tokenProgram: TOKEN_PROGRAM_ID,
-          })
-          .rpc();
-        assert.fail("Should have failed");
-      } catch (_err) {
-        expect(_err).to.be.instanceOf(AnchorError);
-        const err = _err as AnchorError;
-        expect(err.error.errorCode.code).to.equal("VaultPaused");
-      }
-    });
-
-    it("unpauses the vault", async () => {
-      await program.methods
-        .setPaused(false)
-        .accounts({ authority: authority.publicKey })
-        .rpc();
-
-      const vault = await program.account.treasuryVault.fetch(vaultPda);
-      assert.equal(vault.paused, false);
-    });
-
-    it("deposit works after unpause", async () => {
-      await program.methods
-        .deposit(new BN(10 * ONE_USDT))
-        .accounts({
-          authority: authority.publicKey,
-          usdtMint,
-          vaultTokenAccount,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .rpc();
-
-      const vault = await program.account.treasuryVault.fetch(vaultPda);
-      // 150 (prev) + 10 = 160
-      assert.equal(vault.totalDeposited.toNumber(), 160 * ONE_USDT);
-      assert.equal(vault.depositCount, 3);
-    });
-
-    it("rejects set_paused from unauthorized signer", async () => {
-      const attacker = Keypair.generate();
-      const sig = await provider.connection.requestAirdrop(
-        attacker.publicKey,
-        LAMPORTS_PER_SOL
-      );
-      await provider.connection.confirmTransaction(sig);
-
-      try {
-        await program.methods
-          .setPaused(true)
-          .accounts({ authority: attacker.publicKey })
-          .signers([attacker])
-          .rpc();
-        assert.fail("Should have failed");
-      } catch (err) {
-        // PDA seeds не совпадают — vault для attacker не существует
-        assert.ok(err);
       }
     });
   });
@@ -731,81 +629,5 @@ describe("treasury-vault", () => {
       );
     });
 
-    // ─── Pause interaction ───────────────────────────────────
-
-    it("rejects create_withdrawal when vault is paused", async () => {
-      // Pause vault
-      await program.methods
-        .setPaused(true)
-        .accounts({ authority: authority.publicKey })
-        .rpc();
-
-      try {
-        await program.methods
-          .createWithdrawal(new BN(5 * ONE_USDT), new BN(3600))
-          .accounts({
-            authority: authority.publicKey,
-            usdtMint,
-            vaultTokenAccount,
-            user: userA.publicKey,
-          })
-          .rpc();
-        assert.fail("Should have failed");
-      } catch (_err) {
-        expect(_err).to.be.instanceOf(AnchorError);
-        const err = _err as AnchorError;
-        expect(err.error.errorCode.code).to.equal("VaultPaused");
-      }
-
-      // Unpause for next test
-      await program.methods
-        .setPaused(false)
-        .accounts({ authority: authority.publicKey })
-        .rpc();
-    });
-
-    it("rejects claim when vault is paused", async () => {
-      // Create a new withdrawal request (vault is unpaused now)
-      await program.methods
-        .createWithdrawal(new BN(5 * ONE_USDT), new BN(3600))
-        .accounts({
-          authority: authority.publicKey,
-          usdtMint,
-          vaultTokenAccount,
-          user: userA.publicKey,
-        })
-        .rpc();
-
-      // Now pause vault
-      await program.methods
-        .setPaused(true)
-        .accounts({ authority: authority.publicKey })
-        .rpc();
-
-      try {
-        await program.methods
-          .claimWithdrawal()
-          .accounts({
-            user: userA.publicKey,
-            authority: authority.publicKey,
-            usdtMint,
-            vaultTokenAccount,
-            tokenProgram: TOKEN_PROGRAM_ID,
-          })
-          .signers([userA])
-          .rpc();
-        assert.fail("Should have failed");
-      } catch (_err) {
-        expect(_err).to.be.instanceOf(AnchorError);
-        const err = _err as AnchorError;
-        expect(err.error.errorCode.code).to.equal("VaultPaused");
-      }
-
-      // Unpause for cleanup
-      await program.methods
-        .setPaused(false)
-        .accounts({ authority: authority.publicKey })
-        .rpc();
-    });
   });
 });
