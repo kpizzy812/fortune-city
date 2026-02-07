@@ -48,11 +48,10 @@ export function MachineGrid({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="
-          flex flex-col items-center justify-center py-12 lg:py-16
+          flex flex-col items-center justify-center py-8 lg:py-16
           bg-gradient-to-b from-[#2a1a4e] to-[#1a0a2e]
           rounded-xl border border-[#00d4ff]/30
           relative overflow-hidden
-          max-h-[850px]:py-6
         "
       >
         {/* Background decoration */}
@@ -67,7 +66,7 @@ export function MachineGrid({
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-          className="relative z-10 max-h-[850px]:hidden"
+          className="relative z-10 hidden lg:block"
         >
           <div className="relative">
             <Gamepad2 className="w-20 h-20 mb-4 text-[#00d4ff]" />
@@ -81,8 +80,8 @@ export function MachineGrid({
           </div>
         </motion.div>
 
-        <h3 className="text-2xl font-bold text-white mb-2 relative z-10 max-h-[850px]:text-xl max-h-[850px]:mb-1">{t('noMachinesYet')}</h3>
-        <p className="text-[#b0b0b0] text-center mb-6 max-w-xs relative z-10 max-h-[850px]:mb-4 max-h-[850px]:text-sm">
+        <h3 className="text-xl lg:text-2xl font-bold text-white mb-1.5 lg:mb-2 relative z-10">{t('noMachinesYet')}</h3>
+        <p className="text-sm lg:text-base text-[#b0b0b0] text-center mb-4 lg:mb-6 max-w-xs relative z-10">
           {t('buyFirstMachine')}
         </p>
 
