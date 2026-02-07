@@ -70,6 +70,7 @@ export interface CollectResult {
   collected: number;
   newBalance: number;
   machine: Machine;
+  fameEarned: number;
 }
 
 // ============================================
@@ -147,6 +148,10 @@ export interface CanAffordResponse {
   nextReinvestRound: number;
   currentProfitReduction: number; // % reduction on current machine (0-85)
   nextProfitReduction: number; // % reduction if buy now (0-85)
+  // Fame info
+  fameUnlockRequired: boolean;
+  fameUnlockCost: number | null;
+  userFame: number;
 }
 
 export interface PurchaseResult {
@@ -279,8 +284,16 @@ export interface UserData {
   firstName: string | null;
   lastName: string | null;
   fortuneBalance: string;
+  referralBalance: string;
   maxTierReached: number;
+  maxTierUnlocked: number;
   currentTaxRate: string;
+  taxDiscount: string;
+  referralCode: string;
+  fame: number;
+  totalFameEarned: number;
+  loginStreak: number;
+  lastLoginDate: string | null;
 }
 
 // ============================================
@@ -468,4 +481,54 @@ export interface NotificationFilters {
   offset?: number;
   type?: NotificationType;
   unreadOnly?: boolean;
+}
+
+// ============================================
+// Fame Types
+// ============================================
+
+export type FameSource =
+  | 'machine_passive'
+  | 'manual_collect'
+  | 'daily_login'
+  | 'machine_purchase'
+  | 'tier_unlock'
+  | 'admin_adjustment';
+
+export interface FameBalance {
+  fame: number;
+  totalFameEarned: number;
+  loginStreak: number;
+  lastLoginDate: string | null;
+  maxTierUnlocked: number;
+}
+
+export interface FameTransaction {
+  id: string;
+  amount: number;
+  balanceAfter: number;
+  source: FameSource;
+  description: string | null;
+  machineId: string | null;
+  createdAt: string;
+}
+
+export interface FameHistory {
+  items: FameTransaction[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface DailyLoginResult {
+  earned: number;
+  streak: number;
+  totalFame: number;
+}
+
+export interface UnlockTierResult {
+  tier: number;
+  cost: number;
+  maxTierUnlocked: number;
+  remainingFame: number;
 }

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/stores/auth.store';
 import { useFortuneRateStore } from '@/stores/fortune-rate.store';
 import { ProfileModal } from '@/components/profile/ProfileModal';
+import { FameBadge } from '@/components/fame/FameBadge';
 import { getUserInitial } from '@/lib/utils';
 
 export function MobileHeader() {
@@ -32,16 +33,19 @@ export function MobileHeader() {
 
           {/* User Info */}
           <div className="flex items-center gap-3">
-            {/* Balance */}
+            {/* Balance + Fame */}
             <div className="text-right">
               <p className="text-sm text-[#ffd700] font-mono font-bold">
                 ${balance.toFixed(2)}
               </p>
-              {isRateAvailable() && (
-                <p className="text-[10px] text-[#b0b0b0]">
-                  {Math.floor(usdToFortune(balance) ?? 0).toLocaleString()} $FORTUNE
-                </p>
-              )}
+              <div className="flex items-center justify-end gap-2">
+                {isRateAvailable() && (
+                  <p className="text-[10px] text-[#b0b0b0]">
+                    {Math.floor(usdToFortune(balance) ?? 0).toLocaleString()} $FORTUNE
+                  </p>
+                )}
+                <FameBadge size="sm" />
+              </div>
             </div>
 
             {/* Avatar */}
