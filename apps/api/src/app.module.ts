@@ -18,6 +18,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { WheelModule } from './modules/wheel/wheel.module';
 import { TelegramBotModule } from './modules/telegram-bot/telegram-bot.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ActivityModule } from './modules/activity/activity.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     WheelModule,
     TelegramBotModule,
     NotificationsModule,
+    ActivityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

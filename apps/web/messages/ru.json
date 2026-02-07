@@ -462,6 +462,12 @@
       "spinNow": "Крутить!"
     }
   },
+  "activity": {
+    "purchased": "купил автомат",
+    "withdrew": "вывел",
+    "won": "выиграл",
+    "jackpot": "сорвал ДЖЕКПОТ!"
+  },
   "metadata": {
     "title": "Fortune City",
     "description": "Крути фортуну. Владей залом."

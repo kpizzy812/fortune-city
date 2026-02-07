@@ -20,6 +20,7 @@ import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { ProfileModal } from '@/components/profile/ProfileModal';
 import { TelegramConnectionBanner } from '@/components/notifications/TelegramConnectionBanner';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { ActivityFeed } from '@/components/activity/ActivityFeed';
 import { getUserInitial } from '@/lib/utils';
 import type { GambleInfo, AutoCollectInfo } from '@/types';
 
@@ -508,6 +509,9 @@ export default function Home() {
             </button>
           </div>
         )}
+
+        {/* Live Activity Feed */}
+        <ActivityFeed />
 
         {/* Machines Section */}
         <div className="mb-6">

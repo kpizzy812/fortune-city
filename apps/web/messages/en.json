@@ -462,6 +462,12 @@
       "spinNow": "Spin Now!"
     }
   },
+  "activity": {
+    "purchased": "bought a machine",
+    "withdrew": "withdrew",
+    "won": "won",
+    "jackpot": "hit JACKPOT!"
+  },
   "metadata": {
     "title": "Fortune City",
     "description": "Spin your fortune. Own the floor."

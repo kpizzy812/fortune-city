@@ -1159,6 +1159,17 @@ class ApiClient {
   }
 
   // ============================================
+  // Activity Feed endpoints
+  // ============================================
+
+  /**
+   * Get activity feed (public, for social proof)
+   */
+  async getActivityFeed(limit: number = 30): Promise<ActivityFeedItem[]> {
+    return this.request<ActivityFeedItem[]>(`/activity/feed?limit=${limit}`);
+  }
+
+  // ============================================
   // Notification endpoints
   // ============================================
 
@@ -2009,4 +2020,24 @@ export interface WheelJackpotResponse {
   lastWinner: string | null;
   lastAmount: number | null;
   timesWon: number;
+}
+
+export interface ActivityFeedItem {
+  type: 'machine_purchase' | 'withdrawal' | 'wheel_win' | 'jackpot';
+  username: string;
+  amount: number;
+  tier?: number;
+  multiplier?: string;
+  createdAt: string;
+}
+
+export interface RecentWinItem {
+  id: string;
+  username: string;
+  payout: number;
+  netResult: number;
+  isJackpot: boolean;
+  jackpotAmount: number;
+  multiplier: string;
+  createdAt: string;
 }
