@@ -43,9 +43,8 @@ const INCOME_INTERPOLATION_INTERVAL = 1000;
 export default function Home() {
   const { user, token, isLoading: authLoading, error: authError, clearAuth, refreshUser, devLogin } = useAuthStore();
   const { isTelegramApp } = useTelegramWebApp();
-  const { usdToFortune, fetchRate, isRateAvailable } = useFortuneRateStore();
+  const { fetchRate } = useFortuneRateStore();
 
-  const t = useTranslations();
   const tCommon = useTranslations('common');
   const tAuth = useTranslations('auth');
   const tBrand = useTranslations('brand');
@@ -58,7 +57,6 @@ export default function Home() {
     isCollecting,
     lastGambleResult,
     gambleInfos,
-    autoCollectInfos,
     error: machinesError,
     fetchMachines,
     fetchAllIncomes,

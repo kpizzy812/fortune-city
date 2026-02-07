@@ -9,7 +9,6 @@ import { useTranslations } from 'next-intl';
 import { Home, ShoppingCart, FerrisWheel, Users, Wallet, ChevronLeft, ChevronRight, LogOut, type LucideIcon } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useUIStore } from '@/stores/ui.store';
-import { useFortuneRateStore } from '@/stores/fortune-rate.store';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ProfileModal } from '@/components/profile/ProfileModal';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -34,7 +33,6 @@ export function SidebarNavigation() {
   const pathname = usePathname();
   const { user, clearAuth } = useAuthStore();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
-  const { usdToFortune, isRateAvailable } = useFortuneRateStore();
   const t = useTranslations('nav');
   const tBrand = useTranslations('brand');
   const tCommon = useTranslations('common');

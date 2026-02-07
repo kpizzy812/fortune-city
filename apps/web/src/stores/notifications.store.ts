@@ -89,7 +89,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
 
   markAllAsRead: async (token) => {
     try {
-      const response = await api.markAllNotificationsAsRead(token);
+      await api.markAllNotificationsAsRead(token);
 
       // Update local state
       const now = new Date().toISOString();

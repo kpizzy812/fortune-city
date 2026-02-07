@@ -13,7 +13,7 @@ import {
   RecentWins,
 } from '@/components/wheel';
 import { BottomNavigation } from '@/components/layout/BottomNavigation';
-import type { WheelMultiplier, WheelSpinResponse } from '@/lib/api';
+import type { WheelMultiplier } from '@/lib/api';
 
 export default function WheelPage() {
   const { user, token, refreshUser } = useAuthStore();

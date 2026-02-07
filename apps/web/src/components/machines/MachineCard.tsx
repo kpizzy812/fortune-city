@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Clock, Zap } from 'lucide-react';
@@ -118,15 +119,21 @@ export function MachineCard({
           onClick={() => setIsImageExpanded(!isImageExpanded)}
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         >
-          <div className="absolute inset-0 flex items-center justify-center">
-            <motion.span
-              className="text-6xl filter drop-shadow-lg"
-              animate={isImageExpanded ? { scale: 1.2 } : { scale: 1 }}
-              whileHover={{ rotate: [0, -10, 10, 0], scale: 1.2 }}
+          <div className="absolute inset-0 flex items-center justify-center p-2">
+            <motion.div
+              className="relative w-full h-full"
+              animate={isImageExpanded ? { scale: 1.05 } : { scale: 1 }}
+              whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.3 }}
             >
-              {machine.tierInfo.emoji}
-            </motion.span>
+              <Image
+                src={machine.tierInfo.imageUrl}
+                alt={machine.tierInfo.name}
+                fill
+                className="object-contain drop-shadow-lg"
+                sizes="(max-width: 768px) 120px, 200px"
+              />
+            </motion.div>
           </div>
           <div className="absolute top-2 right-2">
             <span className={`

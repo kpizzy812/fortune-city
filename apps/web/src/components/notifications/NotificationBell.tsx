@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationsStore } from '@/stores/notifications.store';
@@ -8,17 +8,12 @@ import { NotificationCenter } from './NotificationCenter';
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { token, user } = useAuthStore();
   const { unreadCount, fetchUnreadCount } = useNotificationsStore();
-
-  // Track if component is mounted (for portal)
-  useLayoutEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const isMounted = typeof document !== 'undefined';
 
   // Fetch unread count on mount
   useEffect(() => {

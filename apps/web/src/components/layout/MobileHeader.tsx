@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/stores/auth.store';
 import { useFortuneRateStore } from '@/stores/fortune-rate.store';
 import { ProfileModal } from '@/components/profile/ProfileModal';
-import { formatUserDisplayName, getUserInitial } from '@/lib/utils';
+import { getUserInitial } from '@/lib/utils';
 
 export function MobileHeader() {
   const { user } = useAuthStore();
@@ -16,7 +16,6 @@ export function MobileHeader() {
 
   if (!user) return null;
 
-  const displayName = formatUserDisplayName(user);
   const userInitial = getUserInitial(user);
   const balance = parseFloat(user.fortuneBalance);
 

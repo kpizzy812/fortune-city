@@ -73,7 +73,7 @@ const initialState = {
   error: null,
 };
 
-export const useWheelStore = create<WheelState>((set, get) => ({
+export const useWheelStore = create<WheelState>((set) => ({
   ...initialState,
 
   fetchState: async (token: string) => {

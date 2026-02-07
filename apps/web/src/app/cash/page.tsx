@@ -798,6 +798,7 @@ export default function CashPage() {
                         {/* QR Code - smaller on mobile */}
                         <div className="flex-shrink-0">
                           <div className="bg-white p-1.5 rounded-lg">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={depositAddress.qrCode}
                               alt="Deposit QR Code"

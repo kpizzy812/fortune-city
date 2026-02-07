@@ -474,6 +474,7 @@ export function TopUpAndBuyModal({
                 {/* QR Code + Address row */}
                 <div className="flex gap-3 items-start">
                   <div className="bg-white p-2 rounded-lg flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={depositAddress.qrCode}
                       alt="Deposit QR Code"

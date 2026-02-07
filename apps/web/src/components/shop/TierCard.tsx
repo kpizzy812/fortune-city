@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import type { TierInfo, CanAffordResponse } from '@/types';
@@ -47,7 +48,7 @@ export function TierCard({
       <div className="flex items-start justify-between">
         {/* Left: Info */}
         <div className="flex items-center gap-3">
-          <span className="text-4xl">{tier.emoji}</span>
+          <Image src={tier.imageUrl} alt={tier.name} width={56} height={56} className="object-contain" />
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-white text-lg">{tier.name}</h3>

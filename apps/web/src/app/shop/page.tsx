@@ -6,7 +6,6 @@ import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMachinesStore } from '@/stores/machines.store';
-import { useFortuneRateStore } from '@/stores/fortune-rate.store';
 import { TierCarousel } from '@/components/shop/TierCarousel';
 import { PurchaseModal } from '@/components/shop/PurchaseModal';
 import { SellMachineModal } from '@/components/shop/SellMachineModal';
@@ -25,7 +24,6 @@ const SolanaWalletProvider = dynamic(
 export default function ShopPage() {
   const router = useRouter();
   const { user, token, refreshUser } = useAuthStore();
-  const { usdToFortune, isRateAvailable } = useFortuneRateStore();
   const t = useTranslations('shop');
   const tCommon = useTranslations('common');
 

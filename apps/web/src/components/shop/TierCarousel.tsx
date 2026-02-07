@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, ChevronLeft, ChevronRight, Tag, TrendingDown, TrendingUp } from 'lucide-react';
@@ -117,9 +118,17 @@ function TierCard({
             'from-[#00ff88]/30 to-[#00d4ff]/30'}
         `} />
 
-        {/* Machine emoji (replace with Image when assets ready) */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[120px] filter drop-shadow-2xl">{tier.emoji}</span>
+        {/* Machine image */}
+        <div className="absolute inset-0 flex items-center justify-center p-4">
+          <div className="relative w-full h-full">
+            <Image
+              src={tier.imageUrl}
+              alt={tier.name}
+              fill
+              className="object-contain drop-shadow-2xl"
+              sizes="280px"
+            />
+          </div>
         </div>
 
         {/* Tier badge - top right */}
@@ -460,7 +469,7 @@ export function TierCarousel({
                     : 'bg-[#2a1a4e] text-[#b0b0b0] hover:text-white hover:bg-[#2a1a4e]/80'}
               `}
             >
-              {tier.emoji} T{tier.tier}
+              <Image src={tier.imageUrl} alt={tier.name} width={20} height={20} className="inline-block object-contain" /> T{tier.tier}
             </button>
           );
         })}

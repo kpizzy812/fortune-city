@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, TrendingUp, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -19,16 +19,7 @@ export function RecentWins() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  /** Add a new win to the top of the list (for realtime events) */
-  const addWin = (win: RecentWinItem) => {
-    setItems((prev) => [win, ...prev.slice(0, 14)]);
-  };
-
-  // Expose addWin for parent via ref would be overkill here —
-  // we attach to it through the exported function if needed
-  // For now, the component is self-contained with polling data.
-
-  const formatTimeAgo = (dateStr: string) => {
+  const formatTimeAgo = useCallback((dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
     const minutes = Math.floor(diff / 60000);
     if (minutes < 1) return 'now';
@@ -36,7 +27,7 @@ export function RecentWins() {
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h`;
     return `${Math.floor(hours / 24)}d`;
-  };
+  }, []);
 
   if (isLoading) {
     return (
