@@ -351,7 +351,7 @@ export default function Home() {
       <div className="max-w-4xl mx-auto">
         {/* Header - visible only on mobile (on desktop it's in sidebar) */}
         <header className="flex items-center justify-between mb-3 lg:hidden">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-[#ff2d95] to-[#00d4ff] bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-[#ff2d95] to-[#00d4ff] bg-clip-text text-transparent text-center leading-tight">
             {tBrand('name')}
           </h1>
           <div className="flex items-center gap-3">
