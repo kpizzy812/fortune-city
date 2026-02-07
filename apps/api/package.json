@@ -29,6 +29,7 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
     "@fortune-city/shared": "workspace:*",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.0",

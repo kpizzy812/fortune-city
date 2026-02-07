@@ -512,6 +512,13 @@
     "unlockCost": "⚡{cost}",
     "locked": "Locked"
   },
+  "treasury": {
+    "title": "On-Chain Treasury",
+    "subtitle": "Transparent smart contract vault",
+    "totalIn": "Total In",
+    "totalOut": "Total Out",
+    "viewOnSolscan": "View on Solscan"
+  },
   "metadata": {
     "title": "Fortune City",
     "description": "Spin your fortune. Own the floor."

@@ -8,6 +8,9 @@ import type {
   UpgradeGambleResult,
   AutoCollectInfo,
   PurchaseAutoCollectResult,
+  OverclockInfo,
+  PurchaseOverclockResult,
+  PaymentMethod,
   CanAffordResponse,
   PurchaseResult,
   Transaction,
@@ -210,10 +213,32 @@ class ApiClient {
     return this.request<AutoCollectInfo>(`/machines/${machineId}/auto-collect-info`, { token });
   }
 
-  async purchaseAutoCollect(token: string, machineId: string): Promise<PurchaseAutoCollectResult> {
+  async purchaseAutoCollect(token: string, machineId: string, paymentMethod?: PaymentMethod): Promise<PurchaseAutoCollectResult> {
     return this.request<PurchaseAutoCollectResult>(`/machines/${machineId}/purchase-auto-collect`, {
       token,
       method: 'POST',
+      body: JSON.stringify({ paymentMethod: paymentMethod || 'fortune' }),
+    });
+  }
+
+  // ============================================
+  // Overclock endpoints
+  // ============================================
+
+  async getOverclockInfo(token: string, machineId: string): Promise<OverclockInfo> {
+    return this.request<OverclockInfo>(`/machines/${machineId}/overclock-info`, { token });
+  }
+
+  async purchaseOverclock(
+    token: string,
+    machineId: string,
+    level: number,
+    paymentMethod: PaymentMethod,
+  ): Promise<PurchaseOverclockResult> {
+    return this.request<PurchaseOverclockResult>(`/machines/${machineId}/overclock`, {
+      token,
+      method: 'POST',
+      body: JSON.stringify({ level, paymentMethod }),
     });
   }
 
@@ -1131,6 +1156,14 @@ class ApiClient {
       `/admin/audit/resource/${resource}/${resourceId}`,
       { token },
     );
+  }
+
+  // ============================================
+  // Treasury endpoints
+  // ============================================
+
+  async getTreasuryInfo(): Promise<TreasuryInfoData> {
+    return this.request<TreasuryInfoData>('/treasury/info');
   }
 
   // ============================================
@@ -2130,4 +2163,24 @@ export interface RecentWinItem {
   jackpotAmount: number;
   multiplier: string;
   createdAt: string;
+}
+
+// ============================================
+// Treasury Types
+// ============================================
+
+export interface TreasuryInfoData {
+  vaultAddress: string;
+  authority: string;
+  payoutWallet: string;
+  usdtMint: string;
+  currentBalance: number;
+  totalDeposited: number;
+  totalPaidOut: number;
+  depositCount: number;
+  payoutCount: number;
+  lastDepositAt: string | null;
+  lastPayoutAt: string | null;
+  paused: boolean;
+  solscanUrl: string;
 }

@@ -43,10 +43,8 @@ pub struct Deposit<'info> {
     pub token_program: Interface<'info, TokenInterface>,
 }
 
-pub fn handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+pub fn handle_deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
     require!(amount > 0, TreasuryError::ZeroAmount);
-
-    let clock = Clock::get()?;
 
     // Transfer USDT from authority to vault (authority signs as owner)
     transfer_checked(
@@ -73,16 +71,15 @@ pub fn handler(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         .deposit_count
         .checked_add(1)
         .ok_or(TreasuryError::Overflow)?;
-    vault.last_deposit_at = clock.unix_timestamp;
+    vault.last_deposit_at = Clock::get()?.unix_timestamp;
 
     emit!(DepositEvent {
         vault: vault.key(),
         amount,
         total_deposited: vault.total_deposited,
         deposit_count: vault.deposit_count,
-        timestamp: clock.unix_timestamp,
+        timestamp: vault.last_deposit_at,
     });
 
-    msg!("Deposited {} USDT units into vault", amount);
     Ok(())
 }

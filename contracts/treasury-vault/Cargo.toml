@@ -9,9 +9,13 @@ resolver = "2"
 blake3 = "=1.8.2"
 
 [profile.release]
-overflow-checks = true
-lto = "fat"
-codegen-units = 1
+opt-level = "z"          # Optimize for size (not speed)
+lto = "fat"              # Full link-time optimization
+codegen-units = 1        # Single codegen unit — better optimization
+overflow-checks = false  # Save ~4KB, we use checked_add explicitly
+strip = true             # Strip symbols from binary
+panic = "abort"          # Abort instead of unwind — saves ~20KB
+
 [profile.release.build-override]
 opt-level = 3
 incremental = false

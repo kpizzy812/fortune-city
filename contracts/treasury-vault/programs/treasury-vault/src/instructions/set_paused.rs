@@ -17,7 +17,7 @@ pub struct SetPaused<'info> {
     pub vault: Account<'info, TreasuryVault>,
 }
 
-pub fn handler(ctx: Context<SetPaused>, paused: bool) -> Result<()> {
+pub fn handle_set_paused(ctx: Context<SetPaused>, paused: bool) -> Result<()> {
     let vault = &mut ctx.accounts.vault;
     vault.paused = paused;
 
@@ -29,6 +29,5 @@ pub fn handler(ctx: Context<SetPaused>, paused: bool) -> Result<()> {
         timestamp: clock.unix_timestamp,
     });
 
-    msg!("Vault paused: {}", paused);
     Ok(())
 }

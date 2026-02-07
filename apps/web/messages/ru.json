@@ -512,6 +512,13 @@
     "unlockCost": "⚡{cost}",
     "locked": "Закрыто"
   },
+  "treasury": {
+    "title": "On-Chain Treasury",
+    "subtitle": "Прозрачный смарт-контракт",
+    "totalIn": "Внесено",
+    "totalOut": "Выплачено",
+    "viewOnSolscan": "Solscan"
+  },
   "metadata": {
     "title": "Fortune City",
     "description": "Крути фортуну. Владей залом."

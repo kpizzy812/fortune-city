@@ -22,6 +22,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { SolanaRpcService } from '../deposits/services/solana-rpc.service';
 import { FundSourceService } from '../economy/services/fund-source.service';
+import { TreasuryService } from '../treasury/treasury.service';
 import { SOLANA_TOKENS } from '../deposits/constants/tokens';
 import {
   CreateWithdrawalDto,
@@ -44,6 +45,7 @@ export class WithdrawalsService {
     private readonly config: ConfigService,
     private readonly solanaRpc: SolanaRpcService,
     private readonly fundSource: FundSourceService,
+    private readonly treasury: TreasuryService,
   ) {}
 
   /**
@@ -195,6 +197,9 @@ export class WithdrawalsService {
         status: 'pending',
       },
     });
+
+    // Release USDT from vault to payout wallet (graceful — skip if disabled/fails)
+    await this.tryVaultPayout(preview.usdtAmount);
 
     // Build transaction
     const connection = this.solanaRpc.getConnection();
@@ -492,6 +497,9 @@ export class WithdrawalsService {
         });
       });
 
+      // Release USDT from vault to payout wallet (graceful — skip if disabled/fails)
+      await this.tryVaultPayout(preview.usdtAmount);
+
       // Send USDT from payout wallet
       const usdtMintPubkey = new PublicKey(usdtMint);
       const usdtAmountRaw = Math.floor(
@@ -622,6 +630,23 @@ export class WithdrawalsService {
     });
 
     this.logger.log(`Rolled back withdrawal ${withdrawal.id}`);
+  }
+
+  /**
+   * Try to release USDT from vault to payout wallet.
+   * Graceful: logs warning and continues if treasury is disabled or fails.
+   */
+  private async tryVaultPayout(amountUsd: number): Promise<void> {
+    if (!this.treasury.isEnabled()) return;
+
+    try {
+      await this.treasury.payout(amountUsd);
+    } catch (error) {
+      this.logger.warn(
+        `Vault payout $${amountUsd} failed (proceeding with payout wallet balance):`,
+        error instanceof Error ? error.message : error,
+      );
+    }
   }
 
   /**

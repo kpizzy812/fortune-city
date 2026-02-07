@@ -20,6 +20,7 @@ import { TelegramBotModule } from './modules/telegram-bot/telegram-bot.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ActivityModule } from './modules/activity/activity.module';
 import { FameModule } from './modules/fame/fame.module';
+import { TreasuryModule } from './modules/treasury/treasury.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { FameModule } from './modules/fame/fame.module';
     NotificationsModule,
     ActivityModule,
     FameModule,
+    TreasuryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

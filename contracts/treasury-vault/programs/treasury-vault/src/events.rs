@@ -14,7 +14,7 @@ pub struct DepositEvent {
     pub vault: Pubkey,
     pub amount: u64,
     pub total_deposited: u64,
-    pub deposit_count: u64,
+    pub deposit_count: u32,
     pub timestamp: i64,
 }
 
@@ -24,7 +24,7 @@ pub struct PayoutEvent {
     pub payout_wallet: Pubkey,
     pub amount: u64,
     pub total_paid_out: u64,
-    pub payout_count: u64,
+    pub payout_count: u32,
     pub timestamp: i64,
 }
 

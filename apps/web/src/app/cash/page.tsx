@@ -37,6 +37,7 @@ import { useWithdrawalsStore } from '@/stores/withdrawals.store';
 import { useOnDepositCredited } from '@/hooks/useDepositsSocket';
 import { OtherCryptoModal } from '@/components/shop/OtherCryptoModal';
 import { BuyCryptoGuideModal } from '@/components/cash/BuyCryptoGuideModal';
+import { TreasuryInfo } from '@/components/treasury/TreasuryInfo';
 import { CurrencyIcon } from '@/components/ui/CurrencyIcon';
 import type { DepositCurrency } from '@/lib/api';
 
@@ -492,6 +493,9 @@ export default function CashPage() {
             )}
           </div>
         </div>
+
+        {/* Treasury Info */}
+        <TreasuryInfo />
 
         {/* Main Tabs: Deposit / Withdraw */}
         <div className="flex bg-[#1a0a2e] rounded-xl p-1 mb-3">

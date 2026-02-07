@@ -21,11 +21,11 @@ pub struct TreasuryVault {
     /// Total USDT paid out (raw units, 6 decimals)
     pub total_paid_out: u64,
 
-    /// Number of deposit transactions
-    pub deposit_count: u64,
+    /// Number of deposit transactions (u32 = up to 4B ops)
+    pub deposit_count: u32,
 
-    /// Number of payout transactions
-    pub payout_count: u64,
+    /// Number of payout transactions (u32 = up to 4B ops)
+    pub payout_count: u32,
 
     /// Last deposit unix timestamp
     pub last_deposit_at: i64,

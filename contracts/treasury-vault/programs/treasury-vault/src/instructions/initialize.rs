@@ -42,7 +42,7 @@ pub struct Initialize<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<Initialize>) -> Result<()> {
+pub fn handle_initialize(ctx: Context<Initialize>) -> Result<()> {
     let vault = &mut ctx.accounts.vault;
     let clock = Clock::get()?;
 
@@ -67,6 +67,5 @@ pub fn handler(ctx: Context<Initialize>) -> Result<()> {
         timestamp: clock.unix_timestamp,
     });
 
-    msg!("Treasury vault initialized");
     Ok(())
 }

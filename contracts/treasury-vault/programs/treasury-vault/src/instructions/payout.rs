@@ -53,14 +53,14 @@ pub struct Payout<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<Payout>, amount: u64) -> Result<()> {
+pub fn handle_payout(ctx: Context<Payout>, amount: u64) -> Result<()> {
     require!(amount > 0, TreasuryError::ZeroAmount);
 
     // Check vault has enough balance
-    let vault_balance = ctx.accounts.vault_token_account.amount;
-    require!(vault_balance >= amount, TreasuryError::InsufficientBalance);
-
-    let clock = Clock::get()?;
+    require!(
+        ctx.accounts.vault_token_account.amount >= amount,
+        TreasuryError::InsufficientBalance
+    );
 
     // Transfer USDT from vault to payout wallet using PDA signer seeds
     let authority_key = ctx.accounts.authority.key();
@@ -95,7 +95,7 @@ pub fn handler(ctx: Context<Payout>, amount: u64) -> Result<()> {
         .payout_count
         .checked_add(1)
         .ok_or(TreasuryError::Overflow)?;
-    vault.last_payout_at = clock.unix_timestamp;
+    vault.last_payout_at = Clock::get()?.unix_timestamp;
 
     emit!(PayoutEvent {
         vault: vault.key(),
@@ -103,9 +103,8 @@ pub fn handler(ctx: Context<Payout>, amount: u64) -> Result<()> {
         amount,
         total_paid_out: vault.total_paid_out,
         payout_count: vault.payout_count,
-        timestamp: clock.unix_timestamp,
+        timestamp: vault.last_payout_at,
     });
 
-    msg!("Paid out {} USDT units to payout wallet", amount);
     Ok(())
 }
