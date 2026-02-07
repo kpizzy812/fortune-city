@@ -134,6 +134,16 @@ export class MachinesService {
     const client = tx ?? this.prisma;
     const tierConfig = this.tierCacheService.getTierOrThrow(tier);
 
+    // Check if user already has an active machine of this tier
+    const existing = await client.machine.findFirst({
+      where: { userId, tier, status: 'active' },
+    });
+    if (existing) {
+      throw new Error(
+        `Already have an active tier ${tier} machine. Claim after it expires.`,
+      );
+    }
+
     // Same yield calculation as regular purchase, reinvestRound = 1 (no penalty)
     const totalYield = new Prisma.Decimal(tierConfig.price)
       .mul(tierConfig.yieldPercent)
