@@ -611,6 +611,54 @@ User → Other Crypto Modal → Backend (pending) → Admin Panel → Approve/Re
 
 ---
 
+## Phase 13: Docker Production & Deployment Scripts (COMPLETED)
+
+**Date:** 2026-02-07
+**Goal:** Полная контейнеризация и удобные скрипты для деплоя на сервер
+
+### Сервер
+- SSH alias: `kp` (доступ по ключу)
+- Project root: `/fortune`
+- Домен: `fortune.syntratrade.com`
+- Docker уже установлен на сервере
+
+### 13.1 Docker (COMPLETED)
+- [x] `apps/api/Dockerfile` — multi-stage build (deps → build-shared → build → runner)
+- [x] `apps/web/Dockerfile` — multi-stage build с Next.js standalone output
+- [x] `docker-compose.prod.yml` — 4 сервиса: postgres, redis, api, web
+- [x] `.dockerignore` — исключения для билда
+- [x] `next.config.ts` — добавлен `output: 'standalone'` для production
+
+### 13.2 Nginx & SSL (COMPLETED)
+- [x] `nginx/fortune.conf` — reverse proxy с WebSocket support
+- [x] API: `/api/*` → `localhost:3001`
+- [x] WebSocket: `/socket.io/` → `localhost:3001`
+- [x] Frontend: `/` → `localhost:3000`
+- [x] SSL через certbot (Let's Encrypt)
+
+### 13.3 Makefile (COMPLETED)
+Единая точка входа — все команды через `make`:
+- `make sync` — rsync кода на сервер
+- `make deploy` — полный деплой (sync + build + restart + db push)
+- `make deploy-api` / `make deploy-web` — деплой одного сервиса
+- `make logs` / `make logs-api` / `make logs-web` — просмотр логов
+- `make status` / `make health` — мониторинг
+- `make db-push` / `make db-psql` / `make db-studio` / `make db-backup` — БД
+- `make redis-cli` / `make redis-flush` — Redis
+- `make ssh` / `make shell-api` — доступ к серверу/контейнерам
+- `make nginx-setup` / `make ssl-setup` — настройка nginx и SSL
+- `make setup` — первоначальная настройка
+- `make help` — справка
+
+### 13.4 Прочее (COMPLETED)
+- [x] `scripts/server-setup.sh` — скрипт проверки сервера
+- [x] CORS обновлён: добавлен `https://fortune.syntratrade.com`
+- [x] `.gitignore`: добавлена папка `backups/`
+
+**Build Status:** API и Web собираются успешно
+
+---
+
 ## Notes
 
 - Используем существующие паттерны из auth, machines, economy модулей

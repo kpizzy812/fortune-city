@@ -35,3 +35,6 @@ prisma/*.db-journal
 # Misc
 *.tsbuildinfo
 .env.backup
+
+# Backups
+backups/

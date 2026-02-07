@@ -18,8 +18,13 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   // Enable CORS for frontend
+  const corsOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://fortune.syntratrade.com',
+  ];
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: corsOrigins,
     credentials: true,
   });
 

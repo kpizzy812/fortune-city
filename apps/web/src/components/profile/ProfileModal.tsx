@@ -331,26 +331,22 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
 // Mini Telegram login button for linking
 function TelegramLinkButton({
-  onAuth,
   isLoading,
 }: {
   onAuth: (user: TelegramLoginWidgetData) => void;
   isLoading: boolean;
 }) {
-  const t = useTranslations('profile');
-  const containerRef = useState<HTMLDivElement | null>(null);
-  const botName = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || 'fortune_city_bot';
+  const botName = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || 'FortuneCityAppBot';
 
   useEffect(() => {
-    // Set up global callback for this specific widget
-    window.onTelegramLinkAuth = onAuth;
+    const authUrl = `${window.location.origin}/auth/telegram/link`;
 
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
     script.setAttribute('data-telegram-login', botName);
     script.setAttribute('data-size', 'small');
     script.setAttribute('data-radius', '8');
-    script.setAttribute('data-onauth', 'onTelegramLinkAuth(user)');
+    script.setAttribute('data-auth-url', authUrl);
     script.setAttribute('data-request-access', 'write');
     script.async = true;
 
@@ -359,11 +355,7 @@ function TelegramLinkButton({
       container.innerHTML = '';
       container.appendChild(script);
     }
-
-    return () => {
-      window.onTelegramLinkAuth = undefined;
-    };
-  }, [botName, onAuth]);
+  }, [botName]);
 
   if (isLoading) {
     return (
