@@ -69,16 +69,17 @@ export function Modal({
               className="
                 bg-[#2a1a4e] rounded-xl border border-[#ff2d95]/30
                 shadow-[0_0_40px_rgba(255,45,149,0.2)]
-                w-full max-w-md max-h-[90vh] overflow-auto
-                pointer-events-auto
+                w-full max-w-md max-h-[85dvh] overflow-hidden
+                pointer-events-auto flex flex-col
+                pb-[env(safe-area-inset-bottom)]
               "
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
               {(title || showCloseButton) && (
-                <div className="flex items-center justify-between p-4 border-b border-[#ff2d95]/20">
+                <div className="flex items-center justify-between p-4 border-b border-[#ff2d95]/20 flex-shrink-0">
                   {title && (
-                    <h2 className="text-xl font-semibold text-white">{title}</h2>
+                    <h2 className="text-lg font-semibold text-white">{title}</h2>
                   )}
                   {showCloseButton && (
                     <button
@@ -87,7 +88,7 @@ export function Modal({
                         w-8 h-8 flex items-center justify-center
                         text-[#b0b0b0] hover:text-white
                         hover:bg-white/10 rounded-lg
-                        transition-colors
+                        transition-colors ml-auto
                       "
                     >
                       <svg
@@ -108,8 +109,8 @@ export function Modal({
                 </div>
               )}
 
-              {/* Content */}
-              <div className="p-4">{children}</div>
+              {/* Content — scrollable */}
+              <div className="p-4 overflow-y-auto flex-1 min-h-0">{children}</div>
             </div>
           </motion.div>
         </>

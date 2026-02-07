@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import Image from 'next/image';
 import { Users, Zap, Clock, TrendingDown, AlertTriangle } from 'lucide-react';
 import type { SaleOptions, Machine } from '@/types';
 
@@ -62,7 +63,7 @@ export function SellMachineModal({
       <div className="space-y-4">
         {/* Machine info */}
         <div className="flex items-center gap-3 p-3 bg-[#1a0a2e] rounded-lg border border-[#ff2d95]/20">
-          <span className="text-4xl">{machine.tierInfo.emoji}</span>
+          <Image src={machine.tierInfo.imageUrl} alt={machine.tierInfo.name} width={48} height={48} className="object-contain" />
           <div>
             <p className="font-semibold text-white">{machine.tierInfo.name}</p>
             <p className="text-xs text-[#b0b0b0]">

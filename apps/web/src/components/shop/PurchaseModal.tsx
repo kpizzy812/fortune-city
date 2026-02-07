@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { AlertTriangle, XCircle, TrendingUp, TrendingDown } from 'lucide-react';
 import type { TierInfo, CanAffordResponse } from '@/types';
 import { Modal } from '@/components/ui/Modal';
@@ -53,11 +54,11 @@ export function PurchaseModal({
     <Modal isOpen={isOpen} onClose={onClose} title={t('purchaseConfirm', { name: tier.name })}>
       <div className="space-y-4">
         {/* Machine preview */}
-        <div className="flex items-center gap-4 p-4 bg-[#1a0a2e] rounded-xl">
-          <span className="text-5xl">{tier.emoji}</span>
+        <div className="flex items-center gap-4 p-3 bg-[#1a0a2e] rounded-xl">
+          <Image src={tier.imageUrl} alt={tier.name} width={56} height={56} className="object-contain" />
           <div>
-            <h3 className="font-bold text-white text-xl">{tier.name}</h3>
-            <p className="text-[#b0b0b0]">{t('tier')} {tier.tier}</p>
+            <h3 className="font-bold text-white text-lg">{tier.name}</h3>
+            <p className="text-[#b0b0b0] text-sm">{t('tier')} {tier.tier}</p>
           </div>
         </div>
 
@@ -149,25 +150,6 @@ export function PurchaseModal({
                 {t('reinvest.upgradeTip', { tier: tier.tier + 1 })}
               </p>
             )}
-          </div>
-        )}
-
-        {/* Upgrade bonus info */}
-        {isUpgrade && (
-          <div className="p-3 bg-[#00ff88]/10 border border-[#00ff88]/30 rounded-lg">
-            <div className="flex items-start gap-2">
-              <TrendingUp className="w-4 h-4 flex-shrink-0 text-[#00ff88] mt-0.5" />
-              <div className="flex-1">
-                <Tooltip content={t('reinvest.newTierTooltip')} position="bottom">
-                  <p className="text-[#00ff88] text-sm font-semibold">
-                    {t('reinvest.newTierTitle')}
-                  </p>
-                </Tooltip>
-                <p className="text-xs text-[#b0b0b0] mt-1">
-                  {t('reinvest.newTierText')}
-                </p>
-              </div>
-            </div>
           </div>
         )}
 
