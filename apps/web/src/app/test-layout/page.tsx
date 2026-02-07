@@ -76,15 +76,12 @@ export default function TestLayoutPage() {
     };
 
     const handleMouseMove = (ev: MouseEvent) => {
-      if (!dragRef.current) return;
-      const dx = ev.clientX - dragRef.current.startX;
-      const dy = ev.clientY - dragRef.current.startY;
+      const drag = dragRef.current;
+      if (!drag) return;
+      const newX = drag.machineX + (ev.clientX - drag.startX);
+      const newY = drag.machineY + (ev.clientY - drag.startY);
       setPlacedMachines(prev =>
-        prev.map(m =>
-          m.id === id
-            ? { ...m, x: dragRef.current!.machineX + dx, y: dragRef.current!.machineY + dy }
-            : m
-        )
+        prev.map(m => m.id === id ? { ...m, x: newX, y: newY } : m)
       );
     };
 
@@ -113,16 +110,13 @@ export default function TestLayoutPage() {
 
     const handleTouchMove = (ev: TouchEvent) => {
       ev.preventDefault();
-      if (!dragRef.current) return;
+      const drag = dragRef.current;
+      if (!drag) return;
       const t = ev.touches[0];
-      const dx = t.clientX - dragRef.current.startX;
-      const dy = t.clientY - dragRef.current.startY;
+      const newX = drag.machineX + (t.clientX - drag.startX);
+      const newY = drag.machineY + (t.clientY - drag.startY);
       setPlacedMachines(prev =>
-        prev.map(m =>
-          m.id === id
-            ? { ...m, x: dragRef.current!.machineX + dx, y: dragRef.current!.machineY + dy }
-            : m
-        )
+        prev.map(m => m.id === id ? { ...m, x: newX, y: newY } : m)
       );
     };
 
