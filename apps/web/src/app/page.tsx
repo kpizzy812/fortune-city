@@ -25,6 +25,15 @@ import type { GambleInfo, AutoCollectInfo } from '@/types';
 
 const TELEGRAM_BOT_NAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || 'FortuneCityAppBot';
 
+// City fee tiers (mirrors backend taxRatesByTier)
+const CITY_FEE_TIERS: Record<number, number> = {1:50,2:50,3:40,4:40,5:30,6:30,7:20,8:20,9:20,10:10};
+function getNextFeeTier(currentMax: number): number {
+  return [3, 5, 7, 10].find(t => t > currentMax) || 10;
+}
+function getNextFeeRate(currentMax: number): number {
+  return CITY_FEE_TIERS[getNextFeeTier(currentMax)] ?? 10;
+}
+
 // Refresh server data every 30 seconds
 const SERVER_REFRESH_INTERVAL = 30000;
 // Interpolate income every second
@@ -418,12 +427,20 @@ export default function Home() {
               <div className="absolute inset-0 bg-gradient-to-br from-[#a855f7]/5 to-transparent" />
               <div className="relative">
                 <Percent className="w-4 h-4 text-[#a855f7] mx-auto mb-1 max-h-[850px]:w-3 max-h-[850px]:h-3 max-h-[850px]:mb-0" />
-                <Tooltip content={tDashboard('taxTooltip')} position="top" showIcon={false}>
-                  <p className="text-[10px] text-[#b0b0b0] underline decoration-dotted cursor-help max-h-[850px]:text-[8px]">{tDashboard('tax')}</p>
+                <Tooltip content={tDashboard('cityFeeTooltip')} position="top" showIcon={false}>
+                  <p className="text-[10px] text-[#b0b0b0] underline decoration-dotted cursor-help max-h-[850px]:text-[8px]">{tDashboard('cityFee')}</p>
                 </Tooltip>
                 <p className="text-lg font-mono font-bold text-white max-h-[850px]:text-base">
                   {(parseFloat(user.currentTaxRate) * 100).toFixed(0)}%
                 </p>
+                {user.maxTierReached < 10 && (
+                  <p className="text-[9px] text-[#a855f7]/70 mt-0.5">
+                    {tDashboard('cityFeeProgress', { target: getNextFeeRate(user.maxTierReached), targetTier: getNextFeeTier(user.maxTierReached) })}
+                  </p>
+                )}
+                {user.maxTierReached >= 10 && (
+                  <p className="text-[9px] text-[#22c55e]/70 mt-0.5">{tDashboard('cityFeeMin')}</p>
+                )}
               </div>
             </div>
           </div>
@@ -459,19 +476,26 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Tax Rate */}
+          {/* City Fee */}
           <div className="group relative bg-[#1a0a2e]/60 backdrop-blur-xl rounded-2xl p-5 border border-[#a855f7]/20 hover:border-[#a855f7]/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-[#a855f7]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="relative flex items-start justify-between">
               <div>
                 <div className="mb-2">
-                  <Tooltip content={tDashboard('taxTooltip')} position="bottom">
-                    <span className="text-sm text-[#b0b0b0]">{tDashboard('currentTaxRate')}</span>
+                  <Tooltip content={tDashboard('cityFeeTooltip')} position="bottom">
+                    <span className="text-sm text-[#b0b0b0]">{tDashboard('currentCityFee')}</span>
                   </Tooltip>
                 </div>
                 <p className="text-3xl font-mono font-bold text-white tracking-tight">
                   {(parseFloat(user.currentTaxRate) * 100).toFixed(0)}%
                 </p>
+                {user.maxTierReached < 10 ? (
+                  <p className="text-xs text-[#a855f7]/70 mt-1">
+                    {tDashboard('cityFeeProgress', { target: getNextFeeRate(user.maxTierReached), targetTier: getNextFeeTier(user.maxTierReached) })}
+                  </p>
+                ) : (
+                  <p className="text-xs text-[#22c55e]/70 mt-1">{tDashboard('cityFeeMin')}</p>
+                )}
               </div>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#a855f7]/20 to-[#a855f7]/5 flex items-center justify-center border border-[#a855f7]/20 group-hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-shadow duration-300">
                 <Percent className="w-6 h-6 text-[#a855f7]" />
