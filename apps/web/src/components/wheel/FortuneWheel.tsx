@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useEffect, useState, useCallback } from 'react';
-import { motion, useAnimation, useMotionValue, useTransform } from 'framer-motion';
+import { useRef, useEffect, useCallback } from 'react';
+import { motion, useAnimation } from 'framer-motion';
 import type { WheelSector } from '@/lib/api';
 
 interface FortuneWheelProps {
@@ -32,14 +32,11 @@ export function FortuneWheel({
   onSpinComplete,
 }: FortuneWheelProps) {
   const controls = useAnimation();
-  const rotation = useMotionValue(0);
   const wheelRef = useRef<SVGGElement>(null);
-  const [currentRotation, setCurrentRotation] = useState(0);
+  const currentRotationRef = useRef(0);
 
-  // Calculate sector angle
   const sectorAngle = 360 / sectors.length;
 
-  // Get color for sector
   const getSectorColor = (sector: string) => {
     return SECTOR_COLORS[sector] || DEFAULT_COLOR;
   };
@@ -47,21 +44,27 @@ export function FortuneWheel({
   // Calculate the target rotation for a specific sector
   const calculateTargetRotation = useCallback(
     (targetSector: string) => {
+      const cur = currentRotationRef.current;
       const sectorIndex = sectors.findIndex((s) => s.sector === targetSector);
-      if (sectorIndex === -1) return currentRotation + 360 * 5;
+      if (sectorIndex === -1) return cur + 360 * 5;
 
-      // Calculate base angle to land on this sector
-      // Sectors are drawn clockwise starting from top
-      // We need to rotate so the target sector is at the pointer (top)
+      // Center of the target sector (clockwise from top, in degrees)
       const targetAngle = sectorIndex * sectorAngle + sectorAngle / 2;
 
-      // Add multiple full rotations for visual effect
-      const fullRotations = 5 + Math.random() * 3; // 5-8 full rotations
-      const totalRotation = fullRotations * 360 + (360 - targetAngle);
+      // To place this sector under the pointer (top), the wheel's
+      // rotation modulo 360 must equal (360 - targetAngle)
+      const desiredMod = ((360 - targetAngle) % 360 + 360) % 360;
+      const currentMod = ((cur % 360) + 360) % 360;
 
-      return currentRotation + totalRotation;
+      // Additional rotation to reach the desired sector from current position
+      let delta = desiredMod - currentMod;
+      if (delta < 0) delta += 360;
+
+      // Add 5-8 full rotations for visual effect
+      const fullRotations = 5 + Math.floor(Math.random() * 3);
+      return cur + fullRotations * 360 + delta;
     },
-    [sectors, sectorAngle, currentRotation]
+    [sectors, sectorAngle]
   );
 
   // Handle spin animation
@@ -78,7 +81,7 @@ export function FortuneWheel({
           },
         })
         .then(() => {
-          setCurrentRotation(targetRotation % 360);
+          currentRotationRef.current = targetRotation;
           onSpinComplete?.();
         });
     }
@@ -142,7 +145,6 @@ export function FortuneWheel({
         viewBox="0 0 300 300"
         className="w-full h-full drop-shadow-2xl"
         animate={controls}
-        style={{ rotate: rotation }}
       >
         {/* Outer glow ring */}
         <circle
