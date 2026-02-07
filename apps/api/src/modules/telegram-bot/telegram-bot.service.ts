@@ -31,7 +31,7 @@ export class TelegramBotService {
     this.botToken = this.configService.get<string>('TELEGRAM_BOT_TOKEN');
     this.webAppUrl =
       this.configService.get<string>('TELEGRAM_WEBAPP_URL') ||
-      'https://fortunecity.app';
+      'https://fortune.syntratrade.com';
 
     if (!this.botToken) {
       this.logger.warn(

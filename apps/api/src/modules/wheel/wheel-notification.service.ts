@@ -31,7 +31,7 @@ export class WheelNotificationService {
     this.botToken = this.configService.get<string>('TELEGRAM_BOT_TOKEN');
     this.webAppUrl =
       this.configService.get<string>('TELEGRAM_WEBAPP_URL') ||
-      'https://fortunecity.app';
+      'https://fortune.syntratrade.com';
   }
 
   /**
