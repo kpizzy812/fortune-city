@@ -6,8 +6,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useWheelStore } from '@/stores/wheel.store';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { WS_BASE_URL } from '@/lib/socket';
 
 interface JackpotWonEvent {
   winnerId: string;
@@ -75,7 +74,7 @@ export function useWheelSocket(currentUserId?: string) {
 
   useEffect(() => {
     // Connect to wheel namespace
-    const socket = io(`${API_URL}/wheel`, {
+    const socket = io(`${WS_BASE_URL}/wheel`, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
     });

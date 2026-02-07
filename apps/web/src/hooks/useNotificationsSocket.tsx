@@ -5,9 +5,8 @@ import { io, Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationsStore } from '@/stores/notifications.store';
+import { WS_BASE_URL } from '@/lib/socket';
 import type { Notification } from '@/types';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 /**
  * Global WebSocket connection for notifications.
@@ -64,7 +63,7 @@ export function useNotificationsSocket() {
     if (!user?.id) return;
 
     // Connect to notifications namespace
-    const socket = io(`${API_URL}/notifications`, {
+    const socket = io(`${WS_BASE_URL}/notifications`, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
     });

@@ -6,8 +6,7 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepositEventsStore, type DepositCreditedEvent } from '@/stores/deposit-events.store';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { WS_BASE_URL } from '@/lib/socket';
 
 // Re-export type for convenience
 export type { DepositCreditedEvent } from '@/stores/deposit-events.store';
@@ -57,7 +56,7 @@ export function useDepositsSocket() {
     if (!user?.id) return;
 
     // Connect to deposits namespace
-    const socket = io(`${API_URL}/deposits`, {
+    const socket = io(`${WS_BASE_URL}/deposits`, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
     });
