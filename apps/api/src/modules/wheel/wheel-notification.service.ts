@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  type Lang,
+  getLang,
+  getWheelMessages,
+} from '../telegram-bot/telegram-bot.messages';
 
 interface JackpotBroadcastData {
   winnerId: string;
@@ -47,7 +52,6 @@ export class WheelNotificationService {
     }
 
     // Get all users with telegramId except the winner
-    // Note: telegramId is required field, all users have it
     const users = await this.prisma.user.findMany({
       where: {
         id: { not: data.winnerId },
@@ -55,6 +59,7 @@ export class WheelNotificationService {
       },
       select: {
         telegramId: true,
+        language: true,
       },
     });
 
@@ -64,32 +69,7 @@ export class WheelNotificationService {
     }
 
     const winnerDisplay = data.winnerName || 'Someone';
-
-    // Message with inline button to open wheel
-    const messageEn =
-      `🎰 <b>JACKPOT HIT!</b> 🎉\n\n` +
-      `${winnerDisplay} just won <b>$${data.amount.toFixed(2)}</b> on the Fortune Wheel!\n\n` +
-      `Try your luck now! 🍀`;
-
-    const messageRu =
-      `🎰 <b>ДЖЕКПОТ!</b> 🎉\n\n` +
-      `${winnerDisplay} сорвал <b>$${data.amount.toFixed(2)}</b> на Колесе Фортуны!\n\n` +
-      `Испытай удачу! 🍀`;
-
-    // Bilingual message
-    const message = `${messageEn}\n\n---\n\n${messageRu}`;
-
-    // Inline keyboard with Web App button
-    const keyboard: TelegramInlineKeyboard = {
-      inline_keyboard: [
-        [
-          {
-            text: '🎡 Spin Now! / Крутить!',
-            web_app: { url: `${this.webAppUrl}/wheel` },
-          },
-        ],
-      ],
-    };
+    const amountStr = data.amount.toFixed(2);
 
     let sent = 0;
     let failed = 0;
@@ -102,6 +82,21 @@ export class WheelNotificationService {
       }
 
       try {
+        const lang: Lang = getLang(user.language ?? undefined);
+        const wheel = getWheelMessages(lang);
+
+        const message = wheel.jackpotBroadcast(winnerDisplay, amountStr);
+        const keyboard: TelegramInlineKeyboard = {
+          inline_keyboard: [
+            [
+              {
+                text: wheel.spinButton,
+                web_app: { url: `${this.webAppUrl}/wheel` },
+              },
+            ],
+          ],
+        };
+
         await this.sendTelegramMessageWithKeyboard(
           user.telegramId,
           message,
@@ -113,7 +108,7 @@ export class WheelNotificationService {
         if (sent % 25 === 0) {
           await this.delay(1000);
         }
-      } catch (error) {
+      } catch {
         failed++;
         // Don't log every failure - user may have blocked the bot
       }
@@ -135,20 +130,21 @@ export class WheelNotificationService {
       return;
     }
 
-    const message =
-      `🎰 <b>ПОЗДРАВЛЯЕМ!</b> 🎉\n\n` +
-      `Вы выиграли ДЖЕКПОТ <b>$${amount.toFixed(2)}</b> на Колесе Фортуны!\n\n` +
-      `Ваш выигрыш уже на балансе. Удачи! 🍀\n\n` +
-      `---\n\n` +
-      `🎰 <b>CONGRATULATIONS!</b> 🎉\n\n` +
-      `You won the JACKPOT <b>$${amount.toFixed(2)}</b> on the Fortune Wheel!\n\n` +
-      `Your winnings are in your balance. Good luck! 🍀`;
+    // Fetch winner's language
+    const user = await this.prisma.user.findUnique({
+      where: { telegramId },
+      select: { language: true },
+    });
 
+    const lang: Lang = getLang(user?.language ?? undefined);
+    const wheel = getWheelMessages(lang);
+
+    const message = wheel.jackpotPersonal(amount.toFixed(2));
     const keyboard: TelegramInlineKeyboard = {
       inline_keyboard: [
         [
           {
-            text: '🎡 Spin Again! / Крутить ещё!',
+            text: wheel.spinAgainButton,
             web_app: { url: `${this.webAppUrl}/wheel` },
           },
         ],

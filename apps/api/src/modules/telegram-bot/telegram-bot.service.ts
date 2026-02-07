@@ -129,6 +129,16 @@ export class TelegramBotService {
         ? String(message.from.id)
         : undefined;
 
+      // Сохраняем язык юзера для будущих уведомлений
+      if (telegramUserId) {
+        this.prisma.user
+          .updateMany({
+            where: { telegramId: telegramUserId },
+            data: { language: lang },
+          })
+          .catch(() => {}); // fire-and-forget
+      }
+
       switch (command) {
         case 'start':
           await this.handleStart(

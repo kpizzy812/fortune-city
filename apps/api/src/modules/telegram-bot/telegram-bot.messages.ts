@@ -220,3 +220,195 @@ const messages: Record<Lang, BotMessages> = { ru, en };
 export function getMessages(lang: Lang): BotMessages {
   return messages[lang];
 }
+
+// ============ Wheel notification messages ============
+
+interface WheelMessages {
+  jackpotBroadcast: (winnerName: string, amount: string) => string;
+  jackpotPersonal: (amount: string) => string;
+  spinButton: string;
+  spinAgainButton: string;
+}
+
+const wheelRu: WheelMessages = {
+  jackpotBroadcast: (winnerName, amount) =>
+    `🎰 <b>ДЖЕКПОТ!</b> 🎉\n\n` +
+    `${winnerName} сорвал <b>$${amount}</b> на Колесе Фортуны!\n\n` +
+    `Испытай удачу! 🍀`,
+  jackpotPersonal: (amount) =>
+    `🎰 <b>ПОЗДРАВЛЯЕМ!</b> 🎉\n\n` +
+    `Вы выиграли ДЖЕКПОТ <b>$${amount}</b> на Колесе Фортуны!\n\n` +
+    `Ваш выигрыш уже на балансе. Удачи! 🍀`,
+  spinButton: '🎡 Крутить!',
+  spinAgainButton: '🎡 Крутить ещё!',
+};
+
+const wheelEn: WheelMessages = {
+  jackpotBroadcast: (winnerName, amount) =>
+    `🎰 <b>JACKPOT HIT!</b> 🎉\n\n` +
+    `${winnerName} just won <b>$${amount}</b> on the Fortune Wheel!\n\n` +
+    `Try your luck now! 🍀`,
+  jackpotPersonal: (amount) =>
+    `🎰 <b>CONGRATULATIONS!</b> 🎉\n\n` +
+    `You won the JACKPOT <b>$${amount}</b> on the Fortune Wheel!\n\n` +
+    `Your winnings are in your balance. Good luck! 🍀`,
+  spinButton: '🎡 Spin Now!',
+  spinAgainButton: '🎡 Spin Again!',
+};
+
+const wheelMessages: Record<Lang, WheelMessages> = { ru: wheelRu, en: wheelEn };
+
+export function getWheelMessages(lang: Lang): WheelMessages {
+  return wheelMessages[lang];
+}
+
+// ============ Notification templates (for Telegram) ============
+
+export function formatNotificationLocalized(
+  type: string,
+  data: Record<string, any>,
+  lang: Lang,
+): { title: string; message: string } {
+  if (lang === 'ru') return formatNotificationRu(type, data);
+  return formatNotificationEn(type, data);
+}
+
+function formatNotificationEn(
+  type: string,
+  data: Record<string, any>,
+): { title: string; message: string } {
+  switch (type) {
+    case 'machine_expired_soon':
+      return {
+        title: '⏰ Machine Expiring Soon',
+        message: `Your ${data.tierName || 'machine'} will expire in 24 hours! Don't forget to collect your earnings.`,
+      };
+    case 'machine_expired':
+      return {
+        title: '🎰 Machine Expired',
+        message: `Your ${data.tierName || 'machine'} has completed its cycle. Total earned: $${data.totalEarned || 0}`,
+      };
+    case 'coin_box_full':
+      return {
+        title: '📦 Coin Box Full!',
+        message: `Your ${data.tierName || 'machine'} coin box is full! Collect now or earnings will stop.`,
+      };
+    case 'coin_box_almost_full':
+      return {
+        title: '📦 Coin Box Almost Full',
+        message: `Your ${data.tierName || 'machine'} coin box is 90% full. Collect soon!`,
+      };
+    case 'referral_joined':
+      return {
+        title: '👥 New Referral!',
+        message: `${data.referralName || 'Someone'} joined using your referral link! You'll earn ${data.bonusPercent || 5}% from their deposits.`,
+      };
+    case 'deposit_credited':
+      return {
+        title: '💰 Deposit Credited',
+        message: `$${data.amountUsd || data.amount || 0} has been added to your balance!`,
+      };
+    case 'deposit_rejected':
+      return {
+        title: '❌ Deposit Rejected',
+        message: `Your deposit was rejected. Reason: ${data.reason || 'Unknown'}`,
+      };
+    case 'wheel_jackpot_won':
+      return {
+        title: '🎉 JACKPOT!',
+        message: `Congratulations! You won $${data.amount || 0} on the Fortune Wheel!`,
+      };
+    case 'wheel_jackpot_alert':
+      return {
+        title: '🎰 Jackpot Won!',
+        message: `${data.winnerName || 'Someone'} just won $${data.amount || 0} on the Wheel! Try your luck!`,
+      };
+    case 'withdrawal_approved':
+      return {
+        title: '✅ Withdrawal Approved',
+        message: `Your withdrawal of $${data.netAmount || data.amount || 0} has been approved and is being processed.`,
+      };
+    case 'withdrawal_completed':
+      return {
+        title: '✅ Withdrawal Completed',
+        message: `Your withdrawal of $${data.netAmount || data.amount || 0} has been sent successfully!`,
+      };
+    case 'withdrawal_rejected':
+      return {
+        title: '❌ Withdrawal Rejected',
+        message: `Your withdrawal was rejected. Reason: ${data.reason || 'Unknown'}`,
+      };
+    default:
+      return { title: 'Notification', message: 'You have a new notification' };
+  }
+}
+
+function formatNotificationRu(
+  type: string,
+  data: Record<string, any>,
+): { title: string; message: string } {
+  switch (type) {
+    case 'machine_expired_soon':
+      return {
+        title: '⏰ Машина скоро истечёт',
+        message: `Ваша ${data.tierName || 'машина'} истечёт через 24 часа! Не забудьте собрать заработок.`,
+      };
+    case 'machine_expired':
+      return {
+        title: '🎰 Машина истекла',
+        message: `Ваша ${data.tierName || 'машина'} завершила цикл. Всего заработано: $${data.totalEarned || 0}`,
+      };
+    case 'coin_box_full':
+      return {
+        title: '📦 Coin Box полон!',
+        message: `Coin Box вашей ${data.tierName || 'машины'} полон! Соберите заработок, иначе доход остановится.`,
+      };
+    case 'coin_box_almost_full':
+      return {
+        title: '📦 Coin Box почти полон',
+        message: `Coin Box вашей ${data.tierName || 'машины'} заполнен на 90%. Соберите скорее!`,
+      };
+    case 'referral_joined':
+      return {
+        title: '👥 Новый реферал!',
+        message: `${data.referralName || 'Кто-то'} присоединился по вашей ссылке! Вы будете получать ${data.bonusPercent || 5}% от их депозитов.`,
+      };
+    case 'deposit_credited':
+      return {
+        title: '💰 Депозит зачислен',
+        message: `$${data.amountUsd || data.amount || 0} зачислено на ваш баланс!`,
+      };
+    case 'deposit_rejected':
+      return {
+        title: '❌ Депозит отклонён',
+        message: `Ваш депозит отклонён. Причина: ${data.reason || 'Неизвестно'}`,
+      };
+    case 'wheel_jackpot_won':
+      return {
+        title: '🎉 ДЖЕКПОТ!',
+        message: `Поздравляем! Вы выиграли $${data.amount || 0} на Колесе Фортуны!`,
+      };
+    case 'wheel_jackpot_alert':
+      return {
+        title: '🎰 Джекпот сорван!',
+        message: `${data.winnerName || 'Кто-то'} выиграл $${data.amount || 0} на Колесе! Испытай удачу!`,
+      };
+    case 'withdrawal_approved':
+      return {
+        title: '✅ Вывод одобрен',
+        message: `Ваш вывод $${data.netAmount || data.amount || 0} одобрен и обрабатывается.`,
+      };
+    case 'withdrawal_completed':
+      return {
+        title: '✅ Вывод завершён',
+        message: `Ваш вывод $${data.netAmount || data.amount || 0} успешно отправлен!`,
+      };
+    case 'withdrawal_rejected':
+      return {
+        title: '❌ Вывод отклонён',
+        message: `Ваш вывод отклонён. Причина: ${data.reason || 'Неизвестно'}`,
+      };
+    default:
+      return { title: 'Уведомление', message: 'У вас новое уведомление' };
+  }
+}

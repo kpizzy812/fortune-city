@@ -1,6 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TelegramBotService } from '../telegram-bot/telegram-bot.service';
+import {
+  type Lang,
+  getLang,
+  formatNotificationLocalized,
+} from '../telegram-bot/telegram-bot.messages';
 import { NotificationsGateway } from './notifications.gateway';
 import {
   CreateNotificationDto,
@@ -52,13 +57,13 @@ export class NotificationsService {
       }
     }
 
-    // 3. Send via Telegram - non-blocking
+    // 3. Send via Telegram - non-blocking (localized per user language)
     if (channels.includes('telegram')) {
       this.sendToTelegram(
         notification.id,
         dto.userId,
-        dto.title,
-        dto.message,
+        dto.type,
+        dto.data || {},
       ).catch((error) => {
         this.logger.error(
           `Failed to send Telegram notification: ${error.message}`,
@@ -71,21 +76,22 @@ export class NotificationsService {
   }
 
   /**
-   * Send notification to Telegram
+   * Send notification to Telegram (localized per user language)
    */
   private async sendToTelegram(
     notificationId: string,
     userId: string,
-    title: string,
-    message: string,
+    type: NotificationType,
+    data: Record<string, any>,
   ): Promise<void> {
     try {
-      // Get user's telegram chat ID
+      // Get user's telegram chat ID and language
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
         select: {
           telegramChatId: true,
           telegramNotificationsEnabled: true,
+          language: true,
         },
       });
 
@@ -96,7 +102,9 @@ export class NotificationsService {
         return;
       }
 
-      // Format message for Telegram
+      // Format localized message for Telegram
+      const lang: Lang = getLang(user.language ?? undefined);
+      const { title, message } = formatNotificationLocalized(type, data, lang);
       const telegramMessage = `<b>${title}</b>\n\n${message}`;
 
       // Send message

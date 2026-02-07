@@ -24,6 +24,7 @@ model User {
   firstName   String?  @map("first_name")
   lastName    String?  @map("last_name")
   avatarUrl   String?  @map("avatar_url")
+  language    String?  @default("en") // ru, en — from Telegram language_code
 
   // Balance (only $FORTUNE, USDT converts on deposit/withdrawal)
   fortuneBalance  Decimal @default(0) @map("fortune_balance") @db.Decimal(20, 8)

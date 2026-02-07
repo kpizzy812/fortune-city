@@ -13,6 +13,7 @@ import {
   TelegramUserData,
   EmailUserData,
 } from '../users/users.service';
+import { getLang } from '../telegram-bot/telegram-bot.messages';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   TelegramLoginWidgetDto,
@@ -81,12 +82,25 @@ export class AuthService {
         photo_url: user.photo_url,
       };
 
-      return this.authenticateUser(
+      const result = await this.authenticateUser(
         telegramUser,
         referralCode,
         rememberMe,
         metadata,
       );
+
+      // Сохраняем язык из TMA initData (fire-and-forget)
+      const langCode = user.languageCode as string | undefined;
+      if (langCode) {
+        this.prisma.user
+          .updateMany({
+            where: { telegramId: String(user.id) },
+            data: { language: getLang(langCode) },
+          })
+          .catch(() => {});
+      }
+
+      return result;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`InitData validation failed: ${message}`);
