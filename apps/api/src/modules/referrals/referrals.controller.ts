@@ -19,6 +19,8 @@ import {
   ReferralMilestonesService,
   MilestoneProgress,
 } from './referral-milestones.service';
+import { SettingsService } from '../settings/settings.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { JwtPayload } from '../auth/auth.service';
 
 interface WithdrawDto {
@@ -29,20 +31,48 @@ interface SetReferrerDto {
   referralCode: string;
 }
 
+interface FreeSpinsInfo {
+  base: number;
+  perActiveRef: number;
+  total: number;
+  current: number;
+}
+
 @Controller('referrals')
 @UseGuards(JwtAuthGuard)
 export class ReferralsController {
   constructor(
     private readonly referralsService: ReferralsService,
     private readonly milestonesService: ReferralMilestonesService,
+    private readonly settingsService: SettingsService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
-   * Get referral statistics for current user
+   * Get referral statistics for current user (includes free spins info)
    */
   @Get('stats')
-  async getStats(@Request() req: { user: JwtPayload }): Promise<ReferralStats> {
-    return this.referralsService.getReferralStats(req.user.sub);
+  async getStats(
+    @Request() req: { user: JwtPayload },
+  ): Promise<ReferralStats & { freeSpinsInfo: FreeSpinsInfo }> {
+    const stats = await this.referralsService.getReferralStats(req.user.sub);
+    const settings = await this.settingsService.getSettings();
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.sub },
+      select: { freeSpinsRemaining: true },
+    });
+
+    return {
+      ...stats,
+      freeSpinsInfo: {
+        base: settings.wheelFreeSpinsBase,
+        perActiveRef: settings.wheelFreeSpinsPerRef,
+        total:
+          settings.wheelFreeSpinsBase +
+          stats.activeReferrals * settings.wheelFreeSpinsPerRef,
+        current: user?.freeSpinsRemaining ?? 0,
+      },
+    };
   }
 
   /**

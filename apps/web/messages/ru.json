@@ -288,6 +288,12 @@
     "howItWorks3": "Получай 1% от рефералов 3-го уровня (Линия 3)",
     "howItWorks4": "Бонусы выплачиваются только со свежих депозитов",
     "howItWorks5": "Активный реферал = купил автомат за свои средства",
+    "freeSpins": "Ежедневные фриспины",
+    "freeSpinsBase": "базовые",
+    "freeSpinsActiveRefs": "акт. реф.",
+    "freeSpinsPerDay": "в день",
+    "freeSpinsRemaining": "Осталось сегодня",
+    "freeSpinsCta": "Приглашай друзей — больше рефералов = больше фриспинов!",
     "milestones": {
       "title": "Бонусы за рефералов",
       "activeRefs": "{count} акт. рефералов",
@@ -489,6 +495,22 @@
     "withdrew": "вывел",
     "won": "выиграл",
     "jackpot": "сорвал ДЖЕКПОТ!"
+  },
+  "fame": {
+    "famePoints": "Fame",
+    "dailyLoginTitle": "Ежедневный бонус Fame!",
+    "claimFame": "Забери свои ⚡ очки",
+    "claim": "Забрать",
+    "claimedToday": "Получено сегодня",
+    "streak": "{days}д подряд",
+    "unlockTierTitle": "Открыть уровень {tier}",
+    "progress": "Прогресс",
+    "needMore": "Нужно ещё ⚡{amount}",
+    "unlockDescription": "Потрать Fame чтобы открыть следующий уровень автоматов. Fame зарабатывается за ежедневные входы, сбор монет и покупку автоматов.",
+    "unlockButton": "Открыть за ⚡{cost}",
+    "insufficientFame": "Недостаточно Fame",
+    "unlockCost": "⚡{cost}",
+    "locked": "Закрыто"
   },
   "metadata": {
     "title": "Fortune City",

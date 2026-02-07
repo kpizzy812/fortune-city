@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Copy, Check, Send, Twitter } from 'lucide-react';
+import { Copy, Check, Send, Twitter, Gift, Zap } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useReferralsStore } from '@/stores/referrals.store';
 import { api, type MilestoneProgress } from '@/lib/api';
@@ -241,6 +241,56 @@ export default function RefsPage() {
             </p>
           </div>
         </div>
+
+        {/* Daily Free Spins */}
+        {stats?.freeSpinsInfo && (
+          <div className="bg-[#2a1a4e] rounded-xl p-4 lg:p-6 border border-[#00ff88]/20 mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Gift className="w-5 h-5 text-[#00ff88]" />
+              <h2 className="text-lg font-semibold text-white">
+                {t('freeSpins')}
+              </h2>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm mb-3">
+              <span className="text-[#b0b0b0]">{stats.freeSpinsInfo.base} {t('freeSpinsBase')}</span>
+              <span className="text-white/40">+</span>
+              <span className="text-[#00ff88] font-medium">
+                {stats.activeReferrals} {t('freeSpinsActiveRefs')} × {stats.freeSpinsInfo.perActiveRef}
+              </span>
+              <span className="text-white/40">=</span>
+              <span className="text-white font-bold text-base">
+                {stats.freeSpinsInfo.total}
+              </span>
+              <span className="text-[#b0b0b0]">{t('freeSpinsPerDay')}</span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mb-2">
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-[#b0b0b0]">{t('freeSpinsRemaining')}</span>
+                <span className="text-white font-medium">
+                  {stats.freeSpinsInfo.current} / {stats.freeSpinsInfo.total}
+                </span>
+              </div>
+              <div className="h-2 bg-[#1a0a2e] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#00ff88] to-[#00d4ff] rounded-full transition-all"
+                  style={{
+                    width: `${stats.freeSpinsInfo.total > 0 ? (stats.freeSpinsInfo.current / stats.freeSpinsInfo.total) * 100 : 0}%`,
+                  }}
+                />
+              </div>
+            </div>
+
+            {stats.activeReferrals === 0 && (
+              <p className="text-xs text-[#b0b0b0] mt-2 flex items-center gap-1">
+                <Zap className="w-3 h-3 text-[#ffd700]" />
+                {t('freeSpinsCta')}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Milestones */}
         {milestones && (

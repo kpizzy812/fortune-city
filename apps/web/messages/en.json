@@ -288,6 +288,12 @@
     "howItWorks3": "Earn 1% from 3rd level referrals (Line 3)",
     "howItWorks4": "Bonuses are paid from fresh deposits only",
     "howItWorks5": "Active referral = has purchased machine with own funds",
+    "freeSpins": "Daily Free Spins",
+    "freeSpinsBase": "base",
+    "freeSpinsActiveRefs": "active refs",
+    "freeSpinsPerDay": "per day",
+    "freeSpinsRemaining": "Remaining today",
+    "freeSpinsCta": "Invite more friends — more referrals = more free spins!",
     "milestones": {
       "title": "Referral Milestones",
       "activeRefs": "{count} active referrals",
@@ -489,6 +495,22 @@
     "withdrew": "withdrew",
     "won": "won",
     "jackpot": "hit JACKPOT!"
+  },
+  "fame": {
+    "famePoints": "Fame",
+    "dailyLoginTitle": "Daily Fame bonus!",
+    "claimFame": "Claim your ⚡ points",
+    "claim": "Claim",
+    "claimedToday": "Claimed today",
+    "streak": "{days}d streak",
+    "unlockTierTitle": "Unlock Tier {tier}",
+    "progress": "Progress",
+    "needMore": "Need ⚡{amount} more",
+    "unlockDescription": "Spend Fame to unlock the next machine tier. Earn Fame from daily logins, coin collection, and machine purchases.",
+    "unlockButton": "Unlock for ⚡{cost}",
+    "insufficientFame": "Not enough Fame",
+    "unlockCost": "⚡{cost}",
+    "locked": "Locked"
   },
   "metadata": {
     "title": "Fortune City",

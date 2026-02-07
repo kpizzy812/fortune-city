@@ -4,10 +4,16 @@ import { ReferralMilestonesService } from './referral-milestones.service';
 import { ReferralsController } from './referrals.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
+import { SettingsModule } from '../settings/settings.module';
 import { MachinesModule } from '../machines/machines.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, forwardRef(() => MachinesModule)],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    SettingsModule,
+    forwardRef(() => MachinesModule),
+  ],
   controllers: [ReferralsController],
   providers: [ReferralsService, ReferralMilestonesService],
   exports: [ReferralsService, ReferralMilestonesService],

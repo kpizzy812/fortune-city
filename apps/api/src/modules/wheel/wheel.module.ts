@@ -1,14 +1,20 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { SettingsModule } from '../settings/settings.module';
 import { AuthModule } from '../auth/auth.module';
+import { ReferralsModule } from '../referrals/referrals.module';
 import { WheelController } from './wheel.controller';
 import { WheelService } from './wheel.service';
 import { WheelGateway } from './wheel.gateway';
 import { WheelNotificationService } from './wheel-notification.service';
 
 @Module({
-  imports: [PrismaModule, SettingsModule, AuthModule],
+  imports: [
+    PrismaModule,
+    SettingsModule,
+    AuthModule,
+    forwardRef(() => ReferralsModule),
+  ],
   controllers: [WheelController],
   providers: [WheelService, WheelGateway, WheelNotificationService],
   exports: [WheelService],

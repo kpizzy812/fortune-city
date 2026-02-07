@@ -3,9 +3,13 @@ import {
   BadRequestException,
   Logger,
   OnModuleInit,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
+import { ReferralsService } from '../referrals/referrals.service';
 import { Decimal } from '@prisma/client/runtime/library';
 import { randomBytes } from 'crypto';
 import {
@@ -35,6 +39,8 @@ export class WheelService implements OnModuleInit {
     private readonly settingsService: SettingsService,
     private readonly wheelGateway: WheelGateway,
     private readonly notificationService: WheelNotificationService,
+    @Inject(forwardRef(() => ReferralsService))
+    private readonly referralsService: ReferralsService,
   ) {}
 
   async onModuleInit() {
@@ -362,7 +368,9 @@ export class WheelService implements OnModuleInit {
     return {
       items: items.map((item) => ({
         id: item.id,
-        betMultiplier: Math.round(Number(item.totalBet) / Number(item.betAmount)),
+        betMultiplier: Math.round(
+          Number(item.totalBet) / Number(item.betAmount),
+        ),
         totalBet: Number(item.totalBet),
         totalPayout: Number(item.totalPayout),
         netResult: Number(item.netResult),
@@ -377,21 +385,49 @@ export class WheelService implements OnModuleInit {
   }
 
   /**
-   * Reset daily free spins (called by cron)
+   * Reset daily free spins at midnight UTC.
+   * Formula: base + activeReferrals × perRef
+   * Non-referrers get base spins, referrers get individual calculation.
    */
+  @Cron('0 0 0 * * *')
   async resetDailyFreeSpins(): Promise<number> {
     const settings = await this.settingsService.getSettings();
     const baseSpins = settings.wheelFreeSpinsBase;
+    const perRef = settings.wheelFreeSpinsPerRef;
 
-    // For now, just reset to base. Referral bonus can be added later.
-    const result = await this.prisma.user.updateMany({
-      data: {
-        freeSpinsRemaining: baseSpins,
-      },
+    // Users who have at least one referral — need individual calculation
+    const referrers = await this.prisma.user.findMany({
+      where: { referrals: { some: {} } },
+      select: { id: true },
     });
 
-    this.logger.log(`Reset daily free spins for ${result.count} users`);
-    return result.count;
+    const referrerIds = referrers.map((u) => u.id);
+
+    // All non-referrers — simple bulk update to base
+    const bulkResult = await this.prisma.user.updateMany({
+      where: { id: { notIn: referrerIds } },
+      data: { freeSpinsRemaining: baseSpins },
+    });
+
+    // Referrers — calculate individually based on active referral count
+    let referrerCount = 0;
+    for (const referrer of referrers) {
+      const activeCount = await this.referralsService.getActiveReferralCount(
+        referrer.id,
+      );
+      const totalSpins = baseSpins + activeCount * perRef;
+
+      await this.prisma.user.update({
+        where: { id: referrer.id },
+        data: { freeSpinsRemaining: totalSpins },
+      });
+      referrerCount++;
+    }
+
+    this.logger.log(
+      `Reset daily free spins: ${bulkResult.count} users → ${baseSpins}, ${referrerCount} referrers → individual`,
+    );
+    return bulkResult.count + referrerCount;
   }
 
   /**
@@ -506,9 +542,21 @@ export class WheelService implements OnModuleInit {
 
   private generateWinSeedData(count: number) {
     const names = [
-      'Al***ex', 'Vi***or', 'Ni***ai', 'An***ey', 'Se***ey',
-      'Di***ry', 'Ma***im', 'Pa***el', 'Ar***em', 'Iv***an',
-      'Da***la', 'Mi***el', 'Ol***eg', 'Ro***an', 'Ti***ey',
+      'Al***ex',
+      'Vi***or',
+      'Ni***ai',
+      'An***ey',
+      'Se***ey',
+      'Di***ry',
+      'Ma***im',
+      'Pa***el',
+      'Ar***em',
+      'Iv***an',
+      'Da***la',
+      'Mi***el',
+      'Ol***eg',
+      'Ro***an',
+      'Ti***ey',
     ];
     const now = Date.now();
 

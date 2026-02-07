@@ -1257,6 +1257,45 @@ class ApiClient {
       token,
     });
   }
+
+  // ============================================
+  // Fame
+  // ============================================
+
+  async getFameBalance(token: string): Promise<import('@/types').FameBalance> {
+    return this.request<import('@/types').FameBalance>('/fame/balance', {
+      token,
+    });
+  }
+
+  async getFameHistory(
+    token: string,
+    page = 1,
+    limit = 20,
+  ): Promise<import('@/types').FameHistory> {
+    return this.request<import('@/types').FameHistory>(
+      `/fame/history?page=${page}&limit=${limit}`,
+      { token },
+    );
+  }
+
+  async claimDailyLogin(token: string): Promise<import('@/types').DailyLoginResult> {
+    return this.request<import('@/types').DailyLoginResult>('/fame/daily-login', {
+      method: 'POST',
+      token,
+    });
+  }
+
+  async unlockTier(
+    token: string,
+    tier: number,
+  ): Promise<import('@/types').UnlockTierResult> {
+    return this.request<import('@/types').UnlockTierResult>('/fame/unlock-tier', {
+      method: 'POST',
+      token,
+      body: { tier },
+    });
+  }
 }
 
 export const api = new ApiClient(API_URL);
@@ -1277,10 +1316,15 @@ export interface UserData {
   fortuneBalance: string;
   referralBalance: string;
   maxTierReached: number;
+  maxTierUnlocked: number;
   currentTaxRate: string;
   taxDiscount: string;
   referralCode: string;
   telegramNotificationsEnabled: boolean;
+  fame: number;
+  totalFameEarned: number;
+  loginStreak: number;
+  lastLoginDate: string | null;
 }
 
 export interface ReferralStats {
@@ -1294,6 +1338,12 @@ export interface ReferralStats {
   totalEarned: number;
   referralBalance: number;
   referralCode: string;
+  freeSpinsInfo: {
+    base: number;
+    perActiveRef: number;
+    total: number;
+    current: number;
+  };
 }
 
 export interface ReferralListItem {
