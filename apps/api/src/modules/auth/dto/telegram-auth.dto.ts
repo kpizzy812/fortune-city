@@ -93,6 +93,7 @@ export class AuthResponseDto {
     username: string | null;
     firstName: string | null;
     lastName: string | null;
+    avatarUrl: string | null;
     fortuneBalance: string;
     referralBalance: string;
     maxTierReached: number;

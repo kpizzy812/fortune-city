@@ -8,6 +8,7 @@ export interface TelegramUserData {
   username?: string;
   first_name?: string;
   last_name?: string;
+  photo_url?: string;
 }
 
 export interface EmailUserData {
@@ -56,6 +57,7 @@ export class UsersService {
         username: telegramUser.username,
         firstName: telegramUser.first_name,
         lastName: telegramUser.last_name,
+        avatarUrl: telegramUser.photo_url,
         referralCode,
         referredById: referrerId,
       },
@@ -82,6 +84,7 @@ export class UsersService {
           username: telegramUser.username,
           firstName: telegramUser.first_name,
           lastName: telegramUser.last_name,
+          avatarUrl: telegramUser.photo_url,
         },
       });
     }
@@ -227,6 +230,7 @@ export class UsersService {
         username: telegramUser.username || undefined,
         firstName: telegramUser.first_name || undefined,
         lastName: telegramUser.last_name || undefined,
+        avatarUrl: telegramUser.photo_url || undefined,
       },
     });
   }

@@ -1237,6 +1237,7 @@ export interface UserData {
   username: string | null;
   firstName: string | null;
   lastName: string | null;
+  avatarUrl: string | null;
   fortuneBalance: string;
   referralBalance: string;
   maxTierReached: number;

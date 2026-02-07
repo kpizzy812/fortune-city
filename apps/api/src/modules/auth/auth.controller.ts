@@ -90,6 +90,7 @@ export class AuthController {
       username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
+      avatarUrl: user.avatarUrl,
       fortuneBalance: user.fortuneBalance.toString(),
       referralBalance: user.referralBalance.toString(),
       maxTierReached: user.maxTierReached,

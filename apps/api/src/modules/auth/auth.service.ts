@@ -76,6 +76,7 @@ export class AuthService {
         username: user.username,
         first_name: user.firstName as string | undefined,
         last_name: user.lastName as string | undefined,
+        photo_url: user.photo_url,
       };
 
       return this.authenticateUser(
@@ -121,6 +122,7 @@ export class AuthService {
       username: data.username,
       first_name: data.first_name,
       last_name: data.last_name,
+      photo_url: data.photo_url,
     };
 
     return this.authenticateUser(
@@ -241,6 +243,7 @@ export class AuthService {
       username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
+      avatarUrl: user.avatarUrl,
       fortuneBalance: user.fortuneBalance.toString(),
       referralBalance: user.referralBalance.toString(),
       maxTierReached: user.maxTierReached,
@@ -311,6 +314,7 @@ export class AuthService {
       username: telegramData.username,
       first_name: telegramData.first_name,
       last_name: telegramData.last_name,
+      photo_url: telegramData.photo_url,
     };
 
     const user = await this.usersService.linkTelegramToUser(
