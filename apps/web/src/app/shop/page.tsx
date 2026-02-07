@@ -13,6 +13,7 @@ import { TopUpAndBuyModal } from '@/components/shop/TopUpAndBuyModal';
 import { usePurchaseIntentStore } from '@/stores/purchase-intent.store';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { api } from '@/lib/api';
+import { useFeedback } from '@/hooks/useFeedback';
 import type { TierInfo, Machine, SaleOptions } from '@/types';
 
 // Dynamic import SolanaWalletProvider to avoid SSR issues
@@ -26,6 +27,8 @@ export default function ShopPage() {
   const { user, token, refreshUser } = useAuthStore();
   const t = useTranslations('shop');
   const tCommon = useTranslations('common');
+
+  const { purchase: fbPurchase } = useFeedback();
 
   const {
     tiers,
@@ -122,21 +125,18 @@ export default function ShopPage() {
 
     try {
       await purchaseMachine(token, selectedTier.tier);
-      // Refresh user to update balance
+      fbPurchase();
       await refreshUser();
-      // Recheck affordability
       if (user) {
         checkAllAffordability(token, user.maxTierReached);
       }
-      // Close modal
       setIsModalOpen(false);
       setSelectedTier(null);
-      // Redirect to dashboard
       router.push('/');
     } catch {
       // Error is displayed in modal
     }
-  }, [token, selectedTier, purchaseMachine, refreshUser, user, checkAllAffordability, router]);
+  }, [token, selectedTier, purchaseMachine, refreshUser, user, checkAllAffordability, router, fbPurchase]);
 
   // Handle modal close
   const handleCloseModal = useCallback(() => {
@@ -206,19 +206,15 @@ export default function ShopPage() {
   const handleTopUpSuccess = useCallback(async () => {
     if (!token || !pendingTierInfo) return;
 
-    // Purchase the machine
     await purchaseMachine(token, pendingTierInfo.tier);
-    // Refresh user balance
+    fbPurchase();
     await refreshUser();
-    // Recheck affordability
     if (user) {
       checkAllAffordability(token, user.maxTierReached);
     }
-    // Clear the intent
     clearPendingPurchase();
-    // Redirect to dashboard
     router.push('/');
-  }, [token, pendingTierInfo, purchaseMachine, refreshUser, user, checkAllAffordability, clearPendingPurchase, router]);
+  }, [token, pendingTierInfo, purchaseMachine, refreshUser, user, checkAllAffordability, clearPendingPurchase, router, fbPurchase]);
 
   // Loading state
   if (!user || !token) {

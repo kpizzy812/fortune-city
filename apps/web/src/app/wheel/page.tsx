@@ -13,6 +13,7 @@ import {
   RecentWins,
 } from '@/components/wheel';
 import { BottomNavigation } from '@/components/layout/BottomNavigation';
+import { useFeedback } from '@/hooks/useFeedback';
 import type { WheelMultiplier } from '@/lib/api';
 
 export default function WheelPage() {
@@ -37,6 +38,8 @@ export default function WheelPage() {
     clearLastResult,
     clearError,
   } = useWheelStore();
+
+  const { spin: fbSpin, win: fbWin, lose: fbLose } = useFeedback();
 
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
   const [currentResultSector, setCurrentResultSector] = useState<string | undefined>();
@@ -63,24 +66,31 @@ export default function WheelPage() {
 
       try {
         clearError();
+        fbSpin();
         const result = await spin(token, multiplier);
 
-        // Start wheel animation — always single spin now
         setIsWheelSpinning(true);
         setCurrentResultSector(result.result.sector);
       } catch {
         // Error handled in store
       }
     },
-    [token, isSpinning, spin, clearError]
+    [token, isSpinning, spin, clearError, fbSpin]
   );
 
   // Handle wheel animation complete
   const handleSpinComplete = useCallback(() => {
     setIsWheelSpinning(false);
     setIsResultModalOpen(true);
+    // Play win/lose sound based on last result
+    const result = useWheelStore.getState().lastSpinResult;
+    if (result && result.netResult > 0) {
+      fbWin();
+    } else {
+      fbLose();
+    }
     refreshUser();
-  }, [refreshUser]);
+  }, [refreshUser, fbWin, fbLose]);
 
   // Close result modal
   const handleCloseResult = useCallback(() => {

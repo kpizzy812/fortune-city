@@ -26,6 +26,7 @@ import { ActivityFeed } from '@/components/activity/ActivityFeed';
 import { DailyLoginBanner } from '@/components/fame/DailyLoginBanner';
 import { FameBadge } from '@/components/fame/FameBadge';
 import { getUserInitial } from '@/lib/utils';
+import { useFeedback } from '@/hooks/useFeedback';
 import type { GambleInfo, AutoCollectInfo } from '@/types';
 
 const TELEGRAM_BOT_NAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || 'FortuneCityAppBot';
@@ -48,6 +49,8 @@ export default function Home() {
   const { user, token, isLoading: authLoading, error: authError, clearAuth, refreshUser, devLogin } = useAuthStore();
   const { isTelegramApp } = useTelegramWebApp();
   const { fetchRate } = useFortuneRateStore();
+
+  const { collect: fbCollect, win: fbWin, lose: fbLose, purchase: fbPurchase, click: fbClick } = useFeedback();
 
   const tCommon = useTranslations('common');
   const tAuth = useTranslations('auth');
@@ -137,13 +140,13 @@ export default function Home() {
       if (!token) return;
       try {
         await collectCoins(token, machineId);
-        // Refresh user balance
+        fbCollect();
         refreshUser();
       } catch {
         // Error is handled in store
       }
     },
-    [token, collectCoins, refreshUser]
+    [token, collectCoins, refreshUser, fbCollect]
   );
 
   // Handle risky collect (open modal)
@@ -165,20 +168,25 @@ export default function Home() {
   const handleConfirmRiskyCollect = useCallback(
     async () => {
       if (!token || !selectedMachineId) return;
+      fbClick();
 
       try {
-        await riskyCollect(token, selectedMachineId);
-        // Close modal and show result
+        const result = await riskyCollect(token, selectedMachineId);
         setIsRiskyModalOpen(false);
         setIsResultModalOpen(true);
-        // Refresh user balance
+        // Play win/lose sound based on result
+        if (result?.won) {
+          fbWin();
+        } else {
+          fbLose();
+        }
         refreshUser();
       } catch {
-        // Error is handled in store
+        fbLose();
         setIsRiskyModalOpen(false);
       }
     },
-    [token, selectedMachineId, riskyCollect, refreshUser]
+    [token, selectedMachineId, riskyCollect, refreshUser, fbClick, fbWin, fbLose]
   );
 
   // Close result modal
@@ -211,9 +219,8 @@ export default function Home() {
       setIsPurchasingAutoCollect(true);
       try {
         await purchaseAutoCollect(token, selectedMachineId);
-        // Refresh user balance
+        fbPurchase();
         refreshUser();
-        // Update auto collect info and use returned value
         const info = await fetchAutoCollectInfo(token, selectedMachineId);
         setCurrentAutoCollectInfo(info);
       } catch {
@@ -222,7 +229,7 @@ export default function Home() {
         setIsPurchasingAutoCollect(false);
       }
     },
-    [token, selectedMachineId, purchaseAutoCollect, refreshUser, fetchAutoCollectInfo]
+    [token, selectedMachineId, purchaseAutoCollect, refreshUser, fetchAutoCollectInfo, fbPurchase]
   );
 
   // Show loading state
