@@ -18,6 +18,7 @@ import { AutoCollectModal } from '@/components/machines/AutoCollectModal';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { useInterval } from '@/hooks/useInterval';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
+import { MusicToggleButton } from '@/components/layout/MusicToggleButton';
 import { ProfileModal } from '@/components/profile/ProfileModal';
 import { TelegramConnectionBanner } from '@/components/notifications/TelegramConnectionBanner';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -257,8 +258,9 @@ export default function Home() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center px-4 py-6 lg:p-8">
         <div className="w-full max-w-md">
-          {/* Language Switcher */}
-          <div className="flex justify-end mb-4">
+          {/* Top controls */}
+          <div className="flex justify-end items-center gap-2 mb-4">
+            <MusicToggleButton />
             <LanguageSwitcher />
           </div>
 
@@ -352,10 +354,7 @@ export default function Home() {
       {/* Container with max-width for desktop */}
       <div className="max-w-4xl mx-auto">
         {/* Header - visible only on mobile (on desktop it's in sidebar) */}
-        <header className="flex items-center justify-between mb-3 lg:hidden">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-[#ff2d95] to-[#00d4ff] bg-clip-text text-transparent text-center leading-tight">
-            {tBrand('name')}
-          </h1>
+        <header className="flex items-center justify-end mb-3 lg:hidden">
           <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-lg lg:text-xl text-[#ffd700] font-mono font-bold">
@@ -363,6 +362,7 @@ export default function Home() {
               </p>
               <FameBadge size="sm" />
             </div>
+            <MusicToggleButton />
             <NotificationBell />
             <LanguageSwitcher />
             <button

@@ -10,6 +10,7 @@ import { Home, ShoppingCart, FerrisWheel, Users, Wallet, ChevronLeft, ChevronRig
 import { useAuthStore } from '@/stores/auth.store';
 import { useUIStore } from '@/stores/ui.store';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { MusicToggleButton } from './MusicToggleButton';
 import { ProfileModal } from '@/components/profile/ProfileModal';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { FameBadge } from '@/components/fame/FameBadge';
@@ -233,6 +234,7 @@ export function SidebarNavigation() {
       {/* Language & Logout */}
       <div className={`border-t border-[#ff2d95]/10 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
         <div className={`flex items-center ${sidebarCollapsed ? 'flex-col gap-2' : 'gap-2'}`}>
+          <MusicToggleButton collapsed={sidebarCollapsed} />
           <LanguageSwitcher collapsed={sidebarCollapsed} />
           <button
             onClick={clearAuth}

@@ -9,6 +9,7 @@ import { useWheelSocket } from '@/hooks/useWheelSocket';
 import { useNotificationsSocket } from '@/hooks/useNotificationsSocket';
 import { BottomNavigation } from './BottomNavigation';
 import { SidebarNavigation } from './SidebarNavigation';
+import { MusicPlayer } from './MusicPlayer';
 
 interface AuthenticatedLayoutProps {
   children: ReactNode;
@@ -33,11 +34,18 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
   // Show navigation only for authenticated users
   if (!user) {
-    return <>{children}</>;
+    return (
+      <>
+        <MusicPlayer />
+        {children}
+      </>
+    );
   }
 
   return (
     <>
+      <MusicPlayer />
+
       {/* Sidebar for desktop (lg+) */}
       <SidebarNavigation />
 
