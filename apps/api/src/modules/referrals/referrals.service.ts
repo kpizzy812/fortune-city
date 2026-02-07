@@ -235,6 +235,20 @@ export class ReferralsService {
   }
 
   /**
+   * Get total count of active referrals across all levels (L1+L2+L3)
+   * Lightweight version of getReferralStats — returns only the count
+   */
+  async getActiveReferralCount(userId: string): Promise<number> {
+    const counts = await Promise.all(
+      [1, 2, 3].map(async (level) => {
+        const refs = await this.getActiveReferralsAtLevel(userId, level);
+        return refs.length;
+      }),
+    );
+    return counts.reduce((sum, c) => sum + c, 0);
+  }
+
+  /**
    * Check if user has at least one machine purchased with fresh deposit
    */
   async hasActiveMachineWithFreshDeposit(userId: string): Promise<boolean> {
