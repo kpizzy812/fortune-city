@@ -405,7 +405,21 @@
       "depositSubmitted": "Deposit submitted for review!",
       "depositFailed": "Failed to submit deposit",
       "failedToLoadInstructions": "Failed to load instructions"
-    }
+    },
+    "buyCrypto": "Buy SOL / USDT",
+    "buyCryptoHint": "How to buy crypto with fiat",
+    "buyCryptoTitle": "How to Buy SOL / USDT",
+    "buyCryptoSubtitle": "The whole process takes no more than 15 minutes",
+    "buyCryptoStepLabel": "Step {num}",
+    "step1Title": "Download Phantom — Crypto Wallet",
+    "step1Desc": "It's like a banking app, but for crypto. Install Phantom Wallet on your phone or as a browser extension. Click 'Create wallet' and save your 12 words — it's your key, never share it.",
+    "step2Title": "Buy Solana (SOL)",
+    "step2Desc": "Solana is the cryptocurrency used to buy tokens. You can buy it through BestChange, Telegram CryptoBot, or exchanges like Bybit and Binance.",
+    "step3Title": "Send SOL to your Phantom wallet",
+    "step3Desc": "Copy your Solana address in Phantom. Paste it in the exchange or bot where you're buying. Funds arrive in Phantom within 1-5 minutes.",
+    "step4Title": "Top up your Fortune City balance",
+    "step4Desc": "Come back to this page, connect your Phantom wallet and deposit via the 'Wallet' tab. You can deposit SOL or USDT.",
+    "buyCryptoWarning": "Never send crypto to unknown addresses. Only use the official links above. If you have any issues — contact support."
   },
   "wheel": {
     "title": "Fortune Wheel",
