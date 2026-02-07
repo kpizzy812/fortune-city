@@ -6,7 +6,9 @@ import { useTranslations } from 'next-intl';
 import { Copy, Check, Send, Twitter } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useReferralsStore } from '@/stores/referrals.store';
+import { api, type MilestoneProgress } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
+import { MilestoneCard } from '@/components/referrals/MilestoneCard';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { useTelegramWebApp } from '@/providers/TelegramProvider';
 
@@ -37,8 +39,10 @@ export default function RefsPage() {
   } = useReferralsStore();
 
   const [copied, setCopied] = useState(false);
+  const [milestones, setMilestones] = useState<MilestoneProgress | null>(null);
   const hasFetched = useRef(false);
   const { webApp, isTelegramApp } = useTelegramWebApp();
+  const tMilestones = useTranslations('refs.milestones');
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -54,8 +58,16 @@ export default function RefsPage() {
       fetchStats(token);
       fetchReferrals(token);
       checkCanWithdraw(token);
+      api.getReferralMilestones(token).then(setMilestones).catch(() => {});
     }
   }, [token, fetchStats, fetchReferrals, checkCanWithdraw]);
+
+  // Reload milestones after claim
+  const refreshMilestones = useCallback(() => {
+    if (token) {
+      api.getReferralMilestones(token).then(setMilestones).catch(() => {});
+    }
+  }, [token]);
 
   // Generate referral link
   const referralLink = stats?.referralCode
@@ -229,6 +241,30 @@ export default function RefsPage() {
             </p>
           </div>
         </div>
+
+        {/* Milestones */}
+        {milestones && (
+          <div className="bg-[#2a1a4e] rounded-xl p-4 lg:p-6 border border-[#ffd700]/20 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white">
+                {tMilestones('title')}
+              </h2>
+              <span className="text-xs text-white/40">
+                {tMilestones('activeRefs', { count: milestones.activeReferrals })}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {milestones.milestones.map((m) => (
+                <MilestoneCard
+                  key={m.milestone}
+                  milestone={m}
+                  activeReferrals={milestones.activeReferrals}
+                  onClaimed={refreshMilestones}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Level Breakdown */}
         <div className="bg-[#2a1a4e] rounded-xl p-4 lg:p-6 border border-[#ff2d95]/30 mb-6">
