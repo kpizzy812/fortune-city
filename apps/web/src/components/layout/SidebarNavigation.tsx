@@ -12,6 +12,7 @@ import { useUIStore } from '@/stores/ui.store';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ProfileModal } from '@/components/profile/ProfileModal';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { FameBadge } from '@/components/fame/FameBadge';
 import { formatUserDisplayName, getUserInitial } from '@/lib/utils';
 
 interface NavItem {
@@ -142,6 +143,9 @@ export function SidebarNavigation() {
               <p className="text-lg lg:text-xl text-[#ffd700] font-mono font-bold">
                 ${parseFloat(user.fortuneBalance).toFixed(2)}
               </p>
+              <div className="mt-1">
+                <FameBadge size="sm" />
+              </div>
             </div>
           )}
           {sidebarCollapsed && (
@@ -152,6 +156,9 @@ export function SidebarNavigation() {
               <p className="text-xs text-[#ffd700] font-mono font-bold truncate">
                 ${parseFloat(user.fortuneBalance).toFixed(0)}
               </p>
+              <div className="mt-1 flex justify-center">
+                <FameBadge size="sm" />
+              </div>
             </div>
           )}
         </div>

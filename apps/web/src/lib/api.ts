@@ -1293,7 +1293,7 @@ class ApiClient {
     return this.request<import('@/types').UnlockTierResult>('/fame/unlock-tier', {
       method: 'POST',
       token,
-      body: { tier },
+      body: JSON.stringify({ tier }),
     });
   }
 }

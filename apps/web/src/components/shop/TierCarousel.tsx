@@ -4,10 +4,12 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, ChevronLeft, ChevronRight, Tag, TrendingDown, TrendingUp } from 'lucide-react';
+import { Lock, ChevronLeft, ChevronRight, Tag, TrendingDown, TrendingUp, Zap } from 'lucide-react';
 import type { TierInfo, CanAffordResponse, Machine } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { UnlockTierModal } from '@/components/fame/UnlockTierModal';
+import { FAME_UNLOCK_COST_BY_TIER } from '@fortune-city/shared';
 
 interface TierCarouselProps {
   tiers: TierInfo[];
@@ -47,6 +49,7 @@ interface TierCardTranslations {
   reinvestRepeatBadge: (params: { round: number }) => string;
   reinvestPenaltyTooltip: string;
   reinvestNewTierTooltip: string;
+  unlockCost: (params: { cost: string }) => string;
 }
 
 function TierCard({
@@ -57,6 +60,7 @@ function TierCard({
   onBuy,
   onSell,
   onTopUpAndBuy,
+  onUnlock,
   isPurchasing,
   t,
 }: {
@@ -67,6 +71,7 @@ function TierCard({
   onBuy: () => void;
   onSell: () => void;
   onTopUpAndBuy: () => void;
+  onUnlock: () => void;
   isPurchasing: boolean;
   t: TierCardTranslations;
 }) {
@@ -156,8 +161,10 @@ function TierCard({
               ${tier.price.toLocaleString()}
             </p>
             {isLocked ? (
-              <span className="flex items-center gap-1 text-[#ff4444] text-xs font-medium">
-                <Lock className="w-3 h-3" /> {t.locked}
+              <span className="flex items-center gap-1 text-[#facc15] text-xs font-medium">
+                <Lock className="w-3 h-3" />
+                <Zap className="w-3 h-3" />
+                {(FAME_UNLOCK_COST_BY_TIER[tier.tier] ?? 0).toLocaleString()}
               </span>
             ) : !hasActiveMachine && isUpgrade ? (
               <Tooltip content={t.reinvestNewTierTooltip} position="top" showIcon={false}>
@@ -206,8 +213,11 @@ function TierCard({
 
         {/* Button */}
         {isLocked ? (
-          <Button variant="ghost" size="sm" fullWidth disabled>
-            {t.reachTierFirst({ tier: tier.tier - 1 })}
+          <Button variant="ghost" size="sm" fullWidth onClick={onUnlock}>
+            <span className="flex items-center gap-1">
+              <Zap className="w-3.5 h-3.5 text-[#facc15]" />
+              {t.unlockCost({ cost: (FAME_UNLOCK_COST_BY_TIER[tier.tier] ?? 0).toLocaleString() })}
+            </span>
           </Button>
         ) : hasActiveMachine && machine ? (
           <Button
@@ -254,10 +264,12 @@ export function TierCarousel({
 }: TierCarouselProps) {
   const tShop = useTranslations('shop');
   const tSell = useTranslations('sell');
+  const tFame = useTranslations('fame');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [unlockTierTarget, setUnlockTierTarget] = useState<number | null>(null);
 
   // Card width for calculations (280px card + 20px gap)
   const cardWidthWithGap = 300;
@@ -337,6 +349,7 @@ export function TierCarousel({
     reinvestRepeatBadge: (params) => tShop('reinvest.repeatBadge', params),
     reinvestPenaltyTooltip: tShop('reinvest.penaltyTooltip'),
     reinvestNewTierTooltip: tShop('reinvest.newTierTooltip'),
+    unlockCost: (params) => tFame('unlockCost', params),
   };
 
   return (
@@ -424,6 +437,7 @@ export function TierCarousel({
                       onTopUpAndBuy(tier, canAffordInfo.shortfall);
                     }
                   }}
+                  onUnlock={() => setUnlockTierTarget(tier.tier)}
                   isPurchasing={isPurchasing}
                   t={cardTranslations}
                 />
@@ -474,6 +488,15 @@ export function TierCarousel({
           );
         })}
       </div>
+
+      {/* Unlock Tier Modal */}
+      {unlockTierTarget !== null && (
+        <UnlockTierModal
+          isOpen={true}
+          onClose={() => setUnlockTierTarget(null)}
+          tier={unlockTierTarget}
+        />
+      )}
     </div>
   );
 }

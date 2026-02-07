@@ -716,6 +716,81 @@ User → Other Crypto Modal → Backend (pending) → Admin Panel → Approve/Re
 
 ---
 
+## Phase 15: Fame System (IN PROGRESS)
+
+**Started:** 2026-02-07
+**Документация:** [docs/fame-system.md](docs/fame-system.md)
+
+### Концепция
+Fame (⚡) — мета-валюта, не торгуется, не выводится. Используется для разблокировки тиров и прогресса.
+
+### 15.1 Backend (COMPLETED)
+- [x] Prisma: fame, totalFameEarned, loginStreak, lastLoginDate, maxTierUnlocked на User
+- [x] Prisma: FameTransaction модель (source, amount, balanceAfter)
+- [x] FameModule: balance, history, daily-login, unlock-tier endpoints
+- [x] FameService: начисление fame за machine_passive, manual_collect, daily_login, machine_purchase, tier_unlock
+- [x] getActiveReferralCount() в ReferralsService для подсчёта активных рефов
+
+### 15.2 Frontend (IN PROGRESS)
+- [x] FameBadge, DailyLoginBanner, UnlockTierModal компоненты
+- [x] Fame store (Zustand)
+- [x] Fame API методы и типы
+- [x] FameBadge в MobileHeader
+- [ ] Интеграция DailyLoginBanner в layout
+- [ ] Интеграция UnlockTierModal в TierCarousel
+- [ ] SidebarNavigation обновления
+
+### 15.3 Ежедневные фриспины от рефералов (COMPLETED)
+- [x] Cron (`0 0 0 * * *`, полночь UTC) для ежедневного сброса фриспинов
+- [x] Формула: `base(1) + activeReferrals × perRef(5)`
+- [x] Фриспины сгорают ежедневно (не накапливаются)
+- [x] GET /referrals/stats обогащён `freeSpinsInfo` (base, perActiveRef, total, current)
+- [x] Карточка "Daily Free Spins" на странице рефералов
+- [x] Переводы ru/en
+
+**Build Status:** API и Web собираются успешно
+
+---
+
+## Phase 15: Fame System (Phase 1)
+
+### Описание
+Fame (⚡) — расходуемый ресурс прогрессии. Зарабатывается за активность (пассивный доход от машин, ручной сбор, daily login, покупка машин), тратится на unlock тиров. Заменяет авто-unlock тиров при экспирации машины.
+
+### Изменения
+
+**Schema (Prisma):**
+- User: +fame, totalFameEarned, loginStreak, lastLoginDate
+- Machine: +fameGenerated, lastFameCalculatedAt
+- Новая модель FameTransaction + enum FameSource
+- SystemSettings: +famePerHourByTier, famePerManualCollect, fameDailyLogin, fameStreakBonus, fameStreakCap, famePurchaseByTier, fameUpgradeMultiplier, fameUnlockCostByTier
+
+**Shared (packages/shared):**
+- constants/fame.ts — все константы Fame и хелперы
+
+**Backend:**
+- FameModule (fame.service, fame.controller, dto) — earn/spend/balance/history/daily-login/unlock-tier
+- MachinesService: collectCoins с isAutoCollect, passive Fame, manual collect Fame
+- AutoCollectService: isAutoCollect=true → нет Fame за ручной сбор
+- PurchaseService: Fame за покупку (x2 при upgrade)
+- AuthService: Fame-поля в /auth/me
+- Убран авто-unlock maxTierUnlocked при экспирации машины
+
+**Frontend:**
+- Types: FameSource, FameBalance, FameTransaction, FameHistory, DailyLoginResult, UnlockTierResult
+- API: getFameBalance, getFameHistory, claimDailyLogin, unlockTier
+- Store: fame.store.ts (Zustand)
+- Компоненты:
+  - FameBadge — ⚡{fame} в header (MobileHeader, SidebarNavigation, page.tsx)
+  - DailyLoginBanner — баннер daily login на dashboard
+  - UnlockTierModal — модал unlock тира за Fame
+- TierCarousel: залоченные тиры показывают стоимость в ⚡, кнопка открывает UnlockTierModal
+- Локализация: fame namespace в ru.json/en.json
+
+**Build Status:** API и Web собираются успешно
+
+---
+
 ## Notes
 
 - Используем существующие паттерны из auth, machines, economy модулей

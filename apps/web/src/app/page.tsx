@@ -22,6 +22,8 @@ import { ProfileModal } from '@/components/profile/ProfileModal';
 import { TelegramConnectionBanner } from '@/components/notifications/TelegramConnectionBanner';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ActivityFeed } from '@/components/activity/ActivityFeed';
+import { DailyLoginBanner } from '@/components/fame/DailyLoginBanner';
+import { FameBadge } from '@/components/fame/FameBadge';
 import { getUserInitial } from '@/lib/utils';
 import type { GambleInfo, AutoCollectInfo } from '@/types';
 
@@ -359,6 +361,7 @@ export default function Home() {
               <p className="text-lg lg:text-xl text-[#ffd700] font-mono font-bold">
                 ${parseFloat(user.fortuneBalance).toFixed(2)}
               </p>
+              <FameBadge size="sm" />
             </div>
             <NotificationBell />
             <LanguageSwitcher />
@@ -380,6 +383,9 @@ export default function Home() {
 
         {/* Telegram Connection Banner */}
         <TelegramConnectionBanner />
+
+        {/* Daily Fame Login Banner */}
+        <DailyLoginBanner />
 
         {/* User Stats Card - visible only on mobile (on desktop it's in sidebar) */}
         <div className="grid grid-cols-3 gap-2 mb-4 lg:hidden">
