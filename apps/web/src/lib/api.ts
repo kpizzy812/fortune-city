@@ -86,6 +86,13 @@ class ApiClient {
     return this.request<UserData>('/auth/me', { token });
   }
 
+  async authWithTelegramBotToken(token: string) {
+    return this.request<AuthResponse>('/auth/telegram-bot-login', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  }
+
   async devLogin() {
     return this.request<AuthResponse>('/auth/dev-login', {
       method: 'POST',
@@ -322,6 +329,20 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ referralCode }),
     });
+  }
+
+  async getReferralMilestones(token: string): Promise<MilestoneProgress> {
+    return this.request<MilestoneProgress>('/referrals/milestones', { token });
+  }
+
+  async claimReferralMilestone(
+    token: string,
+    milestoneId: string,
+  ): Promise<{ success: boolean; reward: string }> {
+    return this.request<{ success: boolean; reward: string }>(
+      `/referrals/milestones/${milestoneId}/claim`,
+      { token, method: 'POST' },
+    );
   }
 
   // ============================================
@@ -1260,6 +1281,7 @@ export interface UserData {
   referralBalance: string;
   maxTierReached: number;
   currentTaxRate: string;
+  taxDiscount: string;
   referralCode: string;
   telegramNotificationsEnabled: boolean;
 }
@@ -1291,6 +1313,21 @@ export interface WithdrawReferralResult {
   success: boolean;
   newFortuneBalance: number;
   newReferralBalance: number;
+}
+
+export interface MilestoneStatus {
+  milestone: string;
+  threshold: number;
+  reward: string;
+  description: string;
+  claimed: boolean;
+  claimedAt: string | null;
+  canClaim: boolean;
+}
+
+export interface MilestoneProgress {
+  activeReferrals: number;
+  milestones: MilestoneStatus[];
 }
 
 export interface AuthResponse {

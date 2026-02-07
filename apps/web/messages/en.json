@@ -284,7 +284,20 @@
     "howItWorks2": "Earn 3% from their referrals (Line 2)",
     "howItWorks3": "Earn 1% from 3rd level referrals (Line 3)",
     "howItWorks4": "Bonuses are paid from fresh deposits only",
-    "howItWorks5": "Active referral = has purchased machine with own funds"
+    "howItWorks5": "Active referral = has purchased machine with own funds",
+    "milestones": {
+      "title": "Referral Milestones",
+      "activeRefs": "{count} active referrals",
+      "claimed": "Claimed",
+      "claim": "Claim",
+      "claiming": "Claiming...",
+      "locked": "Locked",
+      "reward_free_machine_tier1": "Free Rusty Lever",
+      "reward_tax_discount_5": "-5% city fee forever",
+      "reward_free_machine_tier2": "Free Lucky Cherry",
+      "reward_vip": "VIP status",
+      "threshold": "{count} active referrals"
+    }
   },
   "sell": {
     "title": "Sell {name}",

@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
@@ -6,6 +7,10 @@ import {
   extractDeepLinkParam,
   extractCommand,
 } from './dto/telegram-webhook.dto';
+import { getLang, getMessages, type Lang } from './telegram-bot.messages';
+
+const LOGIN_TOKEN_BYTES = 32;
+const LOGIN_TOKEN_TTL_MINUTES = 5;
 
 interface TelegramInlineKeyboard {
   inline_keyboard: Array<
@@ -40,9 +45,72 @@ export class TelegramBotService {
     }
   }
 
+  // ============ Login Token helpers ============
+
+  private generateLoginToken(): string {
+    return crypto.randomBytes(LOGIN_TOKEN_BYTES).toString('hex');
+  }
+
+  private hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
+  private async createLoginTokenForUser(userId: string): Promise<string> {
+    const token = this.generateLoginToken();
+    const hashedToken = this.hashToken(token);
+
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + LOGIN_TOKEN_TTL_MINUTES);
+
+    // Удаляем старые токены этого юзера
+    await this.prisma.telegramLoginToken.deleteMany({ where: { userId } });
+
+    await this.prisma.telegramLoginToken.create({
+      data: { userId, token: hashedToken, expiresAt },
+    });
+
+    return token;
+  }
+
   /**
-   * Handle incoming webhook update from Telegram
+   * Строим URL для "Открыть в браузере" с одноразовым токеном
    */
+  private async buildBrowserUrl(telegramUserId?: string): Promise<string> {
+    if (!telegramUserId) return this.webAppUrl;
+
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { telegramId: telegramUserId },
+        select: { id: true },
+      });
+
+      if (!user) return this.webAppUrl;
+
+      const token = await this.createLoginTokenForUser(user.id);
+      return `${this.webAppUrl}/auth/tg-login?token=${token}`;
+    } catch (error) {
+      this.logger.error(`Failed to build browser URL: ${error.message}`);
+      return this.webAppUrl;
+    }
+  }
+
+  // ============ Keyboard builder ============
+
+  private buildAppKeyboard(
+    lang: Lang,
+    browserUrl: string,
+  ): TelegramInlineKeyboard {
+    const msg = getMessages(lang);
+    return {
+      inline_keyboard: [
+        [{ text: msg.welcome.openMiniApp, web_app: { url: this.webAppUrl } }],
+        [{ text: msg.welcome.openBrowser, url: browserUrl }],
+      ],
+    };
+  }
+
+  // ============ Webhook handler ============
+
   async handleWebhook(update: TelegramWebhookDto): Promise<void> {
     if (!this.botToken) {
       return;
@@ -56,105 +124,100 @@ export class TelegramBotService {
 
       const command = extractCommand(message.text);
       const telegramChatId = String(message.chat.id);
+      const lang = getLang(message.from?.language_code);
+      const telegramUserId = message.from
+        ? String(message.from.id)
+        : undefined;
 
       switch (command) {
         case 'start':
-          await this.handleStart(telegramChatId, message.text);
+          await this.handleStart(
+            telegramChatId,
+            message.text,
+            lang,
+            telegramUserId,
+          );
           break;
 
         case 'help':
-          await this.handleHelp(telegramChatId);
+          await this.handleHelp(telegramChatId, lang);
           break;
 
         case 'notifications':
-          await this.handleNotifications(telegramChatId);
+          await this.handleNotifications(telegramChatId, lang);
           break;
 
         case 'disconnect':
-          await this.handleDisconnect(telegramChatId);
+          await this.handleDisconnect(telegramChatId, lang);
           break;
 
         default:
-          await this.handleUnknownCommand(telegramChatId);
+          await this.handleUnknownCommand(telegramChatId, lang);
       }
     } catch (error) {
       this.logger.error(`Error handling webhook: ${error.message}`, error);
     }
   }
 
+  // ============ Command handlers ============
+
   /**
-   * Handle /start command with optional deep link parameter
-   * Deep link format: /start connect_USER_ID
+   * /start с опциональным deep link параметром
+   * Deep link формат: /start connect_USER_ID
    */
   private async handleStart(
     telegramChatId: string,
     text: string,
+    lang: Lang,
+    telegramUserId?: string,
   ): Promise<void> {
     const deepLinkParam = extractDeepLinkParam(text);
 
     if (deepLinkParam && deepLinkParam.startsWith('connect_')) {
       const userId = deepLinkParam.replace('connect_', '');
-      await this.connectUser(telegramChatId, userId);
+      await this.connectUser(telegramChatId, userId, lang, telegramUserId);
     } else {
-      await this.sendWelcomeMessage(telegramChatId);
+      await this.sendWelcomeMessage(telegramChatId, lang, telegramUserId);
     }
   }
 
   /**
-   * Connect Telegram chat to user account
+   * Подключение Telegram чата к аккаунту пользователя
    */
   private async connectUser(
     telegramChatId: string,
     userId: string,
+    lang: Lang,
+    telegramUserId?: string,
   ): Promise<void> {
+    const msg = getMessages(lang);
+
     try {
-      // Find user by ID
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
         select: {
           id: true,
           firstName: true,
-          lastName: true,
           telegramId: true,
           telegramNotificationsEnabled: true,
         },
       });
 
       if (!user) {
-        await this.sendMessage(
-          telegramChatId,
-          '❌ <b>Connection Failed</b>\n\n' +
-            'User not found. Please try again from the app.\n\n' +
-            '---\n\n' +
-            '❌ <b>Ошибка подключения</b>\n\n' +
-            'Пользователь не найден. Попробуйте снова из приложения.',
-        );
+        await this.sendMessage(telegramChatId, msg.connectionFailed.notFound);
         return;
       }
 
-      // Check if user is already connected
+      // Уже подключён
       if (
         user.telegramNotificationsEnabled &&
         user.telegramId === telegramChatId
       ) {
-        await this.sendMessage(
-          telegramChatId,
-          '✅ <b>Already Connected!</b>\n\n' +
-            'Your Telegram is already linked to Fortune City.\n\n' +
-            'You will receive notifications about:\n' +
-            '• 💰 Deposits\n' +
-            '• 🎰 Machine updates\n' +
-            '• 📦 Full Coin Boxes\n' +
-            '• 👥 New referrals\n' +
-            '• 🎡 Wheel jackpots\n\n' +
-            '---\n\n' +
-            '✅ <b>Уже подключено!</b>\n\n' +
-            'Ваш Telegram уже привязан к Fortune City.',
-        );
+        await this.sendMessage(telegramChatId, msg.alreadyConnected);
         return;
       }
 
-      // Update user with Telegram chat ID
+      // Привязываем Telegram chat
       await this.prisma.user.update({
         where: { id: userId },
         data: {
@@ -164,43 +227,25 @@ export class TelegramBotService {
         },
       });
 
-      const userName = user.firstName || 'Player';
+      const userName =
+        user.firstName || (lang === 'ru' ? 'Игрок' : 'Player');
+      const browserUrl = await this.buildBrowserUrl(telegramUserId);
 
-      // Send success message with inline keyboard
       const keyboard: TelegramInlineKeyboard = {
         inline_keyboard: [
           [
             {
-              text: '🎰 Open Fortune City',
+              text: msg.connected.openMiniApp,
               web_app: { url: this.webAppUrl },
             },
           ],
+          [{ text: msg.connected.openBrowser, url: browserUrl }],
         ],
       };
 
       await this.sendMessageWithKeyboard(
         telegramChatId,
-        `🎉 <b>Connected Successfully!</b>\n\n` +
-          `Welcome, ${userName}! Your Telegram is now linked to Fortune City.\n\n` +
-          `You will receive instant notifications about:\n` +
-          `• 💰 Deposits and withdrawals\n` +
-          `• 🎰 Machine status updates\n` +
-          `• 📦 Full Coin Boxes (collect now!)\n` +
-          `• 👥 New referrals\n` +
-          `• 🎡 Wheel jackpots\n\n` +
-          `<b>Commands:</b>\n` +
-          `/help - Show all commands\n` +
-          `/notifications - Notification settings\n` +
-          `/disconnect - Unlink Telegram\n\n` +
-          `---\n\n` +
-          `🎉 <b>Успешно подключено!</b>\n\n` +
-          `Добро пожаловать, ${userName}! Ваш Telegram привязан к Fortune City.\n\n` +
-          `Вы будете получать уведомления о:\n` +
-          `• 💰 Депозитах и выводах\n` +
-          `• 🎰 Статусе машин\n` +
-          `• 📦 Заполненных Coin Box\n` +
-          `• 👥 Новых рефералах\n` +
-          `• 🎡 Джекпотах колеса`,
+        msg.connected.text(userName),
         keyboard,
       );
 
@@ -212,148 +257,80 @@ export class TelegramBotService {
         `Failed to connect user ${userId}: ${error.message}`,
         error,
       );
-      await this.sendMessage(
-        telegramChatId,
-        '❌ <b>Connection Failed</b>\n\n' +
-          'An error occurred. Please try again later.\n\n' +
-          '---\n\n' +
-          '❌ <b>Ошибка подключения</b>\n\n' +
-          'Произошла ошибка. Попробуйте позже.',
-      );
+      await this.sendMessage(telegramChatId, msg.connectionFailed.error);
     }
   }
 
   /**
-   * Send welcome message for users who just started bot
+   * Приветственное сообщение — точка входа в приложение
    */
-  private async sendWelcomeMessage(telegramChatId: string): Promise<void> {
-    const keyboard: TelegramInlineKeyboard = {
-      inline_keyboard: [
-        [
-          {
-            text: '🎰 Open Fortune City',
-            web_app: { url: this.webAppUrl },
-          },
-        ],
-      ],
-    };
+  private async sendWelcomeMessage(
+    telegramChatId: string,
+    lang: Lang,
+    telegramUserId?: string,
+  ): Promise<void> {
+    const msg = getMessages(lang);
+    const browserUrl = await this.buildBrowserUrl(telegramUserId);
+    const keyboard = this.buildAppKeyboard(lang, browserUrl);
 
     await this.sendMessageWithKeyboard(
       telegramChatId,
-      '🎰 <b>Welcome to Fortune City!</b>\n\n' +
-        'Build your casino empire and earn $FORTUNE.\n\n' +
-        'To receive notifications, please:\n' +
-        '1. Open Fortune City app\n' +
-        '2. Click "Enable Telegram Notifications"\n' +
-        '3. Return here to connect\n\n' +
-        'Use /help to see all commands.\n\n' +
-        '---\n\n' +
-        '🎰 <b>Добро пожаловать в Fortune City!</b>\n\n' +
-        'Создай империю казино и зарабатывай $FORTUNE.\n\n' +
-        'Чтобы получать уведомления:\n' +
-        '1. Открой приложение Fortune City\n' +
-        '2. Нажми "Подключить Telegram"\n' +
-        '3. Вернись сюда для подключения',
+      msg.welcome.text,
       keyboard,
     );
   }
 
   /**
-   * Handle /help command
+   * /help
    */
-  private async handleHelp(telegramChatId: string): Promise<void> {
-    await this.sendMessage(
-      telegramChatId,
-      '📖 <b>Fortune City Bot Commands</b>\n\n' +
-        '<b>Available commands:</b>\n' +
-        '/start - Start bot and connect account\n' +
-        '/help - Show this help message\n' +
-        '/notifications - Notification settings\n' +
-        '/disconnect - Unlink Telegram from account\n\n' +
-        '---\n\n' +
-        '📖 <b>Команды Fortune City Bot</b>\n\n' +
-        '<b>Доступные команды:</b>\n' +
-        '/start - Запуск бота и подключение\n' +
-        '/help - Показать эту справку\n' +
-        '/notifications - Настройки уведомлений\n' +
-        '/disconnect - Отключить Telegram',
-    );
+  private async handleHelp(
+    telegramChatId: string,
+    lang: Lang,
+  ): Promise<void> {
+    const msg = getMessages(lang);
+    await this.sendMessage(telegramChatId, msg.help);
   }
 
   /**
-   * Handle /notifications command
+   * /notifications
    */
-  private async handleNotifications(telegramChatId: string): Promise<void> {
-    // Find user by telegram chat ID
+  private async handleNotifications(
+    telegramChatId: string,
+    lang: Lang,
+  ): Promise<void> {
+    const msg = getMessages(lang);
+
     const user = await this.prisma.user.findFirst({
       where: { telegramChatId },
-      select: {
-        telegramNotificationsEnabled: true,
-      },
+      select: { telegramNotificationsEnabled: true },
     });
 
     if (!user) {
-      await this.sendMessage(
-        telegramChatId,
-        '❌ <b>Not Connected</b>\n\n' +
-          'Your Telegram is not linked to any Fortune City account.\n' +
-          'Use /start to connect.\n\n' +
-          '---\n\n' +
-          '❌ <b>Не подключено</b>\n\n' +
-          'Ваш Telegram не привязан к аккаунту.\n' +
-          'Используйте /start для подключения.',
-      );
+      await this.sendMessage(telegramChatId, msg.notifications.notConnected);
       return;
     }
 
-    const status = user.telegramNotificationsEnabled
-      ? 'Enabled ✅'
-      : 'Disabled ❌';
-    const statusRu = user.telegramNotificationsEnabled
-      ? 'Включены ✅'
-      : 'Выключены ❌';
-
     await this.sendMessage(
       telegramChatId,
-      '🔔 <b>Notification Settings</b>\n\n' +
-        `Status: <b>${status}</b>\n\n` +
-        'You receive notifications about:\n' +
-        '• 💰 Deposits and withdrawals\n' +
-        '• 🎰 Machine status\n' +
-        '• 📦 Coin Box alerts\n' +
-        '• 👥 New referrals\n' +
-        '• 🎡 Wheel jackpots\n\n' +
-        'To change settings, visit the app.\n\n' +
-        '---\n\n' +
-        '🔔 <b>Настройки уведомлений</b>\n\n' +
-        `Статус: <b>${statusRu}</b>\n\n` +
-        'Вы получаете уведомления о:\n' +
-        '• 💰 Депозитах и выводах\n' +
-        '• 🎰 Статусе машин\n' +
-        '• 📦 Заполненных Coin Box\n' +
-        '• 👥 Новых рефералах\n' +
-        '• 🎡 Джекпотах колеса',
+      msg.notifications.settings(user.telegramNotificationsEnabled),
     );
   }
 
   /**
-   * Handle /disconnect command
+   * /disconnect
    */
-  private async handleDisconnect(telegramChatId: string): Promise<void> {
-    // Find and disconnect user
+  private async handleDisconnect(
+    telegramChatId: string,
+    lang: Lang,
+  ): Promise<void> {
+    const msg = getMessages(lang);
+
     const user = await this.prisma.user.findFirst({
       where: { telegramChatId },
     });
 
     if (!user) {
-      await this.sendMessage(
-        telegramChatId,
-        '❌ <b>Not Connected</b>\n\n' +
-          'Your Telegram is not linked to any account.\n\n' +
-          '---\n\n' +
-          '❌ <b>Не подключено</b>\n\n' +
-          'Ваш Telegram не привязан к аккаунту.',
-      );
+      await this.sendMessage(telegramChatId, msg.disconnect.notConnected);
       return;
     }
 
@@ -365,18 +342,7 @@ export class TelegramBotService {
       },
     });
 
-    await this.sendMessage(
-      telegramChatId,
-      '✅ <b>Disconnected Successfully</b>\n\n' +
-        'Your Telegram has been unlinked from Fortune City.\n' +
-        'You will no longer receive notifications.\n\n' +
-        'Use /start to reconnect anytime.\n\n' +
-        '---\n\n' +
-        '✅ <b>Успешно отключено</b>\n\n' +
-        'Ваш Telegram отключён от Fortune City.\n' +
-        'Вы больше не будете получать уведомления.\n\n' +
-        'Используйте /start для повторного подключения.',
-    );
+    await this.sendMessage(telegramChatId, msg.disconnect.success);
 
     this.logger.log(
       `Disconnected Telegram chat ${telegramChatId} from user ${user.id}`,
@@ -384,29 +350,22 @@ export class TelegramBotService {
   }
 
   /**
-   * Handle unknown commands
+   * Неизвестная команда
    */
-  private async handleUnknownCommand(telegramChatId: string): Promise<void> {
-    await this.sendMessage(
-      telegramChatId,
-      '❓ <b>Unknown Command</b>\n\n' +
-        'Use /help to see all available commands.\n\n' +
-        '---\n\n' +
-        '❓ <b>Неизвестная команда</b>\n\n' +
-        'Используйте /help для списка команд.',
-    );
+  private async handleUnknownCommand(
+    telegramChatId: string,
+    lang: Lang,
+  ): Promise<void> {
+    const msg = getMessages(lang);
+    await this.sendMessage(telegramChatId, msg.unknownCommand);
   }
 
-  /**
-   * Send message to Telegram user
-   */
+  // ============ Message sending ============
+
   async sendMessage(chatId: string, text: string): Promise<void> {
     return this.sendMessageWithKeyboard(chatId, text);
   }
 
-  /**
-   * Send message with inline keyboard to Telegram user
-   */
   async sendMessageWithKeyboard(
     chatId: string,
     text: string,

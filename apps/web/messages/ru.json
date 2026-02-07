@@ -284,7 +284,20 @@
     "howItWorks2": "Получай 3% от их рефералов (Линия 2)",
     "howItWorks3": "Получай 1% от рефералов 3-го уровня (Линия 3)",
     "howItWorks4": "Бонусы выплачиваются только со свежих депозитов",
-    "howItWorks5": "Активный реферал = купил автомат за свои средства"
+    "howItWorks5": "Активный реферал = купил автомат за свои средства",
+    "milestones": {
+      "title": "Бонусы за рефералов",
+      "activeRefs": "{count} акт. рефералов",
+      "claimed": "Получено",
+      "claim": "Забрать",
+      "claiming": "Забираем...",
+      "locked": "Заблокировано",
+      "reward_free_machine_tier1": "Бесплатный Rusty Lever",
+      "reward_tax_discount_5": "-5% к сбору города навсегда",
+      "reward_free_machine_tier2": "Бесплатный Lucky Cherry",
+      "reward_vip": "VIP статус",
+      "threshold": "{count} акт. рефералов"
+    }
   },
   "sell": {
     "title": "Продать {name}",
