@@ -877,7 +877,7 @@ Fame (⚡) — расходуемый ресурс прогрессии. Зар�
 
 ### 16.2 Tests (COMPLETED)
 - [x] 10 новых тест-кейсов для withdrawal PDA
-- [x] **26/26 тестов пройдено** (localnet)
+- [x] **18/18 тестов пройдено** (localnet, после удаления pause)
 
 ### 16.3 Backend Integration (COMPLETED)
 - [x] IDL обновлён (`apps/api/src/modules/treasury/idl/treasury_vault.ts`)
@@ -899,7 +899,21 @@ Fame (⚡) — расходуемый ресурс прогрессии. Зар�
 - Cleanup cron для истекших PDA с rollback баланса
 - `close = authority` на PDA ставит CLOSED_ACCOUNT_DISCRIMINATOR (нет revival)
 
-### 16.5 Frontend (NOT STARTED)
+### 16.5 Удаление set_paused (COMPLETED)
+- [x] Удалён set_paused из контракта (state, errors, events, instructions, lib.rs)
+- [x] Удалён set_paused.rs
+- [x] Обновлены тесты (убраны 8 pause тестов)
+- [x] Обновлён IDL на бэкенде (инструкция, ошибка, event, field)
+- [x] Обновлён бэкенд (TreasuryService, DTOs — убрано поле paused)
+- [x] Обновлены security audit docs (EN + RU)
+- [x] Контракт: 6 инструкций, 18/18 тестов, API build OK
+
+### 16.6 Devnet Deploy & Testing (TODO)
+- [ ] Deploy контракта на devnet
+- [ ] E2E тесты на devnet: initialize → deposit → create_withdrawal → claim → cancel
+- [ ] Проверить binary size после удаления pause
+
+### 16.7 Frontend (NOT STARTED)
 - [ ] Интеграция claim_withdrawal в withdrawal flow
 - [ ] Юзер подписывает claim транзакцию через WalletConnect
 
