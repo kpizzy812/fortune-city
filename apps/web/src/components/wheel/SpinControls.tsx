@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gift } from 'lucide-react';
 import type { WheelMultiplier } from '@/lib/api';
+import { useFeedback } from '@/hooks/useFeedback';
 
 interface SpinControlsProps {
   betAmount: number;
@@ -22,14 +23,16 @@ export function SpinControls({
   isSpinning,
   onSpin,
 }: SpinControlsProps) {
+  const { click: fbClick } = useFeedback();
   const [currentMultiplierIndex, setCurrentMultiplierIndex] = useState(0);
   const currentMultiplier = multipliers[currentMultiplierIndex] || 1;
 
   // Cycle through multipliers
   const cycleMultiplier = useCallback(() => {
     if (isSpinning) return;
+    fbClick();
     setCurrentMultiplierIndex((prev) => (prev + 1) % multipliers.length);
-  }, [isSpinning, multipliers.length]);
+  }, [isSpinning, multipliers.length, fbClick]);
 
   const totalCost = betAmount * currentMultiplier;
   const freeSpinsUsed = Math.min(freeSpins, currentMultiplier);

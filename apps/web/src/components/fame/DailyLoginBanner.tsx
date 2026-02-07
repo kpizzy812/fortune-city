@@ -7,11 +7,13 @@ import { Zap, X, Flame } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useFameStore } from '@/stores/fame.store';
 import { Button } from '@/components/ui/Button';
+import { useFeedback } from '@/hooks/useFeedback';
 
 export function DailyLoginBanner() {
   const t = useTranslations('fame');
   const { token, user, refreshUser } = useAuthStore();
   const { claimDailyLogin, isClaiming, canClaimToday, fetchBalance } = useFameStore();
+  const { collect: fbCollect } = useFeedback();
   const [dismissed, setDismissed] = useState(false);
   const [earned, setEarned] = useState<number | null>(null);
 
@@ -32,6 +34,7 @@ export function DailyLoginBanner() {
   const handleClaim = async () => {
     try {
       const result = await claimDailyLogin(token);
+      fbCollect();
       setEarned(result.earned);
       // Update user data in auth store
       refreshUser();

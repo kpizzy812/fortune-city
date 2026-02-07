@@ -6,6 +6,7 @@ import { Lock, Check, Gift, Percent, Crown, Cpu } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/stores/auth.store';
 import { api, type MilestoneStatus } from '@/lib/api';
+import { useFeedback } from '@/hooks/useFeedback';
 
 const REWARD_ICONS: Record<string, typeof Gift> = {
   free_machine_tier1: Cpu,
@@ -34,6 +35,7 @@ export function MilestoneCard({
 }: MilestoneCardProps) {
   const [isClaiming, setIsClaiming] = useState(false);
   const { token } = useAuthStore();
+  const { collect: fbCollect } = useFeedback();
   const t = useTranslations('refs.milestones');
 
   const Icon = REWARD_ICONS[milestone.reward] ?? Gift;
@@ -50,13 +52,14 @@ export function MilestoneCard({
     setIsClaiming(true);
     try {
       await api.claimReferralMilestone(token, milestone.milestone);
+      fbCollect();
       onClaimed();
     } catch {
       // Error silently handled
     } finally {
       setIsClaiming(false);
     }
-  }, [token, isClaiming, milestone.milestone, onClaimed]);
+  }, [token, isClaiming, milestone.milestone, onClaimed, fbCollect]);
 
   return (
     <motion.div

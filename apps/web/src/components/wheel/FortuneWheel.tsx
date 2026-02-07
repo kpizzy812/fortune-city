@@ -1,7 +1,9 @@
 'use client';
 
 import { useRef, useEffect, useCallback } from 'react';
-import { motion, useAnimation } from 'framer-motion';
+import { motion, useMotionValue, useMotionValueEvent, animate } from 'framer-motion';
+import { playTick } from '@/hooks/useFeedback';
+import { useUIStore } from '@/stores/ui.store';
 import type { WheelSector } from '@/lib/api';
 
 interface FortuneWheelProps {
@@ -31,15 +33,39 @@ export function FortuneWheel({
   resultSector,
   onSpinComplete,
 }: FortuneWheelProps) {
-  const controls = useAnimation();
-  const wheelRef = useRef<SVGGElement>(null);
+  const rotation = useMotionValue(0);
   const currentRotationRef = useRef(0);
+  const lastTickSector = useRef(-1);
+  const spinningRef = useRef(false);
 
-  const sectorAngle = 360 / sectors.length;
+  const sectorAngle = sectors.length > 0 ? 360 / sectors.length : 30;
 
   const getSectorColor = (sector: string) => {
     return SECTOR_COLORS[sector] || DEFAULT_COLOR;
   };
+
+  // Track spinning state in ref for motion value event callback
+  useEffect(() => {
+    spinningRef.current = isSpinning;
+    if (!isSpinning) {
+      lastTickSector.current = -1;
+    }
+  }, [isSpinning]);
+
+  // Tick on every sector crossing during spin
+  useMotionValueEvent(rotation, 'change', (latest) => {
+    if (!spinningRef.current || sectors.length === 0) return;
+
+    // Calculate which sector the pointer is at (pointer is at top = 0°)
+    const normalizedAngle = ((latest % 360) + 360) % 360;
+    const currentSector = Math.floor(normalizedAngle / sectorAngle) % sectors.length;
+
+    if (currentSector !== lastTickSector.current) {
+      lastTickSector.current = currentSector;
+      const muted = useUIStore.getState().musicMuted;
+      playTick(muted);
+    }
+  });
 
   // Calculate the target rotation for a specific sector
   const calculateTargetRotation = useCallback(
@@ -72,20 +98,18 @@ export function FortuneWheel({
     if (isSpinning && resultSector) {
       const targetRotation = calculateTargetRotation(resultSector);
 
-      controls
-        .start({
-          rotate: targetRotation,
-          transition: {
-            duration: 4 + Math.random() * 2, // 4-6 seconds
-            ease: [0.2, 0.8, 0.3, 1], // Custom easing for realistic spin
-          },
-        })
-        .then(() => {
+      const controls = animate(rotation, targetRotation, {
+        duration: 4 + Math.random() * 2, // 4-6 seconds
+        ease: [0.2, 0.8, 0.3, 1], // Custom easing for realistic spin
+        onComplete: () => {
           currentRotationRef.current = targetRotation;
           onSpinComplete?.();
-        });
+        },
+      });
+
+      return () => controls.stop();
     }
-  }, [isSpinning, resultSector, controls, calculateTargetRotation, onSpinComplete]);
+  }, [isSpinning, resultSector, calculateTargetRotation, onSpinComplete, rotation]);
 
   // Generate SVG path for a sector
   const getSectorPath = (index: number) => {
@@ -144,7 +168,7 @@ export function FortuneWheel({
       <motion.svg
         viewBox="0 0 300 300"
         className="w-full h-full drop-shadow-2xl"
-        animate={controls}
+        style={{ rotate: rotation }}
       >
         {/* Outer glow ring */}
         <circle
@@ -157,7 +181,7 @@ export function FortuneWheel({
         />
 
         {/* Main wheel group */}
-        <g ref={wheelRef}>
+        <g>
           {/* Sectors */}
           {sectors.map((sector, index) => {
             const color = getSectorColor(sector.sector);

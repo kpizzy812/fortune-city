@@ -7,6 +7,7 @@ import type { TierInfo, CanAffordResponse } from '@/types';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { useFeedback } from '@/hooks/useFeedback';
 
 interface PurchaseModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export function PurchaseModal({
 }: PurchaseModalProps) {
   const t = useTranslations('shop');
   const tCommon = useTranslations('common');
+  const { click: fbClick } = useFeedback();
 
   if (!tier) return null;
 
@@ -178,7 +180,7 @@ export function PurchaseModal({
             variant="gold"
             size="lg"
             fullWidth
-            onClick={onConfirm}
+            onClick={() => { fbClick(); onConfirm(); }}
             loading={isLoading}
             disabled={!canAfford?.canAfford || isLoading}
           >

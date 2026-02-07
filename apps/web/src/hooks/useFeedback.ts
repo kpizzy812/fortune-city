@@ -25,6 +25,7 @@ const VIBRATION_PATTERNS: Record<string, number | number[]> = {
   click: 10,
   spin: 30,
   notification: [30, 20, 30],
+  tick: 5,
 };
 
 // Telegram haptic mapping
@@ -45,6 +46,7 @@ const TG_HAPTIC_MAP: Record<string, TgHapticConfig> = {
   click: { type: 'impact', style: 'light' },
   spin: { type: 'impact', style: 'soft' },
   notification: { type: 'notification', notificationType: 'warning' },
+  tick: { type: 'selection' },
 };
 
 // Audio cache to avoid re-creating Audio objects
@@ -109,6 +111,53 @@ function telegramHaptic(name: string) {
   }
 }
 
+// ── Web Audio tick generator (ultra-short mechanical click) ──────────
+let audioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  if (audioCtx) return audioCtx;
+  try {
+    audioCtx = new AudioContext();
+    return audioCtx;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Play a short synthesised tick (~30ms).
+ * Used for rapid-fire wheel sector ticking. No debounce.
+ */
+export function playTick(muted: boolean) {
+  // Haptics always fire (independent of muted)
+  vibrate('tick');
+  telegramHaptic('tick');
+
+  if (muted) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  try {
+    // Resume context if suspended (autoplay policy)
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.type = 'square';
+    osc.frequency.value = 1800;
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
+
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.03);
+  } catch {
+    // Ignore
+  }
+}
+
 /**
  * Unified feedback hook: sound + vibration + Telegram haptics.
  * Respects the musicMuted setting from UIStore for sounds.
@@ -131,6 +180,8 @@ export function useFeedback() {
     [musicMuted]
   );
 
+  const tick = useCallback(() => playTick(musicMuted), [musicMuted]);
+
   return {
     feedback,
     collect: useCallback(() => feedback('collect'), [feedback]),
@@ -140,5 +191,6 @@ export function useFeedback() {
     click: useCallback(() => feedback('click'), [feedback]),
     spin: useCallback(() => feedback('spin'), [feedback]),
     notification: useCallback(() => feedback('notification'), [feedback]),
+    tick,
   };
 }
