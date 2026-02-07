@@ -3,6 +3,8 @@
 import { X, Download, CreditCard, Send, ExternalLink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTelegramWebApp } from '@/providers/TelegramProvider';
+
 interface BuyCryptoGuideModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -44,9 +46,18 @@ const STEPS = [
 
 export function BuyCryptoGuideModal({ isOpen, onClose }: BuyCryptoGuideModalProps) {
   const t = useTranslations('cash');
+  const { isTelegramApp, webApp } = useTelegramWebApp();
 
   const handleOpenLink = (url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    if (isTelegramApp && webApp) {
+      if (url.startsWith('https://t.me/')) {
+        webApp.openTelegramLink(url);
+      } else {
+        webApp.openLink(url);
+      }
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   return (

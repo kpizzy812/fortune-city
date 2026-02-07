@@ -68,6 +68,8 @@ declare global {
         viewportStableHeight: number;
         platform: string;
         version: string;
+        openLink: (url: string) => void;
+        openTelegramLink: (url: string) => void;
       };
     };
   }
