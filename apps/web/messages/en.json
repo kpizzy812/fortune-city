@@ -61,7 +61,10 @@
     "emailSent": "Link sent!",
     "emailSentMessage": "Check your email and click the link",
     "emailPlaceholder": "you@example.com",
-    "send": "Send"
+    "send": "Send",
+    "notifications": "Notifications",
+    "notificationsEnabled": "Enabled",
+    "enableNotifications": "Enable"
   },
   "auth": {
     "signInWithTelegram": "Sign in with Telegram to start playing",

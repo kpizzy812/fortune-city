@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { Send, Wallet, Mail, Check, Copy, ExternalLink, LogOut } from 'lucide-react';
+import { Send, Wallet, Mail, Check, Copy, ExternalLink, LogOut, Bell, BellOff } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/auth.store';
@@ -199,6 +199,38 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                   />
                 )}
               </div>
+
+              {/* Telegram Notifications */}
+              {hasTelegram && (
+                <div className="mt-3 pt-3 border-t border-white/10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {user.telegramNotificationsEnabled ? (
+                        <Bell className="w-4 h-4 text-[#00ff88]" />
+                      ) : (
+                        <BellOff className="w-4 h-4 text-[#b0b0b0]" />
+                      )}
+                      <span className="text-xs text-white">
+                        {t('notifications')}
+                      </span>
+                    </div>
+                    {user.telegramNotificationsEnabled ? (
+                      <span className="text-xs text-[#00ff88] font-medium">
+                        {t('notificationsEnabled')}
+                      </span>
+                    ) : (
+                      <a
+                        href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || 'FortuneCityAppBot'}?start=connect_${user.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-1 bg-[#0088cc] hover:bg-[#0088cc]/80 text-white rounded text-xs font-semibold transition-colors"
+                      >
+                        {t('enableNotifications')}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Email */}

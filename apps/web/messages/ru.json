@@ -61,7 +61,10 @@
     "emailSent": "Ссылка отправлена!",
     "emailSentMessage": "Проверьте почту и перейдите по ссылке",
     "emailPlaceholder": "you@example.com",
-    "send": "Отправить"
+    "send": "Отправить",
+    "notifications": "Уведомления",
+    "notificationsEnabled": "Включены",
+    "enableNotifications": "Включить"
   },
   "auth": {
     "signInWithTelegram": "Войдите через Telegram, чтобы начать играть",
