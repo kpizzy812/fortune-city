@@ -659,6 +659,63 @@ User → Other Crypto Modal → Backend (pending) → Admin Panel → Approve/Re
 
 ---
 
+## Phase 14: Conversion Optimization (COMPLETED)
+
+**Date:** 2026-02-07
+**Goal:** 5 фич для снижения барьеров и повышения конверсии новичков
+
+### 14.1 Смягчение налога (COMPLETED)
+- [x] "Налог 50%" → "Сбор города 50%" с прогрессией к снижению
+- [x] Tooltip с шкалой снижения: Ур.3→40%, Ур.5→30%, Ур.7→20%, Ур.10→10%
+- [x] Мелким шрифтом "→ {target}% на ур. {targetTier}" под процентом
+- [x] Обновлены ключи i18n в ru.json и en.json
+
+### 14.2 Buy Crypto Guide (COMPLETED)
+- [x] Кнопка "Купить SOL / USDT" на странице кассы
+- [x] BuyCryptoGuideModal с 4 шагами: Phantom, BestChange/Bybit, Transfer, Deposit
+- [x] TMA-совместимость: openTelegramLink/openLink
+
+### 14.3 Activity Feed (COMPLETED)
+- [x] Backend: ActivityModule (GET /activity/feed, публичный)
+  - Собирает из Transaction, Withdrawal, WheelSpin
+  - Маскировка username: "An***ey"
+  - Seed данные при < 15 реальных записей
+- [x] Frontend: ActivityFeed.tsx — marquee бегущая строка, 3 сек цикл
+- [x] AnimatePresence fade-анимации
+
+### 14.4 Recent Wins under Wheel (COMPLETED)
+- [x] Backend: GET /wheel/recent-wins (публичный)
+  - WheelSpin где netResult>0, маскировка, seed данные
+- [x] Frontend: RecentWins.tsx — компактный список с золотыми джекпотами
+- [x] Интеграция между SpinControls и SpinHistory
+
+### 14.5 Referral Improvements (COMPLETED)
+#### 5a: Share Buttons
+- [x] Gradient рамка для карточки ссылки
+- [x] 3 кнопки: Telegram Share, Twitter/X, Copy
+- [x] TMA-совместимость
+
+#### 5b: Milestone Bonuses (Full Backend + Frontend)
+- [x] Prisma: ReferralMilestone модель + taxDiscount поле на User
+- [x] ReferralMilestonesService: checkProgress, claimMilestone
+- [x] Endpoints: GET /referrals/milestones, POST /referrals/milestones/:id/claim
+- [x] MachinesService.createFreeMachine() для выдачи бесплатных машин
+- [x] taxDiscount учитывается при расчёте налога на вывод
+- [x] MilestoneCard.tsx — прогресс-бар, иконки, кнопка claim
+- [x] Интеграция в refs page
+
+#### Milestone бонусы:
+| Порог | Награда |
+|-------|---------|
+| 5 активных рефов | Бесплатный Rusty Lever (tier 1) |
+| 15 активных рефов | -5% к сбору города навсегда |
+| 50 активных рефов | Бесплатный Lucky Cherry (tier 2) |
+| 500 активных рефов | VIP статус |
+
+**Build Status:** API и Web собираются успешно
+
+---
+
 ## Notes
 
 - Используем существующие паттерны из auth, machines, economy модулей
