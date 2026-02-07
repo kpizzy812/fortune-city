@@ -434,4 +434,113 @@ export class WheelService implements OnModuleInit {
       timesWon: jackpot.timesWon,
     };
   }
+
+  /**
+   * Get recent wins from all users (public, for social proof)
+   * Fills with seed data if not enough real wins
+   */
+  async getRecentWins(limit: number = 20) {
+    const MIN_ITEMS = 15;
+
+    const spins = await this.prisma.wheelSpin.findMany({
+      where: { netResult: { gt: 0 } },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      select: {
+        id: true,
+        userId: true,
+        totalPayout: true,
+        netResult: true,
+        jackpotWon: true,
+        jackpotAmount: true,
+        spinCount: true,
+        spinResults: true,
+        createdAt: true,
+      },
+    });
+
+    // Get usernames
+    const userIds = [...new Set(spins.map((s) => s.userId))];
+    const users =
+      userIds.length > 0
+        ? await this.prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, username: true, firstName: true },
+          })
+        : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const items = spins.map((spin) => {
+      const user = userMap.get(spin.userId);
+      return {
+        id: spin.id,
+        username: this.maskUsername(
+          user?.username || user?.firstName || 'Player',
+        ),
+        payout: Number(spin.totalPayout),
+        netResult: Number(spin.netResult),
+        isJackpot: spin.jackpotWon,
+        jackpotAmount: Number(spin.jackpotAmount),
+        multiplier: this.extractTopMultiplier(spin.spinResults),
+        createdAt: spin.createdAt.toISOString(),
+      };
+    });
+
+    // Fill with seed if not enough
+    if (items.length < MIN_ITEMS) {
+      items.push(...this.generateWinSeedData(MIN_ITEMS - items.length));
+    }
+
+    return items
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+      .slice(0, limit);
+  }
+
+  private maskUsername(name: string): string {
+    if (name.length <= 3) return name[0] + '***';
+    return name.substring(0, 2) + '***' + name.substring(name.length - 2);
+  }
+
+  private extractTopMultiplier(spinResults: unknown): string {
+    try {
+      const results = spinResults as { multiplier: number }[];
+      if (!Array.isArray(results) || results.length === 0) return '1x';
+      const maxMult = Math.max(...results.map((r) => r.multiplier || 0));
+      return maxMult > 0 ? `${maxMult}x` : '1x';
+    } catch {
+      return '1x';
+    }
+  }
+
+  private generateWinSeedData(count: number) {
+    const names = [
+      'Al***ex', 'Vi***or', 'Ni***ai', 'An***ey', 'Se***ey',
+      'Di***ry', 'Ma***im', 'Pa***el', 'Ar***em', 'Iv***an',
+      'Da***la', 'Mi***el', 'Ol***eg', 'Ro***an', 'Ti***ey',
+    ];
+    const now = Date.now();
+
+    return Array.from({ length: count }, (_, i) => {
+      const mults = ['1.5x', '2x', '2x', '5x', '1.5x', '2x'];
+      const mult = mults[i % mults.length];
+      const multNum = parseFloat(mult);
+      const payout = multNum;
+
+      return {
+        id: `seed_${i}_${now}`,
+        username: names[i % names.length],
+        payout,
+        netResult: payout - 1,
+        isJackpot: false,
+        jackpotAmount: 0,
+        multiplier: mult,
+        createdAt: new Date(
+          now - (2 + Math.floor(Math.random() * 50)) * 60000,
+        ).toISOString(),
+      };
+    });
+  }
 }

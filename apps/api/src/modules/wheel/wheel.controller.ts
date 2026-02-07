@@ -78,4 +78,14 @@ export class WheelController {
   }> {
     return this.wheelService.getJackpotInfo();
   }
+
+  /**
+   * Get recent wins from all users (public, for social proof)
+   * GET /wheel/recent-wins?limit=20
+   */
+  @Get('recent-wins')
+  async getRecentWins(@Query('limit') limit?: string) {
+    const parsedLimit = limit ? Math.min(parseInt(limit, 10) || 20, 50) : 20;
+    return this.wheelService.getRecentWins(parsedLimit);
+  }
 }

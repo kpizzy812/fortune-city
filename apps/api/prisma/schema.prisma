@@ -58,16 +58,20 @@ model User {
   telegramNotificationsEnabled Boolean   @default(false) @map("telegram_notifications_enabled")
   telegramBotConnectedAt       DateTime? @map("telegram_bot_connected_at")
 
+  // Referral milestones
+  taxDiscount  Decimal @default(0) @map("tax_discount") @db.Decimal(5, 4) // Personal tax discount from milestones
+
   // Relations
-  machines          Machine[]
-  transactions      Transaction[]
-  depositAddresses  DepositAddress[]
-  deposits          Deposit[]
-  withdrawals       Withdrawal[]
-  walletConnections WalletConnection[]
-  referralBonuses   ReferralBonus[]    @relation("ReferralReceiver")
-  referralBonusesSent ReferralBonus[]  @relation("ReferralSource")
-  notifications     Notification[]
+  machines            Machine[]
+  transactions        Transaction[]
+  depositAddresses    DepositAddress[]
+  deposits            Deposit[]
+  withdrawals         Withdrawal[]
+  walletConnections   WalletConnection[]
+  referralBonuses     ReferralBonus[]    @relation("ReferralReceiver")
+  referralBonusesSent ReferralBonus[]    @relation("ReferralSource")
+  referralMilestones  ReferralMilestone[]
+  notifications       Notification[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -750,4 +754,19 @@ enum NotificationType {
   withdrawal_approved    // Withdrawal was approved
   withdrawal_completed   // Withdrawal was completed
   withdrawal_rejected    // Withdrawal was rejected
+}
+
+// ============== REFERRAL MILESTONES ==============
+
+model ReferralMilestone {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  milestone String   // "5_refs", "15_refs", "50_refs", "500_refs"
+  reward    String   // "free_machine_tier1", "tax_discount_5", "free_machine_tier2", "vip"
+  claimedAt DateTime @default(now()) @map("claimed_at")
+
+  @@unique([userId, milestone])
+  @@index([userId])
+  @@map("referral_milestones")
 }
