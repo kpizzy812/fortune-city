@@ -9,8 +9,9 @@ import { useTelegramWebApp } from '@/providers/TelegramProvider';
 import { TelegramLoginButton } from '@/components/auth/TelegramLoginButton';
 import { EmailLoginForm } from '@/components/auth/EmailLoginForm';
 import { SolanaLoginButton } from '@/components/auth/SolanaLoginButton';
-import { Gamepad2, Trophy, Percent, Zap } from 'lucide-react';
-import { MachineGrid } from '@/components/machines/MachineGrid';
+import { Gamepad2, Trophy, Percent, Zap, X } from 'lucide-react';
+import { CasinoFloor } from '@/components/machines/CasinoFloor';
+import { MachineCard } from '@/components/machines/MachineCard';
 import { RiskyCollectModal } from '@/components/machines/RiskyCollectModal';
 import { GambleResultAnimation } from '@/components/machines/GambleResultAnimation';
 import { AutoCollectModal } from '@/components/machines/AutoCollectModal';
@@ -79,6 +80,7 @@ export default function Home() {
   const [currentGambleInfo, setCurrentGambleInfo] = useState<GambleInfo | null>(null);
   const [currentAutoCollectInfo, setCurrentAutoCollectInfo] = useState<AutoCollectInfo | null>(null);
   const [isPurchasingAutoCollect, setIsPurchasingAutoCollect] = useState(false);
+  const [floorSelectedMachineId, setFloorSelectedMachineId] = useState<string | null>(null);
 
   // User display
 
@@ -511,22 +513,51 @@ export default function Home() {
         {/* Live Activity Feed */}
         <ActivityFeed />
 
-        {/* Machines Section */}
+        {/* Casino Floor */}
         <div className="mb-6">
-          <h3 className="text-lg lg:text-xl font-semibold mb-4 text-[#00d4ff] flex items-center gap-2">
-            <span>🎰</span>
-            {tDashboard('yourMachines')}
-          </h3>
-          <MachineGrid
+          <CasinoFloor
             machines={machines}
             incomes={incomes}
             onCollect={handleCollect}
             onRiskyCollect={handleRiskyCollect}
             onAutoCollectClick={handleAutoCollectClick}
+            onMachineClick={setFloorSelectedMachineId}
             isCollecting={isCollecting}
             isLoading={isLoadingMachines}
           />
         </div>
+
+        {/* Machine Detail Modal — opens when tapping a machine on the floor */}
+        {floorSelectedMachineId && (() => {
+          const detailMachine = machines.find(m => m.id === floorSelectedMachineId);
+          if (!detailMachine) return null;
+          return (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+              onClick={() => setFloorSelectedMachineId(null)}
+            >
+              <div
+                className="relative w-full max-w-sm"
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => setFloorSelectedMachineId(null)}
+                  className="absolute -top-3 -right-3 z-10 w-8 h-8 bg-[#2a1a4e] border border-[#ff2d95]/30 rounded-full flex items-center justify-center text-white/70 hover:text-white transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <MachineCard
+                  machine={detailMachine}
+                  income={incomes[detailMachine.id] || null}
+                  onCollect={() => handleCollect(detailMachine.id)}
+                  onRiskyCollect={() => handleRiskyCollect(detailMachine.id)}
+                  onAutoCollectClick={() => handleAutoCollectClick(detailMachine.id)}
+                  isCollecting={isCollecting[detailMachine.id] || false}
+                />
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Modals */}
         {selectedMachineId && (

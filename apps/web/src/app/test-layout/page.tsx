@@ -23,11 +23,22 @@ type LayoutMode = 'vertical' | 'horizontal';
 
 export default function TestLayoutPage() {
   const [mode, setMode] = useState<LayoutMode>('vertical');
-  const [placedMachines, setPlacedMachines] = useState<PlacedMachine[]>([]);
+  const [machinesByMode, setMachinesByMode] = useState<Record<LayoutMode, PlacedMachine[]>>({
+    vertical: [],
+    horizontal: [],
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [globalScale, setGlobalScale] = useState(0.15);
   const canvasRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; machineX: number; machineY: number } | null>(null);
+
+  const placedMachines = machinesByMode[mode];
+  const setPlacedMachines = useCallback((updater: PlacedMachine[] | ((prev: PlacedMachine[]) => PlacedMachine[])) => {
+    setMachinesByMode(prev => ({
+      ...prev,
+      [mode]: typeof updater === 'function' ? updater(prev[mode]) : updater,
+    }));
+  }, [mode]);
 
   const bgSrc = mode === 'vertical' ? '/machines/vertical.png' : '/machines/horizontal.png';
   const canvasWidth = mode === 'vertical' ? 540 : 960;
@@ -47,12 +58,12 @@ export default function TestLayoutPage() {
         scale: globalScale,
       },
     ]);
-  }, [canvasWidth, canvasHeight, globalScale]);
+  }, [canvasWidth, canvasHeight, globalScale, setPlacedMachines]);
 
   const removeMachine = useCallback((id: string) => {
     setPlacedMachines(prev => prev.filter(m => m.id !== id));
     if (selectedId === id) setSelectedId(null);
-  }, [selectedId]);
+  }, [selectedId, setPlacedMachines]);
 
   const updateMachineScale = useCallback((id: string, delta: number) => {
     setPlacedMachines(prev =>
@@ -60,7 +71,7 @@ export default function TestLayoutPage() {
         m.id === id ? { ...m, scale: Math.max(0.05, Math.min(1, m.scale + delta)) } : m
       )
     );
-  }, []);
+  }, [setPlacedMachines]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent, id: string) => {
     e.preventDefault();
@@ -93,7 +104,7 @@ export default function TestLayoutPage() {
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-  }, [placedMachines]);
+  }, [placedMachines, setPlacedMachines]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent, id: string) => {
     e.stopPropagation();
@@ -128,11 +139,11 @@ export default function TestLayoutPage() {
 
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handleTouchEnd);
-  }, [placedMachines]);
+  }, [placedMachines, setPlacedMachines]);
 
   const applyGlobalScale = useCallback(() => {
     setPlacedMachines(prev => prev.map(m => ({ ...m, scale: globalScale })));
-  }, [globalScale]);
+  }, [globalScale, setPlacedMachines]);
 
   const exportPositions = useCallback(() => {
     const data = placedMachines.map(m => ({
@@ -154,7 +165,7 @@ export default function TestLayoutPage() {
         {/* Mode toggle */}
         <div className="flex gap-1 bg-[#1a1a2e] rounded-lg p-1">
           <button
-            onClick={() => setMode('vertical')}
+            onClick={() => { setMode('vertical'); setSelectedId(null); }}
             className={`px-3 py-1.5 rounded text-sm font-medium transition ${
               mode === 'vertical' ? 'bg-[#00d4ff] text-black' : 'text-[#b0b0b0] hover:text-white'
             }`}
@@ -162,7 +173,7 @@ export default function TestLayoutPage() {
             Vertical (9:16)
           </button>
           <button
-            onClick={() => setMode('horizontal')}
+            onClick={() => { setMode('horizontal'); setSelectedId(null); }}
             className={`px-3 py-1.5 rounded text-sm font-medium transition ${
               mode === 'horizontal' ? 'bg-[#00d4ff] text-black' : 'text-[#b0b0b0] hover:text-white'
             }`}
@@ -202,7 +213,7 @@ export default function TestLayoutPage() {
 
         {/* Clear */}
         <button
-          onClick={() => { setPlacedMachines([]); setSelectedId(null); }}
+          onClick={() => { setMachinesByMode({ vertical: [], horizontal: [] }); setSelectedId(null); }}
           className="px-3 py-1.5 bg-[#ff4444] text-white text-sm font-medium rounded-lg hover:bg-[#ff4444]/80"
         >
           Clear All
