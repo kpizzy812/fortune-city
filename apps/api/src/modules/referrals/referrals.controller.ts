@@ -3,9 +3,11 @@ import {
   Get,
   Post,
   Body,
+  Param,
   Query,
   UseGuards,
   Request,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
@@ -13,6 +15,10 @@ import {
   ReferralStats,
   ReferralListItem,
 } from './referrals.service';
+import {
+  ReferralMilestonesService,
+  MilestoneProgress,
+} from './referral-milestones.service';
 import { JwtPayload } from '../auth/auth.service';
 
 interface WithdrawDto {
@@ -26,7 +32,10 @@ interface SetReferrerDto {
 @Controller('referrals')
 @UseGuards(JwtAuthGuard)
 export class ReferralsController {
-  constructor(private readonly referralsService: ReferralsService) {}
+  constructor(
+    private readonly referralsService: ReferralsService,
+    private readonly milestonesService: ReferralMilestonesService,
+  ) {}
 
   /**
    * Get referral statistics for current user
@@ -62,6 +71,36 @@ export class ReferralsController {
       req.user.sub,
     );
     return { canWithdraw };
+  }
+
+  /**
+   * Get milestone progress
+   */
+  @Get('milestones')
+  async getMilestones(
+    @Request() req: { user: JwtPayload },
+  ): Promise<MilestoneProgress> {
+    return this.milestonesService.getMilestoneProgress(req.user.sub);
+  }
+
+  /**
+   * Claim a milestone reward
+   */
+  @Post('milestones/:milestoneId/claim')
+  async claimMilestone(
+    @Request() req: { user: JwtPayload },
+    @Param('milestoneId') milestoneId: string,
+  ): Promise<{ success: boolean; reward: string }> {
+    try {
+      return await this.milestonesService.claimMilestone(
+        req.user.sub,
+        milestoneId,
+      );
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to claim milestone',
+      );
+    }
   }
 
   /**

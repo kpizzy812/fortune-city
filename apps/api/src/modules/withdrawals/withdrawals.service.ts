@@ -60,6 +60,7 @@ export class WithdrawalsService {
         totalFreshDeposits: true,
         totalProfitCollected: true,
         currentTaxRate: true,
+        taxDiscount: true,
       },
     });
 
@@ -79,7 +80,10 @@ export class WithdrawalsService {
       amount,
     );
 
-    const taxRate = Number(user.currentTaxRate);
+    // Apply personal tax discount from referral milestones
+    const baseTaxRate = Number(user.currentTaxRate);
+    const discount = Number(user.taxDiscount);
+    const taxRate = Math.max(0, baseTaxRate - discount);
     // Tax only applies to profit portion
     const taxAmount = breakdown.profitDerived * taxRate;
     const netAmount = amount - taxAmount;

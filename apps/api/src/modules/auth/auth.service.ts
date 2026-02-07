@@ -13,6 +13,7 @@ import {
   TelegramUserData,
   EmailUserData,
 } from '../users/users.service';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   TelegramLoginWidgetDto,
   AuthResponseDto,
@@ -43,6 +44,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly supabaseAuthService: SupabaseAuthService,
     private readonly refreshTokenService: RefreshTokenService,
+    private readonly prisma: PrismaService,
   ) {
     this.botToken = this.configService.getOrThrow<string>('TELEGRAM_BOT_TOKEN');
     this.jwtExpiresIn = this.configService.get<string>('JWT_EXPIRES_IN', '7d');
@@ -248,6 +250,7 @@ export class AuthService {
       referralBalance: user.referralBalance.toString(),
       maxTierReached: user.maxTierReached,
       currentTaxRate: user.currentTaxRate.toString(),
+      taxDiscount: user.taxDiscount.toString(),
       referralCode: user.referralCode,
     };
   }
@@ -446,6 +449,58 @@ export class AuthService {
     this.logger.log(`Linking Web3 wallet ${walletAddress} to user ${userId}`);
 
     const user = await this.usersService.linkWeb3ToUser(userId, walletAddress);
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email ?? undefined,
+      telegramId: user.telegramId ?? undefined,
+      username: user.username ?? undefined,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: this.formatUserResponse(user),
+    };
+  }
+
+  /**
+   * Обмен одноразового токена из Telegram бота на JWT
+   */
+  async exchangeTelegramBotToken(
+    rawToken: string,
+  ): Promise<AuthResponseDto> {
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(rawToken)
+      .digest('hex');
+
+    const tokenRecord = await this.prisma.telegramLoginToken.findUnique({
+      where: { token: hashedToken },
+    });
+
+    if (!tokenRecord) {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+
+    if (tokenRecord.expiresAt < new Date()) {
+      // Удаляем просроченный токен
+      await this.prisma.telegramLoginToken.delete({
+        where: { id: tokenRecord.id },
+      });
+      throw new UnauthorizedException('Token expired');
+    }
+
+    // Удаляем токен — одноразовый
+    await this.prisma.telegramLoginToken.delete({
+      where: { id: tokenRecord.id },
+    });
+
+    const user = await this.usersService.findById(tokenRecord.userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
 
     const payload: JwtPayload = {
       sub: user.id,

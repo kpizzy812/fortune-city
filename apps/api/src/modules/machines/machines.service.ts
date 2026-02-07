@@ -123,6 +123,52 @@ export class MachinesService {
     });
   }
 
+  /**
+   * Create a free machine (milestone reward) — no payment, reinvestRound=1
+   */
+  async createFreeMachine(
+    userId: string,
+    tier: number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Machine> {
+    const client = tx ?? this.prisma;
+    const tierConfig = this.tierCacheService.getTierOrThrow(tier);
+
+    // Same yield calculation as regular purchase, reinvestRound = 1 (no penalty)
+    const totalYield = new Prisma.Decimal(tierConfig.price)
+      .mul(tierConfig.yieldPercent)
+      .div(100);
+    const profitAmount = totalYield.sub(tierConfig.price);
+    const actualTotalYield = new Prisma.Decimal(tierConfig.price).add(profitAmount);
+
+    const lifespanSeconds = tierConfig.lifespanDays * 24 * 60 * 60;
+    const ratePerSecond = actualTotalYield.div(lifespanSeconds);
+    const coinBoxCapacity = ratePerSecond.mul(COIN_BOX_CAPACITY_HOURS * 60 * 60);
+
+    const now = new Date();
+    const expiresAt = new Date(
+      now.getTime() + tierConfig.lifespanDays * 24 * 60 * 60 * 1000,
+    );
+
+    return client.machine.create({
+      data: {
+        userId,
+        tier: tierConfig.tier,
+        purchasePrice: 0, // Free machine
+        totalYield: actualTotalYield,
+        profitAmount,
+        lifespanDays: tierConfig.lifespanDays,
+        startedAt: now,
+        expiresAt,
+        ratePerSecond,
+        coinBoxCapacity,
+        reinvestRound: 1,
+        profitReductionRate: 0,
+        status: 'active',
+      },
+    });
+  }
+
   async calculateIncome(machineId: string): Promise<{
     accumulated: number;
     ratePerSecond: number;

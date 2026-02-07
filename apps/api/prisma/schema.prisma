@@ -713,6 +713,21 @@ model AdminRefreshToken {
   @@map("admin_refresh_tokens")
 }
 
+// ============== TELEGRAM LOGIN TOKENS ==============
+
+model TelegramLoginToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique // Hashed one-time token
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("telegram_login_tokens")
+}
+
 // ============== NOTIFICATIONS ==============
 
 model Notification {

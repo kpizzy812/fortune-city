@@ -98,8 +98,18 @@ export class AuthResponseDto {
     referralBalance: string;
     maxTierReached: number;
     currentTaxRate: string;
+    taxDiscount: string;
     referralCode: string;
   };
+}
+
+/**
+ * DTO для авторизации через одноразовый токен из Telegram бота
+ */
+export class TelegramBotLoginDto {
+  @IsString()
+  @IsNotEmpty()
+  token: string;
 }
 
 /**

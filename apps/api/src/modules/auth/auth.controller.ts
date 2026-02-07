@@ -15,6 +15,7 @@ import { AuthService, JwtPayload } from './auth.service';
 import {
   TelegramInitDataDto,
   TelegramLoginWidgetDto,
+  TelegramBotLoginDto,
   AuthResponseDto,
   SupabaseAuthDto,
   RefreshTokenDto,
@@ -95,6 +96,7 @@ export class AuthController {
       referralBalance: user.referralBalance.toString(),
       maxTierReached: user.maxTierReached,
       currentTaxRate: user.currentTaxRate.toString(),
+      taxDiscount: user.taxDiscount.toString(),
       referralCode: user.referralCode,
     };
   }
@@ -199,6 +201,18 @@ export class AuthController {
     const payload = req.user as JwtPayload;
     await this.authService.logout(payload.sub);
     return { success: true };
+  }
+
+  /**
+   * POST /auth/telegram-bot-login
+   * Обмен одноразового токена из Telegram бота на JWT
+   */
+  @Post('telegram-bot-login')
+  @HttpCode(HttpStatus.OK)
+  async telegramBotLogin(
+    @Body() dto: TelegramBotLoginDto,
+  ): Promise<AuthResponseDto> {
+    return this.authService.exchangeTelegramBotToken(dto.token);
   }
 
   /**
