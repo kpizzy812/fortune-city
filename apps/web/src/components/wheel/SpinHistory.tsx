@@ -102,7 +102,7 @@ export function SpinHistory({ items, isLoading }: SpinHistoryProps) {
                 {/* Details */}
                 <div>
                   <div className="text-sm text-white">
-                    {item.spinCount}x Spin
+                    x{item.betMultiplier} Bet
                     {item.jackpotWon && (
                       <span className="ml-2 text-xs text-[#ffd700] font-semibold">
                         JACKPOT!

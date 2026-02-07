@@ -59,7 +59,8 @@ export class WheelService implements OnModuleInit {
   }
 
   /**
-   * Main spin method
+   * Main spin method — single spin with bet multiplier
+   * multiplier = bet size multiplier (x1=$1, x5=$5, x50=$50)
    */
   async spin(userId: string, multiplier: number): Promise<SpinResponseDto> {
     const settings = await this.settingsService.getSettings();
@@ -78,11 +79,11 @@ export class WheelService implements OnModuleInit {
       throw new BadRequestException('User not found');
     }
 
-    // Calculate free spins available vs paid spins needed
+    // Free spins: each covers $1 (one betAmount unit)
     const freeSpinsAvailable = user.freeSpinsRemaining;
     const freeSpinsToUse = Math.min(freeSpinsAvailable, multiplier);
-    const paidSpins = multiplier - freeSpinsToUse;
-    const requiredBalance = paidSpins * betAmount;
+    const paidUnits = multiplier - freeSpinsToUse;
+    const requiredBalance = paidUnits * betAmount;
 
     if (Number(user.fortuneBalance) < requiredBalance) {
       throw new BadRequestException(
@@ -90,39 +91,28 @@ export class WheelService implements OnModuleInit {
       );
     }
 
-    // Perform all spins
-    const results: SpinResult[] = [];
-    let totalPayout = 0;
-    let jackpotWon = false;
-    let jackpotAmount = 0;
-    let totalLoss = 0;
-
     // Get current jackpot pool for potential win
     const jackpot = await this.prisma.wheelJackpot.findUnique({
       where: { id: JACKPOT_ID },
     });
     const currentPool = jackpot ? Number(jackpot.currentPool) : 0;
 
-    for (let i = 0; i < multiplier; i++) {
-      const result = this.spinOnce(sectors, betAmount);
+    // Single spin with totalBet as stake
+    const result = this.spinOnce(sectors, totalBet);
 
-      // Handle jackpot
-      if (result.sector === 'jackpot' && !jackpotWon) {
-        jackpotWon = true;
-        jackpotAmount = currentPool;
-        result.payout = currentPool;
-        result.isJackpot = true;
-      }
+    let jackpotWon = false;
+    let jackpotAmount = 0;
 
-      results.push(result);
-      totalPayout += result.payout;
-
-      // Calculate loss for this spin
-      const spinLoss = betAmount - result.payout;
-      if (spinLoss > 0) {
-        totalLoss += spinLoss;
-      }
+    // Handle jackpot — fixed pool payout (not multiplied by bet)
+    if (result.sector === 'jackpot') {
+      jackpotWon = true;
+      jackpotAmount = currentPool;
+      result.payout = currentPool;
+      result.isJackpot = true;
     }
+
+    const totalPayout = result.payout;
+    const totalLoss = Math.max(totalBet - totalPayout, 0);
 
     // Calculate burn and pool contributions
     const burnAmount = totalLoss * burnRate;
@@ -150,11 +140,11 @@ export class WheelService implements OnModuleInit {
           data: {
             userId,
             betAmount: new Decimal(betAmount),
-            spinCount: multiplier,
+            spinCount: 1,
             totalBet: new Decimal(totalBet),
             totalPayout: new Decimal(totalPayout),
             netResult: new Decimal(netResult),
-            spinResults: results as unknown as object,
+            spinResults: [result] as unknown as object,
             jackpotWon,
             jackpotAmount: new Decimal(jackpotAmount),
             burnAmount: new Decimal(burnAmount),
@@ -257,11 +247,11 @@ export class WheelService implements OnModuleInit {
     return {
       success: true,
       spinId: spin.id,
-      spinCount: multiplier,
+      betMultiplier: multiplier,
       totalBet,
       totalPayout,
       netResult,
-      results,
+      result,
       jackpotWon,
       jackpotAmount,
       burnAmount,
@@ -325,7 +315,6 @@ export class WheelService implements OnModuleInit {
 
     return {
       jackpotPool: jackpot ? Number(jackpot.currentPool) : 0,
-      jackpotCap: Number(settings.wheelJackpotCap),
       lastWinner: jackpot?.lastWinnerId
         ? {
             userId: jackpot.lastWinnerId,
@@ -373,7 +362,7 @@ export class WheelService implements OnModuleInit {
     return {
       items: items.map((item) => ({
         id: item.id,
-        spinCount: item.spinCount,
+        betMultiplier: Math.round(Number(item.totalBet) / Number(item.betAmount)),
         totalBet: Number(item.totalBet),
         totalPayout: Number(item.totalPayout),
         netResult: Number(item.netResult),

@@ -14,7 +14,6 @@ import type {
 interface WheelState {
   // State
   jackpotPool: number;
-  jackpotCap: number;
   betAmount: number;
   multipliers: number[];
   freeSpinsRemaining: number;
@@ -55,7 +54,6 @@ interface WheelState {
 
 const initialState = {
   jackpotPool: 0,
-  jackpotCap: 1000,
   betAmount: 1,
   multipliers: [1, 5, 10, 25, 50],
   freeSpinsRemaining: 0,
@@ -82,7 +80,6 @@ export const useWheelStore = create<WheelState>((set) => ({
       const state: WheelStateResponse = await api.getWheelState(token);
       set({
         jackpotPool: state.jackpotPool,
-        jackpotCap: state.jackpotCap,
         betAmount: state.betAmount,
         multipliers: state.multipliers,
         freeSpinsRemaining: state.freeSpinsRemaining,

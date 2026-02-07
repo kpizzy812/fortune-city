@@ -18,11 +18,11 @@ export interface SpinResult {
 export interface SpinResponseDto {
   success: boolean;
   spinId: string;
-  spinCount: number;
+  betMultiplier: number;
   totalBet: number;
   totalPayout: number;
   netResult: number;
-  results: SpinResult[];
+  result: SpinResult;
   jackpotWon: boolean;
   jackpotAmount: number;
   burnAmount: number;
@@ -35,7 +35,6 @@ export interface SpinResponseDto {
 
 export interface WheelStateDto {
   jackpotPool: number;
-  jackpotCap: number;
   lastWinner: {
     userId: string | null;
     amount: number | null;
@@ -57,7 +56,7 @@ export interface WheelSectorDto {
 
 export interface SpinHistoryItemDto {
   id: string;
-  spinCount: number;
+  betMultiplier: number;
   totalBet: number;
   totalPayout: number;
   netResult: number;

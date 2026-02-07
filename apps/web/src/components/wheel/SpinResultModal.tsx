@@ -76,7 +76,6 @@ export function SpinResultModal({
   // Trigger confetti for big wins
   useEffect(() => {
     if (result && (result.jackpotWon || result.netResult > result.totalBet * 2)) {
-      // Use setTimeout to avoid synchronous setState in effect
       const showTimer = setTimeout(() => setShowConfetti(true), 0);
       const hideTimer = setTimeout(() => setShowConfetti(false), 3000);
       return () => {
@@ -91,15 +90,11 @@ export function SpinResultModal({
 
   const isWin = result.netResult > 0;
   const isBigWin = result.netResult > result.totalBet * 3;
-
-  // Group results by sector
-  const resultSummary = result.results.reduce(
-    (acc, r) => {
-      acc[r.sector] = (acc[r.sector] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+  const sectorLabel = result.result.sector === 'jackpot'
+    ? 'JACKPOT'
+    : result.result.sector === 'empty'
+      ? 'EMPTY'
+      : result.result.sector.toUpperCase();
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -201,32 +196,9 @@ export function SpinResultModal({
             </div>
 
             <div className="text-sm text-white/60 mt-2">
-              {result.spinCount} spin{result.spinCount > 1 ? 's' : ''} | Bet: ${result.totalBet.toFixed(2)} | Payout: ${result.totalPayout.toFixed(2)}
+              Sector: {sectorLabel} | Bet: ${result.totalBet.toFixed(2)} | Payout: ${result.totalPayout.toFixed(2)}
             </div>
           </motion.div>
-
-          {/* Results breakdown for multi-spin */}
-          {result.spinCount > 1 && (
-            <div className="mb-6">
-              <div className="text-sm font-medium text-white/70 mb-2">Results:</div>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(resultSummary).map(([sector, count]) => (
-                  <div
-                    key={sector}
-                    className="
-                      flex items-center gap-1 px-2 py-1
-                      bg-white/10 rounded-lg text-sm
-                    "
-                  >
-                    <span className="text-white/60">{count}x</span>
-                    <span className="text-white font-medium">
-                      {sector === 'jackpot' ? 'JACKPOT' : sector === 'empty' ? 'Empty' : sector.toUpperCase()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Free spins used */}
           {result.freeSpinsUsed > 0 && (

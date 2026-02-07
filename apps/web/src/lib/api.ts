@@ -2007,11 +2007,11 @@ export interface WheelSpinResult {
 export interface WheelSpinResponse {
   success: boolean;
   spinId: string;
-  spinCount: number;
+  betMultiplier: number;
   totalBet: number;
   totalPayout: number;
   netResult: number;
-  results: WheelSpinResult[];
+  result: WheelSpinResult;
   jackpotWon: boolean;
   jackpotAmount: number;
   burnAmount: number;
@@ -2024,7 +2024,6 @@ export interface WheelSpinResponse {
 
 export interface WheelStateResponse {
   jackpotPool: number;
-  jackpotCap: number;
   lastWinner: {
     userId: string;
     amount: number | null;
@@ -2040,7 +2039,7 @@ export interface WheelStateResponse {
 
 export interface WheelHistoryItem {
   id: string;
-  spinCount: number;
+  betMultiplier: number;
   totalBet: number;
   totalPayout: number;
   netResult: number;

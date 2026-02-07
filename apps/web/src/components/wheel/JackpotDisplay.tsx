@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Sparkles } from 'lucide-react';
+import { Trophy, Sparkles, Info } from 'lucide-react';
 
 interface JackpotDisplayProps {
   currentPool: number;
-  cap: number;
   timesWon: number;
   lastWinner?: {
     userId: string;
@@ -17,13 +16,12 @@ interface JackpotDisplayProps {
 
 export function JackpotDisplay({
   currentPool,
-  cap,
   timesWon,
   lastWinner,
 }: JackpotDisplayProps) {
   const [displayAmount, setDisplayAmount] = useState(currentPool);
   const [isAnimating, setIsAnimating] = useState(false);
-  const progress = Math.min((currentPool / cap) * 100, 100);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   // Animate pool changes
   useEffect(() => {
@@ -89,34 +87,48 @@ export function JackpotDisplay({
             <Trophy className="w-5 h-5 text-[#ffd700]" />
             <span className="text-sm font-semibold text-[#ffd700]">JACKPOT</span>
           </div>
-          <div className="flex items-center gap-1 text-xs text-[#ffd700]/70">
-            <Sparkles className="w-3 h-3" />
-            <span>Won {timesWon}x</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-xs text-[#ffd700]/70">
+              <Sparkles className="w-3 h-3" />
+              <span>Won {timesWon}x</span>
+            </div>
+            {/* Info tooltip trigger */}
+            <button
+              onClick={() => setShowTooltip(!showTooltip)}
+              className="p-0.5 rounded-full hover:bg-[#ffd700]/10 transition-colors"
+            >
+              <Info className="w-3.5 h-3.5 text-[#ffd700]/50" />
+            </button>
           </div>
         </div>
 
         {/* Amount */}
         <motion.div
-          className="text-center mb-3"
+          className="text-center mb-1"
           animate={isAnimating ? { scale: [1, 1.05, 1] } : {}}
         >
           <span className="text-3xl font-bold text-[#ffd700] drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]">
             ${displayAmount.toFixed(2)}
           </span>
-          <span className="text-sm text-[#ffd700]/50 ml-1">
-            / ${cap.toFixed(0)}
-          </span>
         </motion.div>
 
-        {/* Progress bar */}
-        <div className="h-2 bg-[#1a0a2e] rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-gradient-to-r from-[#ffd700] to-[#ff8c00]"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5 }}
-          />
-        </div>
+        {/* Tooltip */}
+        <AnimatePresence>
+          {showTooltip && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-2 p-3 bg-[#1a0a2e]/80 rounded-lg text-xs text-white/70 space-y-1">
+                <p>Part of each losing spin goes to the jackpot pool.</p>
+                <p>Hit the JACKPOT sector to win the entire pool!</p>
+                <p className="text-[#ffd700]/60">Chance: 1% per spin</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Last winner */}
         <AnimatePresence>
@@ -125,7 +137,7 @@ export function JackpotDisplay({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="mt-3 text-center text-xs text-[#ffd700]/60"
+              className="mt-2 text-center text-xs text-[#ffd700]/60"
             >
               Last win: ${lastWinner.amount.toFixed(2)}
             </motion.div>

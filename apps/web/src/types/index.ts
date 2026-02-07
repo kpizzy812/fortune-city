@@ -305,11 +305,11 @@ export interface SpinResult {
 export interface SpinResponse {
   success: boolean;
   spinId: string;
-  spinCount: number;
+  betMultiplier: number;
   totalBet: number;
   totalPayout: number;
   netResult: number;
-  results: SpinResult[];
+  result: SpinResult;
   jackpotWon: boolean;
   jackpotAmount: number;
   burnAmount: number;
@@ -322,7 +322,6 @@ export interface SpinResponse {
 
 export interface WheelState {
   jackpotPool: number;
-  jackpotCap: number;
   lastWinner: {
     userId: string;
     amount: number | null;
@@ -338,7 +337,7 @@ export interface WheelState {
 
 export interface SpinHistoryItem {
   id: string;
-  spinCount: number;
+  betMultiplier: number;
   totalBet: number;
   totalPayout: number;
   netResult: number;

@@ -19,7 +19,6 @@ export default function WheelPage() {
   const { user, token, refreshUser } = useAuthStore();
   const {
     jackpotPool,
-    jackpotCap,
     betAmount,
     multipliers,
     freeSpinsRemaining,
@@ -66,16 +65,9 @@ export default function WheelPage() {
         clearError();
         const result = await spin(token, multiplier);
 
-        // Start wheel animation
+        // Start wheel animation — always single spin now
         setIsWheelSpinning(true);
-
-        // Use the first result sector for single spin, or a random one for multi-spin
-        const targetSector =
-          result.spinCount === 1
-            ? result.results[0].sector
-            : result.results[Math.floor(Math.random() * result.results.length)].sector;
-
-        setCurrentResultSector(targetSector);
+        setCurrentResultSector(result.result.sector);
       } catch {
         // Error handled in store
       }
@@ -144,7 +136,6 @@ export default function WheelPage() {
         {/* Jackpot display */}
         <JackpotDisplay
           currentPool={jackpotPool}
-          cap={jackpotCap}
           timesWon={timesWon}
           lastWinner={lastWinner}
         />

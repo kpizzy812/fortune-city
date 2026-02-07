@@ -31,21 +31,10 @@ export function SpinControls({
     setCurrentMultiplierIndex((prev) => (prev + 1) % multipliers.length);
   }, [isSpinning, multipliers.length]);
 
-  const canAfford = () => {
-    const cost = betAmount * currentMultiplier;
-    const freeSpinsValue = Math.min(freeSpins, currentMultiplier) * betAmount;
-    return balance >= cost - freeSpinsValue;
-  };
-
-  const getCost = () => {
-    const totalCost = betAmount * currentMultiplier;
-    const freeSpinsUsed = Math.min(freeSpins, currentMultiplier);
-    const actualCost = totalCost - freeSpinsUsed * betAmount;
-    return { totalCost, freeSpinsUsed, actualCost };
-  };
-
-  const { freeSpinsUsed, actualCost } = getCost();
-  const affordable = canAfford();
+  const totalCost = betAmount * currentMultiplier;
+  const freeSpinsUsed = Math.min(freeSpins, currentMultiplier);
+  const actualCost = totalCost - freeSpinsUsed * betAmount;
+  const affordable = balance >= actualCost;
   const isFree = freeSpinsUsed >= currentMultiplier;
 
   const handleSpin = () => {
@@ -155,7 +144,7 @@ export function SpinControls({
 
       {/* Bet info */}
       <div className="text-center text-xs text-white/50">
-        ${betAmount} x {currentMultiplier} = ${(betAmount * currentMultiplier).toFixed(2)} total
+        Bet: ${(betAmount * currentMultiplier).toFixed(2)}
       </div>
     </div>
   );
