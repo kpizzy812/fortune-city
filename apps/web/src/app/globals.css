@@ -38,6 +38,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
 body {
   background: var(--fc-bg-dark);
   color: var(--fc-text-primary);

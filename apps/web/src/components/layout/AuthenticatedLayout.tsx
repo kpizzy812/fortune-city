@@ -7,6 +7,7 @@ import { useUIStore } from '@/stores/ui.store';
 import { useDepositsSocket } from '@/hooks/useDepositsSocket';
 import { useWheelSocket } from '@/hooks/useWheelSocket';
 import { useNotificationsSocket } from '@/hooks/useNotificationsSocket';
+import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { BottomNavigation } from './BottomNavigation';
 import { SidebarNavigation } from './SidebarNavigation';
 import { MusicPlayer } from './MusicPlayer';
@@ -26,6 +27,9 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   useDepositsSocket();
   useWheelSocket(user?.id);
   useNotificationsSocket();
+
+  // Telegram BackButton: visible on sub-pages, hidden on root tabs
+  useTelegramBackButton();
 
   // Admin pages have their own layout — skip main navigation
   if (isAdminRoute) {

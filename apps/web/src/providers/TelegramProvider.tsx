@@ -21,10 +21,24 @@ declare global {
             last_name?: string;
             username?: string;
           };
+          start_param?: string;
         };
         ready: () => void;
         expand: () => void;
         close: () => void;
+        // Swipe behavior (Bot API 7.7+)
+        disableVerticalSwipes: () => void;
+        enableVerticalSwipes: () => void;
+        isVerticalSwipesEnabled: boolean;
+        // Closing confirmation
+        enableClosingConfirmation: () => void;
+        disableClosingConfirmation: () => void;
+        isClosingConfirmationEnabled: boolean;
+        // Header & background colors
+        setHeaderColor: (color: string) => void;
+        setBackgroundColor: (color: string) => void;
+        headerColor: string;
+        backgroundColor: string;
         MainButton: {
           text: string;
           color: string;
@@ -92,6 +106,24 @@ export function TelegramProvider({ children }: TelegramProviderProps) {
 
       // Expand to full height
       webApp.expand();
+
+      // Disable vertical swipe-to-close (Bot API 7.7+)
+      if (typeof webApp.disableVerticalSwipes === 'function') {
+        webApp.disableVerticalSwipes();
+      }
+
+      // Enable closing confirmation as extra protection
+      if (typeof webApp.enableClosingConfirmation === 'function') {
+        webApp.enableClosingConfirmation();
+      }
+
+      // Set native header and background to match project theme
+      if (typeof webApp.setHeaderColor === 'function') {
+        webApp.setHeaderColor('#1a0a2e');
+      }
+      if (typeof webApp.setBackgroundColor === 'function') {
+        webApp.setBackgroundColor('#1a0a2e');
+      }
 
       // Auto-authenticate if we have initData and no token
       if (webApp.initData && !token) {
