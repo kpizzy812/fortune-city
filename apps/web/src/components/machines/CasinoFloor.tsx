@@ -76,9 +76,9 @@ export function CasinoFloor({
   // Empty state — show floor with shop CTA
   if (!isLoading && activeMachines.length === 0) {
     return (
-      <div className="relative w-full rounded-xl overflow-hidden" style={{ aspectRatio }}>
+      <div className="relative w-full lg:rounded-xl overflow-hidden" style={{ aspectRatio }}>
         <Image src={bgSrc} alt="Casino floor" fill className="object-cover" priority sizes="(max-width: 1024px) 100vw, 960px" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px]">
+        <div className="absolute inset-0 flex flex-col items-center justify-start pt-[25%] lg:justify-center lg:pt-0 bg-black/40 backdrop-blur-[2px]">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
             <h3 className="text-xl font-bold text-white mb-2">{t('noMachinesYet')}</h3>
             <p className="text-sm text-white/70 mb-4">{t('buyFirstMachine')}</p>
@@ -96,7 +96,7 @@ export function CasinoFloor({
   }
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden" style={{ aspectRatio }}>
+    <div className="relative w-full lg:rounded-xl overflow-hidden" style={{ aspectRatio }}>
       {/* Background */}
       <Image src={bgSrc} alt="Casino floor" fill className="object-cover" priority sizes="(max-width: 1024px) 100vw, 960px" />
 

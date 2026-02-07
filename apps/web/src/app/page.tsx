@@ -513,8 +513,8 @@ export default function Home() {
         {/* Live Activity Feed */}
         <ActivityFeed />
 
-        {/* Casino Floor */}
-        <div className="mb-6">
+        {/* Casino Floor — full-width on mobile */}
+        <div className="mb-6 -mx-4 lg:mx-0">
           <CasinoFloor
             machines={machines}
             incomes={incomes}
