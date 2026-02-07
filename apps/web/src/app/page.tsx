@@ -243,25 +243,25 @@ export default function Home() {
   // Show login page if not authenticated
   if (!user) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-6 lg:p-8 relative">
-        {/* Language Switcher */}
-        <div className="absolute top-4 right-4">
-          <LanguageSwitcher />
-        </div>
-
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-6 lg:p-8">
         <div className="w-full max-w-md">
+          {/* Language Switcher */}
+          <div className="flex justify-end mb-4">
+            <LanguageSwitcher />
+          </div>
+
           {/* Logo */}
-          <div className="text-center mb-10">
-            <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-[#ff2d95] to-[#00d4ff] bg-clip-text text-transparent mb-3">
+          <div className="text-center mb-6 lg:mb-10">
+            <h1 className="text-4xl lg:text-6xl font-bold bg-gradient-to-r from-[#ff2d95] to-[#00d4ff] bg-clip-text text-transparent mb-2">
               {tBrand('name')}
             </h1>
-            <p className="text-[#ffd700] text-lg lg:text-xl italic">
+            <p className="text-[#ffd700] text-base lg:text-xl italic">
               {tBrand('tagline')}
             </p>
           </div>
 
           {/* Description */}
-          <p className="text-[#b0b0b0] text-center mb-10 leading-relaxed">
+          <p className="text-[#b0b0b0] text-center text-sm lg:text-base mb-6 lg:mb-10 leading-relaxed">
             {tBrand('description')}
           </p>
 
@@ -272,9 +272,9 @@ export default function Home() {
               <p className="text-[#00d4ff] text-lg">{tAuth('authenticating')}</p>
             </div>
           ) : (
-            <div className="bg-[#2a1a4e]/40 backdrop-blur-sm rounded-2xl p-8 border border-white/10 shadow-2xl max-w-md mx-auto">
+            <div className="bg-[#2a1a4e]/40 backdrop-blur-sm rounded-2xl p-5 lg:p-8 border border-white/10 shadow-2xl max-w-md mx-auto">
               {/* Email Login */}
-              <div className="mb-6">
+              <div className="mb-4 lg:mb-6">
                 <EmailLoginForm
                   onSuccess={() => console.log('Email login success')}
                   onError={(err) => console.error('Email login error:', err)}
@@ -282,7 +282,7 @@ export default function Home() {
               </div>
 
               {/* Divider */}
-              <div className="relative my-6">
+              <div className="relative my-4 lg:my-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10"></div>
                 </div>
@@ -294,7 +294,7 @@ export default function Home() {
               </div>
 
               {/* Solana Wallet Login */}
-              <div className="mb-6">
+              <div className="mb-4 lg:mb-6">
                 <SolanaLoginButton
                   onSuccess={() => console.log('Solana login success')}
                   onError={(err) => console.error('Solana login error:', err)}
@@ -302,7 +302,7 @@ export default function Home() {
               </div>
 
               {/* Divider */}
-              <div className="relative my-6">
+              <div className="relative my-4 lg:my-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/10"></div>
                 </div>
