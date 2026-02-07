@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { Home, ShoppingCart, FerrisWheel, Users, Wallet, type LucideIcon } from 'lucide-react';
+import { useFeedback } from '@/hooks/useFeedback';
 
 interface NavItem {
   icon: LucideIcon;
@@ -26,6 +27,7 @@ export function BottomNavigation() {
   const pathname = usePathname();
   const t = useTranslations('nav');
   const tCommon = useTranslations('common');
+  const { click: fbClick } = useFeedback();
 
   const handleComingSoon = (e: React.MouseEvent, labelKey: string) => {
     e.preventDefault();
@@ -82,6 +84,7 @@ export function BottomNavigation() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={fbClick}
               className={`
                 flex flex-col items-center justify-center
                 w-16 py-1 relative

@@ -2,6 +2,7 @@
 
 import { ReactNode, forwardRef } from 'react';
 import { motion } from 'framer-motion';
+import { useFeedback } from '@/hooks/useFeedback';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'gold' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -54,6 +55,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
+    const { click: fbClick } = useFeedback();
     const isDisabled = disabled || loading;
 
     return (
@@ -73,7 +75,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           ${className}
         `}
         disabled={isDisabled}
-        onClick={onClick}
+        onClick={() => { if (onClick) { fbClick(); onClick(); } }}
       >
         {loading && (
           <svg

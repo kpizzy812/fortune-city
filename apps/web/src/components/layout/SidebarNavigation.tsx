@@ -15,6 +15,7 @@ import { ProfileModal } from '@/components/profile/ProfileModal';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { FameBadge } from '@/components/fame/FameBadge';
 import { formatUserDisplayName, getUserInitial } from '@/lib/utils';
+import { useFeedback } from '@/hooks/useFeedback';
 
 interface NavItem {
   icon: LucideIcon;
@@ -39,6 +40,7 @@ export function SidebarNavigation() {
   const tBrand = useTranslations('brand');
   const tCommon = useTranslations('common');
   const tProfile = useTranslations('profile');
+  const { click: fbClick } = useFeedback();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const displayName = user ? formatUserDisplayName(user) : '';
@@ -204,6 +206,7 @@ export function SidebarNavigation() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={fbClick}
               className={`
                 w-full flex items-center
                 rounded-lg transition-all relative
