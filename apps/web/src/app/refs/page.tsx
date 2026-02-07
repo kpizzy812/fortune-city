@@ -3,10 +3,12 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { Copy, Check, Send, Twitter } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useReferralsStore } from '@/stores/referrals.store';
 import { Button } from '@/components/ui/Button';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
+import { useTelegramWebApp } from '@/providers/TelegramProvider';
 
 const REFERRAL_RATES = [
   { level: 1, rate: '5%', color: '#00ff88' },
@@ -36,6 +38,7 @@ export default function RefsPage() {
 
   const [copied, setCopied] = useState(false);
   const hasFetched = useRef(false);
+  const { webApp, isTelegramApp } = useTelegramWebApp();
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -78,6 +81,30 @@ export default function RefsPage() {
       setTimeout(() => setCopied(false), 2000);
     }
   }, [referralLink]);
+
+  // Share via Telegram
+  const handleShareTelegram = useCallback(() => {
+    if (!referralLink) return;
+    const text = t('shareText');
+    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(text)}`;
+    if (isTelegramApp && webApp) {
+      webApp.openTelegramLink(tgUrl);
+    } else {
+      window.open(tgUrl, '_blank');
+    }
+  }, [referralLink, t, isTelegramApp, webApp]);
+
+  // Share via Twitter/X
+  const handleShareTwitter = useCallback(() => {
+    if (!referralLink) return;
+    const text = `${t('shareText')} ${referralLink}`;
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    if (isTelegramApp && webApp) {
+      webApp.openLink(url);
+    } else {
+      window.open(url, '_blank');
+    }
+  }, [referralLink, t, isTelegramApp, webApp]);
 
   // Handle withdraw
   const handleWithdraw = useCallback(async () => {
@@ -128,26 +155,51 @@ export default function RefsPage() {
         </header>
 
         {/* Referral Link Card */}
-        <div className="bg-[#2a1a4e] rounded-xl p-4 lg:p-6 border border-[#00d4ff]/30 mb-6">
-          <h2 className="text-lg font-semibold text-white mb-3">
-            {t('yourReferralLink')}
-          </h2>
-          <div className="flex items-center gap-3">
-            <div className="flex-1 bg-[#1a0a2e] rounded-lg px-4 py-3 font-mono text-sm text-[#b0b0b0] truncate">
+        <div className="relative rounded-xl p-[1px] mb-6 bg-gradient-to-r from-[#ff2d95] via-[#00d4ff] to-[#ffd700]">
+          <div className="bg-[#2a1a4e] rounded-xl p-4 lg:p-6">
+            <h2 className="text-lg font-semibold text-white mb-3">
+              {t('yourReferralLink')}
+            </h2>
+            <div className="bg-[#1a0a2e] rounded-lg px-4 py-3 font-mono text-sm text-[#b0b0b0] truncate mb-4">
               {isLoading ? tCommon('loading') : referralLink || t('noReferralCode')}
             </div>
-            <Button
-              onClick={handleCopy}
-              variant="secondary"
-              className="shrink-0"
-              disabled={!referralLink}
-            >
-              {copied ? tCommon('copied') : tCommon('copy')}
-            </Button>
+            {/* Share buttons grid */}
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                onClick={handleShareTelegram}
+                disabled={!referralLink}
+                className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#0088cc]/20 border border-[#0088cc]/40 text-[#0088cc] hover:bg-[#0088cc]/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Send className="w-4 h-4" />
+                <span className="text-sm font-medium">Telegram</span>
+              </button>
+              <button
+                onClick={handleShareTwitter}
+                disabled={!referralLink}
+                className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-white/5 border border-white/20 text-white/80 hover:bg-white/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Twitter className="w-4 h-4" />
+                <span className="text-sm font-medium">X</span>
+              </button>
+              <button
+                onClick={handleCopy}
+                disabled={!referralLink}
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                  copied
+                    ? 'bg-[#00ff88]/20 border-[#00ff88]/40 text-[#00ff88]'
+                    : 'bg-[#ff2d95]/10 border-[#ff2d95]/30 text-[#ff2d95] hover:bg-[#ff2d95]/20'
+                }`}
+              >
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                <span className="text-sm font-medium">
+                  {copied ? tCommon('copied') : tCommon('copy')}
+                </span>
+              </button>
+            </div>
+            <p className="mt-3 text-xs text-[#b0b0b0]">
+              {t('shareHint')}
+            </p>
           </div>
-          <p className="mt-3 text-xs text-[#b0b0b0]">
-            {t('shareHint')}
-          </p>
         </div>
 
         {/* Stats Grid */}
