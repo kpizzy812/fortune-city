@@ -9,9 +9,10 @@ import { PawnshopService } from './services/pawnshop.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { EconomyModule } from '../economy/economy.module';
+import { FameModule } from '../fame/fame.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, forwardRef(() => EconomyModule)],
+  imports: [PrismaModule, AuthModule, forwardRef(() => EconomyModule), FameModule],
   controllers: [MachinesController],
   providers: [
     TierCacheService,

@@ -62,8 +62,15 @@ model User {
   // Referral milestones
   taxDiscount  Decimal @default(0) @map("tax_discount") @db.Decimal(5, 4) // Personal tax discount from milestones
 
+  // Fame (progression resource)
+  fame            Int       @default(0)
+  totalFameEarned Int       @default(0) @map("total_fame_earned")
+  loginStreak     Int       @default(0) @map("login_streak")
+  lastLoginDate   DateTime? @map("last_login_date")
+
   // Relations
   machines            Machine[]
+  fameTransactions    FameTransaction[]
   transactions        Transaction[]
   depositAddresses    DepositAddress[]
   deposits            Deposit[]
@@ -124,6 +131,10 @@ model Machine {
   autoCollectPurchasedAt DateTime? @map("auto_collect_purchased_at")
 
   status MachineStatus @default(active)
+
+  // Fame tracking (lazy calculation at collect time)
+  fameGenerated        Int      @default(0) @map("fame_generated")
+  lastFameCalculatedAt DateTime @default(now()) @map("last_fame_calculated_at")
 
   // Fund source tracking
   fundSource FundSource?
@@ -236,6 +247,33 @@ enum TransactionStatus {
 enum Currency {
   FORTUNE
   USDT
+}
+
+// ============== FAME TRANSACTIONS ==============
+
+model FameTransaction {
+  id           String     @id @default(cuid())
+  userId       String     @map("user_id")
+  user         User       @relation(fields: [userId], references: [id])
+  amount       Int        // + earn, - spend
+  balanceAfter Int        @map("balance_after")
+  source       FameSource
+  description  String?
+  machineId    String?    @map("machine_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([source])
+  @@map("fame_transactions")
+}
+
+enum FameSource {
+  machine_passive
+  manual_collect
+  daily_login
+  machine_purchase
+  tier_unlock
+  admin_adjustment
 }
 
 // ============== DEPOSITS ==============
@@ -445,6 +483,16 @@ model SystemSettings {
 
   // Wheel sectors: [{sector, chance, multiplier}]
   wheelSectors Json @default("[{\"sector\":\"5x\",\"chance\":0.01,\"multiplier\":5},{\"sector\":\"2x\",\"chance\":0.05,\"multiplier\":2},{\"sector\":\"1.5x\",\"chance\":0.08,\"multiplier\":1.5},{\"sector\":\"1x\",\"chance\":0.12,\"multiplier\":1},{\"sector\":\"0.5x\",\"chance\":0.18,\"multiplier\":0.5},{\"sector\":\"0.2x\",\"chance\":0.22,\"multiplier\":0.2},{\"sector\":\"empty\",\"chance\":0.33,\"multiplier\":0},{\"sector\":\"jackpot\",\"chance\":0.01,\"multiplier\":0}]") @map("wheel_sectors")
+
+  // Fame system settings
+  famePerHourByTier     Json @default("{\"1\":2,\"2\":3,\"3\":5,\"4\":8,\"5\":12,\"6\":18,\"7\":28,\"8\":42,\"9\":65,\"10\":100}") @map("fame_per_hour_by_tier")
+  famePerManualCollect  Int  @default(10) @map("fame_per_manual_collect")
+  fameDailyLogin        Int  @default(15) @map("fame_daily_login")
+  fameStreakBonus       Int  @default(2) @map("fame_streak_bonus")
+  fameStreakCap         Int  @default(20) @map("fame_streak_cap")
+  famePurchaseByTier    Json @default("{\"1\":15,\"2\":25,\"3\":40,\"4\":60,\"5\":100,\"6\":150,\"7\":250,\"8\":400,\"9\":600,\"10\":1000}") @map("fame_purchase_by_tier")
+  fameUpgradeMultiplier Int  @default(2) @map("fame_upgrade_multiplier")
+  fameUnlockCostByTier  Json @default("{\"2\":250,\"3\":500,\"4\":1000,\"5\":2000,\"6\":4000,\"7\":7500,\"8\":14000,\"9\":26000,\"10\":45000}") @map("fame_unlock_cost_by_tier")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

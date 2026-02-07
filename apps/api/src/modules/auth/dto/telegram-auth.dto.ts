@@ -97,9 +97,14 @@ export class AuthResponseDto {
     fortuneBalance: string;
     referralBalance: string;
     maxTierReached: number;
+    maxTierUnlocked: number;
     currentTaxRate: string;
     taxDiscount: string;
     referralCode: string;
+    fame: number;
+    totalFameEarned: number;
+    loginStreak: number;
+    lastLoginDate: string | null;
   };
 }
 

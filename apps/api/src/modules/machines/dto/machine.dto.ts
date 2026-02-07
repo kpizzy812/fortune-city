@@ -67,6 +67,7 @@ export class MachineIncomeDto {
 export class CollectCoinsResponseDto {
   collected: number;
   machine: MachineResponseDto;
+  fameEarned: number;
 }
 
 export class TierInfoDto {

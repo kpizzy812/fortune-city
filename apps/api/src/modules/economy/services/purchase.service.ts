@@ -11,6 +11,7 @@ import { TransactionsService } from './transactions.service';
 import { FundSourceService } from './fund-source.service';
 import { SettingsService } from '../../settings/settings.service';
 import { ReferralsService } from '../../referrals/referrals.service';
+import { FameService } from '../../fame/fame.service';
 import {
   getTierConfigOrThrow,
   TAX_RATES_BY_TIER,
@@ -47,6 +48,7 @@ export class PurchaseService {
     private readonly fundSourceService: FundSourceService,
     private readonly settingsService: SettingsService,
     private readonly referralsService: ReferralsService,
+    private readonly fameService: FameService,
   ) {}
 
   async purchaseMachine(
@@ -205,6 +207,14 @@ export class PurchaseService {
         tx,
       );
 
+      // 7. Earn Fame for purchase (x2 if upgrade to new tier)
+      await this.fameService.earnPurchaseFame(
+        userId,
+        input.tier,
+        isUpgrade,
+        tx,
+      );
+
       return {
         machine,
         transaction,
@@ -286,6 +296,10 @@ export class PurchaseService {
     nextReinvestRound: number;
     currentProfitReduction: number;
     nextProfitReduction: number;
+    // Fame info
+    fameUnlockRequired: boolean;
+    fameUnlockCost: number | null;
+    userFame: number;
   }> {
     const tierConfig = getTierConfigOrThrow(tier);
     const user = await this.prisma.user.findUnique({
@@ -338,6 +352,12 @@ export class PurchaseService {
         (REINVEST_REDUCTION[nextReinvestRound] ?? 0.85) * 100;
     }
 
+    // Fame unlock info
+    const fameUnlockRequired = tier > user.maxTierUnlocked;
+    const settings = await this.settingsService.getSettings();
+    const unlockCosts = settings.fameUnlockCostByTier as Record<string, number>;
+    const fameUnlockCost = fameUnlockRequired ? (unlockCosts[String(tier)] ?? null) : null;
+
     return {
       canAfford: totalBalance >= price,
       price,
@@ -351,6 +371,9 @@ export class PurchaseService {
       nextReinvestRound,
       currentProfitReduction,
       nextProfitReduction,
+      fameUnlockRequired,
+      fameUnlockCost,
+      userFame: user.fame,
     };
   }
 }

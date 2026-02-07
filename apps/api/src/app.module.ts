@@ -19,6 +19,7 @@ import { WheelModule } from './modules/wheel/wheel.module';
 import { TelegramBotModule } from './modules/telegram-bot/telegram-bot.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ActivityModule } from './modules/activity/activity.module';
+import { FameModule } from './modules/fame/fame.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { ActivityModule } from './modules/activity/activity.module';
     TelegramBotModule,
     NotificationsModule,
     ActivityModule,
+    FameModule,
   ],
   controllers: [AppController],
   providers: [AppService],

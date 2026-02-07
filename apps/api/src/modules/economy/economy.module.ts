@@ -3,6 +3,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { MachinesModule } from '../machines/machines.module';
 import { AuthModule } from '../auth/auth.module';
 import { ReferralsModule } from '../referrals/referrals.module';
+import { FameModule } from '../fame/fame.module';
 import { EconomyController } from './economy.controller';
 import { TransactionsService } from './services/transactions.service';
 import { FundSourceService } from './services/fund-source.service';
@@ -14,6 +15,7 @@ import { PurchaseService } from './services/purchase.service';
     forwardRef(() => MachinesModule),
     AuthModule,
     ReferralsModule,
+    FameModule,
   ],
   controllers: [EconomyController],
   providers: [TransactionsService, FundSourceService, PurchaseService],

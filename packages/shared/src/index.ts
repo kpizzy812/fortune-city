@@ -5,3 +5,4 @@ export * from './types/transaction';
 
 // Constants
 export * from './constants/tiers';
+export * from './constants/fame';

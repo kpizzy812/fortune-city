@@ -263,9 +263,14 @@ export class AuthService {
       fortuneBalance: user.fortuneBalance.toString(),
       referralBalance: user.referralBalance.toString(),
       maxTierReached: user.maxTierReached,
+      maxTierUnlocked: user.maxTierUnlocked,
       currentTaxRate: user.currentTaxRate.toString(),
       taxDiscount: user.taxDiscount.toString(),
       referralCode: user.referralCode,
+      fame: user.fame,
+      totalFameEarned: user.totalFameEarned,
+      loginStreak: user.loginStreak,
+      lastLoginDate: user.lastLoginDate?.toISOString() ?? null,
     };
   }
 

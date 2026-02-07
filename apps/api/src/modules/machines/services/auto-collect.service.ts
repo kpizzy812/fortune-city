@@ -194,10 +194,11 @@ export class AutoCollectService {
     }
 
     try {
-      // Выполняем обычный сбор через MachinesService
+      // Выполняем обычный сбор через MachinesService (isAutoCollect = true → без Fame за ручной сбор)
       const result = await this.machinesService.collectCoins(
         machineId,
         machine.userId,
+        true,
       );
 
       const collected = Number(result.collected);

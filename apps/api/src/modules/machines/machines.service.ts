@@ -13,6 +13,7 @@ import {
   calculateEarlySellCommission,
 } from '@fortune-city/shared';
 import { FundSourceService } from '../economy/services/fund-source.service';
+import { FameService } from '../fame/fame.service';
 import { TierCacheService } from './services/tier-cache.service';
 
 export interface CreateMachineInput {
@@ -36,6 +37,7 @@ export class MachinesService {
     private readonly tierCacheService: TierCacheService,
     @Inject(forwardRef(() => FundSourceService))
     private readonly fundSourceService: FundSourceService,
+    private readonly fameService: FameService,
   ) {}
 
   async findById(id: string): Promise<Machine | null> {
@@ -295,10 +297,12 @@ export class MachinesService {
   async collectCoins(
     machineId: string,
     userId: string,
+    isAutoCollect: boolean = false,
   ): Promise<{
     collected: number;
     machine: Machine;
     newBalance: number;
+    fameEarned: number;
   }> {
     const machine = await this.findByIdOrThrow(machineId);
 
@@ -327,6 +331,7 @@ export class MachinesService {
         collected: 0,
         machine: currentMachine,
         newBalance: Number(user?.fortuneBalance ?? 0),
+        fameEarned: 0,
       };
     }
 
@@ -380,9 +385,33 @@ export class MachinesService {
         },
       });
 
+      // 5. Fame: passive Fame from machine + manual collect bonus
+      let fameEarned = 0;
+
+      // Passive Fame (always, both auto and manual)
+      if (machine.status === 'active') {
+        fameEarned += await this.fameService.earnMachinePassiveFame(
+          userId,
+          machineId,
+          machine.tier,
+          machine.lastFameCalculatedAt,
+          tx,
+        );
+      }
+
+      // Manual collect bonus (only for non-auto collects)
+      if (!isAutoCollect) {
+        fameEarned += await this.fameService.earnManualCollectFame(
+          userId,
+          machineId,
+          tx,
+        );
+      }
+
       return {
         machine: updatedMachine,
         newBalance: Number(updatedUser.fortuneBalance),
+        fameEarned,
       };
     });
 
@@ -390,6 +419,7 @@ export class MachinesService {
       collected,
       machine: result.machine,
       newBalance: result.newBalance,
+      fameEarned: result.fameEarned,
     };
   }
 
@@ -423,23 +453,12 @@ export class MachinesService {
     // Process each machine in a transaction
     await this.prisma.$transaction(async (tx) => {
       for (const machine of machinesToExpire) {
-        // 1. Mark machine as expired
+        // Mark machine as expired
+        // Note: tier unlock is now handled via Fame system (POST /fame/unlock-tier)
         await tx.machine.update({
           where: { id: machine.id },
           data: { status: 'expired' },
         });
-
-        // 2. Unlock next tier for user if this tier >= current maxTierUnlocked
-        // Only unlock if this was a progression machine (not buying lower tiers again)
-        const nextTier = machine.tier + 1;
-        if (nextTier <= 10 && machine.tier >= machine.user.maxTierUnlocked) {
-          await tx.user.update({
-            where: { id: machine.userId },
-            data: {
-              maxTierUnlocked: Math.max(machine.user.maxTierUnlocked, nextTier),
-            },
-          });
-        }
       }
     });
 

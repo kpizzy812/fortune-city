@@ -176,13 +176,14 @@ export class MachinesController {
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<CollectCoinsResponseDto> {
-    const result = await this.machinesService.collectCoins(id, req.user.sub);
+    const result = await this.machinesService.collectCoins(id, req.user.sub, false);
 
     return {
       collected: result.collected,
       machine: this.toResponseDto(
         this.machinesService.enrichWithTierInfo(result.machine),
       ),
+      fameEarned: result.fameEarned,
     };
   }
 
