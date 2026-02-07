@@ -11,6 +11,7 @@ import { EmailLoginForm } from '@/components/auth/EmailLoginForm';
 import { SolanaLoginButton } from '@/components/auth/SolanaLoginButton';
 import { Gamepad2, Trophy, Percent, Zap, X } from 'lucide-react';
 import { CasinoFloor } from '@/components/machines/CasinoFloor';
+import { MachineGrid } from '@/components/machines/MachineGrid';
 import { MachineCard } from '@/components/machines/MachineCard';
 import { RiskyCollectModal } from '@/components/machines/RiskyCollectModal';
 import { GambleResultAnimation } from '@/components/machines/GambleResultAnimation';
@@ -513,18 +514,30 @@ export default function Home() {
         {/* Live Activity Feed */}
         <ActivityFeed />
 
-        {/* Casino Floor */}
+        {/* Machines — CasinoFloor when active machines exist, MachineGrid otherwise */}
         <div className="mb-6">
-          <CasinoFloor
-            machines={machines}
-            incomes={incomes}
-            onCollect={handleCollect}
-            onRiskyCollect={handleRiskyCollect}
-            onAutoCollectClick={handleAutoCollectClick}
-            onMachineClick={setFloorSelectedMachineId}
-            isCollecting={isCollecting}
-            isLoading={isLoadingMachines}
-          />
+          {machines.length > 0 ? (
+            <CasinoFloor
+              machines={machines}
+              incomes={incomes}
+              onCollect={handleCollect}
+              onRiskyCollect={handleRiskyCollect}
+              onAutoCollectClick={handleAutoCollectClick}
+              onMachineClick={setFloorSelectedMachineId}
+              isCollecting={isCollecting}
+              isLoading={isLoadingMachines}
+            />
+          ) : (
+            <MachineGrid
+              machines={machines}
+              incomes={incomes}
+              onCollect={handleCollect}
+              onRiskyCollect={handleRiskyCollect}
+              onAutoCollectClick={handleAutoCollectClick}
+              isCollecting={isCollecting}
+              isLoading={isLoadingMachines}
+            />
+          )}
         </div>
 
         {/* Machine Detail Modal — opens when tapping a machine on the floor */}
