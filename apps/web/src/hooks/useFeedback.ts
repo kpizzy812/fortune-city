@@ -9,7 +9,6 @@ const SOUNDS = {
   win: '/sounds/win.mp3',
   lose: '/sounds/lose.mp3',
   purchase: '/sounds/purchase.mp3',
-  click: '/sounds/click.mp3',
   spin: '/sounds/spin.mp3',
   notification: '/sounds/notification.mp3',
 } as const;
@@ -125,6 +124,39 @@ function getAudioContext(): AudioContext | null {
 }
 
 /**
+ * Play a short synthesised laser zap (~60ms frequency sweep).
+ * Used for navigation taps and UI clicks. No debounce, instant.
+ */
+export function playLaser(muted: boolean) {
+  vibrate('click');
+  telegramHaptic('click');
+
+  if (muted) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  try {
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1500, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.06);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.06);
+  } catch {
+    // Ignore
+  }
+}
+
+/**
  * Play a short synthesised tick (~30ms).
  * Used for rapid-fire wheel sector ticking. No debounce.
  */
@@ -181,6 +213,7 @@ export function useFeedback() {
   );
 
   const tick = useCallback(() => playTick(musicMuted), [musicMuted]);
+  const laser = useCallback(() => playLaser(musicMuted), [musicMuted]);
 
   return {
     feedback,
@@ -188,9 +221,10 @@ export function useFeedback() {
     win: useCallback(() => feedback('win'), [feedback]),
     lose: useCallback(() => feedback('lose'), [feedback]),
     purchase: useCallback(() => feedback('purchase'), [feedback]),
-    click: useCallback(() => feedback('click'), [feedback]),
+    click: laser,
     spin: useCallback(() => feedback('spin'), [feedback]),
     notification: useCallback(() => feedback('notification'), [feedback]),
     tick,
+    laser,
   };
 }

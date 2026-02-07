@@ -12,7 +12,6 @@ import {
   SpinHistory,
   RecentWins,
 } from '@/components/wheel';
-import { BottomNavigation } from '@/components/layout/BottomNavigation';
 import { useFeedback } from '@/hooks/useFeedback';
 import type { WheelMultiplier } from '@/lib/api';
 
@@ -39,7 +38,7 @@ export default function WheelPage() {
     clearError,
   } = useWheelStore();
 
-  const { spin: fbSpin, win: fbWin, lose: fbLose } = useFeedback();
+  const { win: fbWin, lose: fbLose } = useFeedback();
 
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
   const [currentResultSector, setCurrentResultSector] = useState<string | undefined>();
@@ -66,7 +65,6 @@ export default function WheelPage() {
 
       try {
         clearError();
-        fbSpin();
         const result = await spin(token, multiplier);
 
         setIsWheelSpinning(true);
@@ -75,7 +73,7 @@ export default function WheelPage() {
         // Error handled in store
       }
     },
-    [token, isSpinning, spin, clearError, fbSpin]
+    [token, isSpinning, spin, clearError]
   );
 
   // Handle wheel animation complete
@@ -129,7 +127,7 @@ export default function WheelPage() {
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-lg mx-auto px-4 py-4 space-y-4">
         {/* Error message */}
         {error && (
           <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-center">
@@ -182,8 +180,6 @@ export default function WheelPage() {
         result={lastSpinResult}
       />
 
-      {/* Bottom navigation */}
-      <BottomNavigation />
     </div>
   );
 }
