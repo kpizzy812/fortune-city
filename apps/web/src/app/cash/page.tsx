@@ -29,12 +29,14 @@ import {
   AlertCircle,
   ArrowDownToLine,
   ArrowUpFromLine,
+  CreditCard,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepositsStore } from '@/stores/deposits.store';
 import { useWithdrawalsStore } from '@/stores/withdrawals.store';
 import { useOnDepositCredited } from '@/hooks/useDepositsSocket';
 import { OtherCryptoModal } from '@/components/shop/OtherCryptoModal';
+import { BuyCryptoGuideModal } from '@/components/cash/BuyCryptoGuideModal';
 import { CurrencyIcon } from '@/components/ui/CurrencyIcon';
 import type { DepositCurrency } from '@/lib/api';
 
@@ -111,6 +113,7 @@ export default function CashPage() {
   const [withdrawAddress, setWithdrawAddress] = useState<string>('');
   const [isSending, setIsSending] = useState(false);
   const [isOtherCryptoModalOpen, setIsOtherCryptoModalOpen] = useState(false);
+  const [isBuyCryptoOpen, setIsBuyCryptoOpen] = useState(false);
   const [isCurrencySelected, setIsCurrencySelected] = useState(false);
   const [isMobileNoWallet, setIsMobileNoWallet] = useState(false);
 
@@ -584,6 +587,35 @@ export default function CashPage() {
               </div>
             </button>
 
+            {/* Buy Crypto Guide Button */}
+            <button
+              onClick={() => setIsBuyCryptoOpen(true)}
+              className="
+                w-full mb-3 p-2.5 md:p-3 rounded-lg
+                bg-gradient-to-r from-emerald-500/10 to-cyan-500/10
+                border border-emerald-500/30 hover:border-emerald-500/50
+                flex items-center justify-between
+                transition-all group
+              "
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                  <CreditCard className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="text-left">
+                  <div className="text-white font-medium text-xs md:text-sm">
+                    {t('buyCrypto')}
+                  </div>
+                  <div className="text-[10px] md:text-xs text-emerald-200/80 hidden sm:block">
+                    {t('buyCryptoHint')}
+                  </div>
+                </div>
+              </div>
+              <div className="text-emerald-400 group-hover:translate-x-1 transition-transform text-sm">
+                →
+              </div>
+            </button>
+
             {/* Wallet Connect Deposit */}
             {depositTab === 'wallet' && (
               <div className="space-y-3">
@@ -604,7 +636,12 @@ export default function CashPage() {
                           onClick={() => openInPhantom()}
                           className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#AB9FF2] to-[#8b5cf6] rounded-lg h-9 text-xs font-medium px-4 text-white whitespace-nowrap"
                         >
-                          <Wallet className="w-4 h-4" />
+                          <svg className="w-4 h-4" viewBox="0 0 128 128" fill="none">
+                            <circle cx="64" cy="64" r="64" fill="white" fillOpacity="0.15" />
+                            <path d="M110.584 64.9142H99.142C99.142 41.7651 80.173 23 56.7724 23C33.6612 23 14.8716 41.3057 14.4118 64.0026C13.936 87.4478 33.5467 107.516 57.2037 107H62.1363C83.2743 107 110.584 89.1628 110.584 64.9142Z" fill="white" />
+                            <circle cx="44.5" cy="57.5" r="5.5" fill="#AB9FF2" />
+                            <circle cx="66.5" cy="57.5" r="5.5" fill="#AB9FF2" />
+                          </svg>
                           {t('openInPhantom')}
                         </button>
                       ) : (
@@ -923,7 +960,12 @@ export default function CashPage() {
                           onClick={() => openInPhantom()}
                           className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#AB9FF2] to-[#8b5cf6] rounded-lg h-9 text-xs font-medium px-4 text-white whitespace-nowrap"
                         >
-                          <Wallet className="w-4 h-4" />
+                          <svg className="w-4 h-4" viewBox="0 0 128 128" fill="none">
+                            <circle cx="64" cy="64" r="64" fill="white" fillOpacity="0.15" />
+                            <path d="M110.584 64.9142H99.142C99.142 41.7651 80.173 23 56.7724 23C33.6612 23 14.8716 41.3057 14.4118 64.0026C13.936 87.4478 33.5467 107.516 57.2037 107H62.1363C83.2743 107 110.584 89.1628 110.584 64.9142Z" fill="white" />
+                            <circle cx="44.5" cy="57.5" r="5.5" fill="#AB9FF2" />
+                            <circle cx="66.5" cy="57.5" r="5.5" fill="#AB9FF2" />
+                          </svg>
                           {t('openInPhantom')}
                         </button>
                       ) : (
@@ -1216,6 +1258,12 @@ export default function CashPage() {
       <OtherCryptoModal
         isOpen={isOtherCryptoModalOpen}
         onClose={() => setIsOtherCryptoModalOpen(false)}
+      />
+
+      {/* Buy Crypto Guide Modal */}
+      <BuyCryptoGuideModal
+        isOpen={isBuyCryptoOpen}
+        onClose={() => setIsBuyCryptoOpen(false)}
       />
 
       {/* Error Toast */}
