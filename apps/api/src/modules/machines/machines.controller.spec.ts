@@ -11,6 +11,7 @@ import { MachinesService } from './machines.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RiskyCollectService } from './services/risky-collect.service';
 import { AutoCollectService } from './services/auto-collect.service';
+import { OverclockService } from './services/overclock.service';
 import { AuctionService } from './services/auction.service';
 import { PawnshopService } from './services/pawnshop.service';
 
@@ -19,6 +20,7 @@ describe('MachinesController', () => {
   let machinesService: jest.Mocked<MachinesService>;
   let riskyCollectService: jest.Mocked<RiskyCollectService>;
   let autoCollectService: jest.Mocked<AutoCollectService>;
+  let overclockService: jest.Mocked<OverclockService>;
   let auctionService: jest.Mocked<AuctionService>;
   let pawnshopService: jest.Mocked<PawnshopService>;
 
@@ -41,6 +43,9 @@ describe('MachinesController', () => {
     coinBoxCurrent: new Prisma.Decimal(0.5),
     reinvestRound: 0,
     profitReductionRate: new Prisma.Decimal(0),
+    autoCollectEnabled: false,
+    autoCollectPurchasedAt: null,
+    overclockMultiplier: new Prisma.Decimal(1),
     status: 'active',
     createdAt: new Date(),
   };
@@ -85,6 +90,13 @@ describe('MachinesController', () => {
           },
         },
         {
+          provide: OverclockService,
+          useValue: {
+            getOverclockInfo: jest.fn(),
+            purchaseOverclock: jest.fn(),
+          },
+        },
+        {
           provide: AuctionService,
           useValue: {
             getAuctionQueueByTier: jest.fn(),
@@ -111,6 +123,7 @@ describe('MachinesController', () => {
     machinesService = module.get(MachinesService);
     riskyCollectService = module.get(RiskyCollectService);
     autoCollectService = module.get(AutoCollectService);
+    overclockService = module.get(OverclockService);
     auctionService = module.get(AuctionService);
     pawnshopService = module.get(PawnshopService);
 

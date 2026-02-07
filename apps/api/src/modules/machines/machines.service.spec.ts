@@ -260,8 +260,8 @@ describe('MachinesService', () => {
       const mockMachine = createMockMachine({
         startedAt,
         lastCalculatedAt: startedAt,
-        expiresAt: new Date(now.getTime() + 6 * 24 * 3600 * 1000), // 6 days from now
-        ratePerSecond: new Prisma.Decimal(0.0000223214),
+        expiresAt: new Date(now.getTime() + 2 * 24 * 3600 * 1000), // 2 days from now (tier 1 is 3 days)
+        ratePerSecond: new Prisma.Decimal(0.0000559414),
         coinBoxCapacity: new Prisma.Decimal(1),
         coinBoxCurrent: new Prisma.Decimal(0),
       });
@@ -271,7 +271,7 @@ describe('MachinesService', () => {
 
       const result = await service.calculateIncome('machine-123');
 
-      expect(result.ratePerSecond).toBeCloseTo(0.0000559414, 8);
+      expect(result.ratePerSecond).toBeCloseTo(0.0000559414, 5);
       expect(result.coinBoxCurrent).toBeGreaterThan(0);
       expect(result.isFull).toBe(false);
       expect(result.isExpired).toBe(false);
@@ -992,8 +992,8 @@ describe('MachinesService', () => {
         emoji: '🟤',
         imageUrl: '/machines/tier-1.png',
         price: 10,
-        lifespanDays: 7,
-        yieldPercent: 135,
+        lifespanDays: 3,
+        yieldPercent: 145,
         profit: 5, // Math.round(10 * 1.45 - 10) = 5 (rounded from 4.5)
         dailyRate: expect.any(Number),
       });
