@@ -250,10 +250,7 @@ export class FameService {
 
   // ==================== Tier Unlock ====================
 
-  async unlockTier(
-    userId: string,
-    tier: number,
-  ): Promise<UnlockTierResponse> {
+  async unlockTier(userId: string, tier: number): Promise<UnlockTierResponse> {
     if (tier < 2 || tier > 10) {
       throw new BadRequestException('Tier must be between 2 and 10');
     }
@@ -279,7 +276,9 @@ export class FameService {
       >;
       const cost = unlockCosts[String(tier)];
       if (!cost) {
-        throw new BadRequestException(`No unlock cost defined for tier ${tier}`);
+        throw new BadRequestException(
+          `No unlock cost defined for tier ${tier}`,
+        );
       }
 
       if (user.fame < cost) {
@@ -336,7 +335,8 @@ export class FameService {
     // Get per-hour rate from settings
     const settings = await this.settingsService.getSettings();
     const perHourByTier = settings.famePerHourByTier as Record<string, number>;
-    const perHour = perHourByTier[String(machineTier)] ?? getFamePerHour(machineTier);
+    const perHour =
+      perHourByTier[String(machineTier)] ?? getFamePerHour(machineTier);
 
     const earned = Math.floor(perHour * hoursSinceLast);
     if (earned <= 0) return 0;

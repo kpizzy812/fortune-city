@@ -12,6 +12,7 @@ import type { Request } from 'express';
 import { MachinesService, MachineWithTierInfo } from './machines.service';
 import { RiskyCollectService } from './services/risky-collect.service';
 import { AutoCollectService } from './services/auto-collect.service';
+import { OverclockService } from './services/overclock.service';
 import { AuctionService } from './services/auction.service';
 import { PawnshopService } from './services/pawnshop.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -32,7 +33,13 @@ import {
 import {
   AutoCollectInfoResponseDto,
   PurchaseAutoCollectResponseDto,
+  PurchaseAutoCollectDto,
 } from './dto/auto-collect.dto';
+import {
+  OverclockInfoResponseDto,
+  PurchaseOverclockResponseDto,
+  PurchaseOverclockDto,
+} from './dto/overclock.dto';
 import {
   AuctionInfoResponseDto,
   ListOnAuctionResponseDto,
@@ -54,6 +61,7 @@ export class MachinesController {
     private readonly machinesService: MachinesService,
     private readonly riskyCollectService: RiskyCollectService,
     private readonly autoCollectService: AutoCollectService,
+    private readonly overclockService: OverclockService,
     private readonly auctionService: AuctionService,
     private readonly pawnshopService: PawnshopService,
   ) {}
@@ -76,6 +84,9 @@ export class MachinesController {
       coinBoxCurrent: machine.coinBoxCurrent.toString(),
       reinvestRound: machine.reinvestRound,
       profitReductionRate: machine.profitReductionRate.toString(),
+      autoCollectEnabled: machine.autoCollectEnabled,
+      autoCollectPurchasedAt: machine.autoCollectPurchasedAt,
+      overclockMultiplier: machine.overclockMultiplier.toString(),
       status: machine.status,
       createdAt: machine.createdAt,
       tierInfo: machine.tierInfo,
@@ -176,7 +187,11 @@ export class MachinesController {
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<CollectCoinsResponseDto> {
-    const result = await this.machinesService.collectCoins(id, req.user.sub, false);
+    const result = await this.machinesService.collectCoins(
+      id,
+      req.user.sub,
+      false,
+    );
 
     return {
       collected: result.collected,
@@ -184,6 +199,9 @@ export class MachinesController {
         this.machinesService.enrichWithTierInfo(result.machine),
       ),
       fameEarned: result.fameEarned,
+      overclockApplied: result.overclockApplied,
+      overclockMultiplier: result.overclockMultiplier,
+      baseAmount: result.baseAmount,
     };
   }
 
@@ -287,11 +305,13 @@ export class MachinesController {
   @Post(':id/purchase-auto-collect')
   async purchaseAutoCollect(
     @Param('id') id: string,
+    @Body() dto: PurchaseAutoCollectDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<PurchaseAutoCollectResponseDto> {
     const result = await this.autoCollectService.purchaseAutoCollect(
       id,
       req.user.sub,
+      dto.paymentMethod,
     );
 
     return {
@@ -299,10 +319,49 @@ export class MachinesController {
         this.machinesService.enrichWithTierInfo(result.machine),
       ),
       cost: result.cost,
+      paymentMethod: result.paymentMethod,
       user: {
         fortuneBalance: result.user.fortuneBalance.toString(),
       },
       newBalance: result.newBalance,
+    };
+  }
+
+  // ===== Overclock (Income Boost) Endpoints =====
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/overclock-info')
+  async getOverclockInfo(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<OverclockInfoResponseDto> {
+    return this.overclockService.getOverclockInfo(id, req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/overclock')
+  async purchaseOverclock(
+    @Param('id') id: string,
+    @Body() dto: PurchaseOverclockDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<PurchaseOverclockResponseDto> {
+    const result = await this.overclockService.purchaseOverclock(
+      id,
+      req.user.sub,
+      dto.level,
+      dto.paymentMethod,
+    );
+
+    return {
+      machine: this.toResponseDto(
+        this.machinesService.enrichWithTierInfo(result.machine),
+      ),
+      level: result.level,
+      cost: result.cost,
+      paymentMethod: result.paymentMethod,
+      user: {
+        fortuneBalance: result.user.fortuneBalance.toString(),
+      },
     };
   }
 

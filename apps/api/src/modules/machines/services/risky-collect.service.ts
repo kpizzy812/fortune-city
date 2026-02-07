@@ -62,6 +62,7 @@ export class RiskyCollectService {
   /**
    * Рискованный сбор прибыли (Fortune's Gamble)
    * Win: 2x, Lose: 0.5x
+   * Overclock applies BEFORE gamble: boostedAmount * gambleMultiplier
    */
   async riskyCollect(
     machineId: string,
@@ -84,40 +85,56 @@ export class RiskyCollectService {
       );
     }
 
-    const originalAmount = Number(incomeState.coinBoxCurrent);
+    const baseAmount = Number(incomeState.coinBoxCurrent);
 
-    if (originalAmount === 0) {
+    if (baseAmount === 0) {
       throw new BadRequestException('Nothing to collect');
     }
+
+    // Overclock: apply BEFORE gamble
+    const overclockMultiplier = Number(machine.overclockMultiplier);
+    const hasOverclock = overclockMultiplier > 0;
+    const boostedAmount = hasOverclock
+      ? baseAmount * overclockMultiplier
+      : baseAmount;
 
     // Track profit/principal from income (before multiplier)
     const currentProfit = incomeState.currentProfit;
     const currentPrincipal = incomeState.currentPrincipal;
+    const overclockBonus = hasOverclock
+      ? baseAmount * (overclockMultiplier - 1)
+      : 0;
 
     // Получаем конфиг гамбла для уровня машины
     const gambleConfig = getGambleLevelConfig(machine.fortuneGambleLevel);
     const winChance: number = gambleConfig.winChance;
 
-    // Криптографически безопасный бросок
+    // Криптографически безопасный бросок (gamble applies to boosted amount)
     const won = this.rollGamble(winChance);
     const multiplier = won ? GAMBLE_WIN_MULTIPLIER : GAMBLE_LOSE_MULTIPLIER;
-    const finalAmount = originalAmount * multiplier;
+    const finalAmount = boostedAmount * multiplier;
 
     // Атомарная транзакция
     const result = await this.prisma.$transaction(async (tx) => {
-      // 1. Обновляем машину: сбрасываем coin box, track payouts
+      // 1. Обновляем машину: сбрасываем coin box, track payouts, reset overclock
+      const machineUpdateData: any = {
+        coinBoxCurrent: 0,
+        lastCalculatedAt: new Date(),
+        profitPaidOut: {
+          increment: currentProfit + overclockBonus,
+        },
+        principalPaidOut: {
+          increment: currentPrincipal,
+        },
+      };
+
+      if (hasOverclock) {
+        machineUpdateData.overclockMultiplier = 0;
+      }
+
       const updatedMachine = await tx.machine.update({
         where: { id: machineId },
-        data: {
-          coinBoxCurrent: 0,
-          lastCalculatedAt: new Date(),
-          profitPaidOut: {
-            increment: currentProfit,
-          },
-          principalPaidOut: {
-            increment: currentPrincipal,
-          },
-        },
+        data: machineUpdateData,
       });
 
       // 2. Добавляем finalAmount к балансу пользователя
@@ -154,7 +171,7 @@ export class RiskyCollectService {
 
     return {
       won,
-      originalAmount,
+      originalAmount: boostedAmount,
       finalAmount,
       winChance,
       multiplier,

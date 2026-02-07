@@ -3,28 +3,39 @@ import { BadRequestException } from '@nestjs/common';
 import { AutoCollectService } from './auto-collect.service';
 import { MachinesService } from '../machines.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { FameService } from '../../fame/fame.service';
+import { SettingsService } from '../../settings/settings.service';
 import { Prisma } from '@prisma/client';
-import { AUTO_COLLECT_COST_PERCENT } from '@fortune-city/shared';
+import {
+  calculateCollectorHireCost,
+  calculateCollectorHireFameCost,
+  COLLECTOR_SALARY_PERCENT,
+} from '@fortune-city/shared';
 
 describe('AutoCollectService', () => {
   let service: AutoCollectService;
   let prismaService: jest.Mocked<PrismaService>;
   let machinesService: jest.Mocked<MachinesService>;
+  let settingsService: jest.Mocked<SettingsService>;
 
   const mockUserId = 'user-123';
   const mockMachineId = 'machine-123';
+
+  // v2: Tier 1 — $10, 3d, 145%, profit $4.50
+  const tier1HireCost = calculateCollectorHireCost(1); // 10% × $4.50 = $0.45
+  const tier1HireFame = calculateCollectorHireFameCost(1); // 5h × 3⚡/hr = 15⚡
 
   const createMockMachine = (overrides = {}) => ({
     id: mockMachineId,
     userId: mockUserId,
     tier: 1,
     purchasePrice: new Prisma.Decimal(10),
-    totalYield: new Prisma.Decimal(13.5),
-    profitAmount: new Prisma.Decimal(3.5),
-    lifespanDays: 7,
+    totalYield: new Prisma.Decimal(14.5),
+    profitAmount: new Prisma.Decimal(4.5),
+    lifespanDays: 3,
     startedAt: new Date('2026-01-01T00:00:00Z'),
-    expiresAt: new Date('2026-01-08T00:00:00Z'),
-    ratePerSecond: new Prisma.Decimal(0.0000223214),
+    expiresAt: new Date('2026-01-04T00:00:00Z'),
+    ratePerSecond: new Prisma.Decimal(0.0000559414),
     accumulatedIncome: new Prisma.Decimal(0),
     lastCalculatedAt: new Date('2026-01-01T00:00:00Z'),
     profitPaidOut: new Prisma.Decimal(0),
@@ -61,6 +72,12 @@ describe('AutoCollectService', () => {
     updatedAt: new Date(),
   });
 
+  const mockSettings = {
+    id: 'default',
+    collectorHirePercent: new Prisma.Decimal(10),
+    collectorSalaryPercent: new Prisma.Decimal(5),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -91,14 +108,29 @@ describe('AutoCollectService', () => {
             $transaction: jest.fn(),
           },
         },
+        {
+          provide: FameService,
+          useValue: {
+            spendFame: jest.fn(),
+          },
+        },
+        {
+          provide: SettingsService,
+          useValue: {
+            getSettings: jest.fn().mockResolvedValue(mockSettings),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<AutoCollectService>(AutoCollectService);
     prismaService = module.get(PrismaService);
     machinesService = module.get(MachinesService);
+    settingsService = module.get(SettingsService);
 
     jest.clearAllMocks();
+    // Re-apply default mock after clearAllMocks
+    (settingsService.getSettings as jest.Mock).mockResolvedValue(mockSettings);
   });
 
   describe('getAutoCollectInfo', () => {
@@ -113,7 +145,9 @@ describe('AutoCollectService', () => {
 
       expect(result).toEqual({
         enabled: false,
-        cost: 10 * (AUTO_COLLECT_COST_PERCENT / 100), // 1.5 $FORTUNE
+        hireCost: tier1HireCost,
+        hireCostFame: tier1HireFame,
+        salaryPercent: COLLECTOR_SALARY_PERCENT,
         purchasedAt: null,
         canPurchase: true,
         alreadyPurchased: false,
@@ -135,7 +169,9 @@ describe('AutoCollectService', () => {
 
       expect(result).toEqual({
         enabled: true,
-        cost: 10 * (AUTO_COLLECT_COST_PERCENT / 100),
+        hireCost: tier1HireCost,
+        hireCostFame: tier1HireFame,
+        salaryPercent: COLLECTOR_SALARY_PERCENT,
         purchasedAt,
         canPurchase: false,
         alreadyPurchased: true,
@@ -153,10 +189,9 @@ describe('AutoCollectService', () => {
   });
 
   describe('purchaseAutoCollect', () => {
-    it('should successfully purchase Auto Collect', async () => {
+    it('should successfully purchase Auto Collect with FORTUNE', async () => {
       const mockMachine = createMockMachine();
-      const mockUser = createMockUser(100); // Достаточно баланса
-      const upgradeCost = 10 * (AUTO_COLLECT_COST_PERCENT / 100); // 1.5
+      const mockUser = createMockUser(100);
 
       machinesService.findByIdOrThrow.mockResolvedValue(mockMachine as any);
       prismaService.user.findUnique.mockResolvedValue(mockUser as any);
@@ -168,7 +203,7 @@ describe('AutoCollectService', () => {
       };
       const updatedUser = {
         ...mockUser,
-        fortuneBalance: new Prisma.Decimal(100 - upgradeCost),
+        fortuneBalance: new Prisma.Decimal(100 - tier1HireCost),
       };
 
       prismaService.$transaction.mockImplementation(async (callback: any) => {
@@ -184,9 +219,9 @@ describe('AutoCollectService', () => {
         mockUserId,
       );
 
-      expect(result.cost).toBe(upgradeCost);
+      expect(result.cost).toBe(tier1HireCost);
       expect(result.machine.autoCollectEnabled).toBe(true);
-      expect(result.newBalance).toBe(100 - upgradeCost);
+      expect(result.newBalance).toBe(100 - tier1HireCost);
       expect(prismaService.$transaction).toHaveBeenCalled();
     });
 
@@ -196,7 +231,7 @@ describe('AutoCollectService', () => {
 
       await expect(
         service.purchaseAutoCollect(mockMachineId, mockUserId),
-      ).rejects.toThrow('Cannot purchase for expired machine');
+      ).rejects.toThrow('Cannot hire collector for expired machine');
     });
 
     it('should throw if Auto Collect already purchased', async () => {
@@ -205,14 +240,29 @@ describe('AutoCollectService', () => {
 
       await expect(
         service.purchaseAutoCollect(mockMachineId, mockUserId),
-      ).rejects.toThrow('Auto Collect already purchased');
+      ).rejects.toThrow('Collector already hired');
     });
 
     it('should throw if insufficient balance', async () => {
       const mockMachine = createMockMachine();
-      const mockUser = createMockUser(1); // Недостаточно баланса
+      const mockUser = createMockUser(0.01); // Not enough
       machinesService.findByIdOrThrow.mockResolvedValue(mockMachine as any);
       prismaService.user.findUnique.mockResolvedValue(mockUser as any);
+
+      // $transaction calls purchaseWithFortune which checks balance
+      prismaService.$transaction.mockImplementation(async (callback: any) => {
+        return callback({
+          user: {
+            update: jest
+              .fn()
+              .mockRejectedValue(
+                new BadRequestException('Insufficient balance'),
+              ),
+          },
+          machine: { update: jest.fn() },
+          transaction: { create: jest.fn() },
+        });
+      });
 
       await expect(
         service.purchaseAutoCollect(mockMachineId, mockUserId),
@@ -239,13 +289,13 @@ describe('AutoCollectService', () => {
 
       machinesService.calculateIncome.mockResolvedValue({
         accumulated: 5,
-        coinBoxCurrent: 0.64, // Full
+        coinBoxCurrent: 0.64,
         isFull: true,
         canCollect: true,
         secondsUntilFull: 0,
         currentProfit: 0.64,
         currentPrincipal: 0,
-        profitRemaining: 3.5,
+        profitRemaining: 4.5,
         principalRemaining: 10,
       });
 
@@ -284,13 +334,13 @@ describe('AutoCollectService', () => {
 
       machinesService.calculateIncome.mockResolvedValue({
         accumulated: 2,
-        coinBoxCurrent: 0.32, // Half full
+        coinBoxCurrent: 0.32,
         isFull: false,
         canCollect: false,
         secondsUntilFull: 3600,
         currentProfit: 0.32,
         currentPrincipal: 0,
-        profitRemaining: 3.5,
+        profitRemaining: 4.5,
         principalRemaining: 10,
       });
 
@@ -316,7 +366,7 @@ describe('AutoCollectService', () => {
         secondsUntilFull: 0,
         currentProfit: 0.64,
         currentPrincipal: 0,
-        profitRemaining: 3.5,
+        profitRemaining: 4.5,
         principalRemaining: 10,
       });
 
@@ -325,16 +375,23 @@ describe('AutoCollectService', () => {
         machine: mockMachine,
       } as any);
 
+      // Mock $transaction to execute the callback
+      (prismaService.$transaction as jest.Mock).mockImplementation((cb: any) =>
+        cb(prismaService),
+      );
+
       const result = await service.executeAutoCollect(mockMachineId);
 
+      // 0.64 - 5% salary (0.032) = 0.608
       expect(result).toEqual({
         machineId: mockMachineId,
-        amountCollected: 0.64,
+        amountCollected: 0.608,
         success: true,
       });
       expect(machinesService.collectCoins).toHaveBeenCalledWith(
         mockMachineId,
         mockUserId,
+        true,
       );
     });
 
@@ -370,7 +427,7 @@ describe('AutoCollectService', () => {
         secondsUntilFull: 0,
         currentProfit: 0.64,
         currentPrincipal: 0,
-        profitRemaining: 3.5,
+        profitRemaining: 4.5,
         principalRemaining: 10,
       });
 
@@ -411,7 +468,6 @@ describe('AutoCollectService', () => {
         mockMachine2,
       ] as any);
 
-      // Mock shouldAutoCollect для обеих машин
       machinesService.findByIdOrThrow
         .mockResolvedValueOnce(mockMachine1 as any)
         .mockResolvedValueOnce(mockMachine2 as any);
@@ -424,7 +480,7 @@ describe('AutoCollectService', () => {
         secondsUntilFull: 0,
         currentProfit: 0.64,
         currentPrincipal: 0,
-        profitRemaining: 3.5,
+        profitRemaining: 4.5,
         principalRemaining: 10,
       });
 
@@ -432,6 +488,11 @@ describe('AutoCollectService', () => {
         collected: 0.64,
         machine: mockMachine1,
       } as any);
+
+      // Mock $transaction
+      (prismaService.$transaction as jest.Mock).mockImplementation((cb: any) =>
+        cb(prismaService),
+      );
 
       const results = await service.executeAutoCollectForAll();
 

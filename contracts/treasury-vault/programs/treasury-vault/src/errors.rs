@@ -25,4 +25,10 @@ pub enum TreasuryError {
 
     #[msg("Arithmetic overflow")]
     Overflow,
+
+    #[msg("Withdrawal request has expired")]
+    WithdrawalExpired,
+
+    #[msg("Withdrawal has not expired yet, cannot cancel")]
+    WithdrawalNotExpired,
 }

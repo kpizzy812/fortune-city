@@ -6,6 +6,7 @@ import { WithdrawalsService } from './withdrawals.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SolanaRpcService } from '../deposits/services/solana-rpc.service';
 import { FundSourceService } from '../economy/services/fund-source.service';
+import { TreasuryService } from '../treasury/treasury.service';
 
 describe('WithdrawalsService', () => {
   let service: WithdrawalsService;
@@ -29,6 +30,7 @@ describe('WithdrawalsService', () => {
     maxTierReached: 3,
     maxTierUnlocked: 3,
     currentTaxRate: new Prisma.Decimal(0.35), // 35% tax for tier 3
+    taxDiscount: new Prisma.Decimal(0),
     referralCode: 'ABC12345',
     referredById: null,
     freeSpinsRemaining: 0,
@@ -107,6 +109,13 @@ describe('WithdrawalsService', () => {
           useValue: {
             calculateSourceBreakdown: jest.fn(),
             recordWithdrawal: jest.fn(),
+          },
+        },
+        {
+          provide: TreasuryService,
+          useValue: {
+            getHotWalletPublicKey: jest.fn(),
+            transferFromTreasury: jest.fn(),
           },
         },
       ],

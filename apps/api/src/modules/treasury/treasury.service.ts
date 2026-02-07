@@ -65,8 +65,7 @@ export class TreasuryService implements OnModuleInit {
         commitment: 'confirmed',
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      this.program = new Program(TREASURY_VAULT_IDL as any, provider);
+      this.program = new Program(TREASURY_VAULT_IDL, provider);
 
       // Derive vault PDA
       [this.vaultPda] = PublicKey.findProgramAddressSync(
@@ -113,8 +112,7 @@ export class TreasuryService implements OnModuleInit {
     const usdtMint = this.getUsdtMint();
 
     try {
-      const txSignature = await this.program!.methods
-        .deposit(amountRaw)
+      const txSignature = await this.program!.methods.deposit(amountRaw)
         .accounts({
           authority: this.authorityKeypair!.publicKey,
           usdtMint,
@@ -153,8 +151,7 @@ export class TreasuryService implements OnModuleInit {
     const payoutWallet = new PublicKey(payoutWalletAddress);
 
     try {
-      const txSignature = await this.program!.methods
-        .payout(amountRaw)
+      const txSignature = await this.program!.methods.payout(amountRaw)
         .accounts({
           authority: this.authorityKeypair!.publicKey,
           usdtMint,
@@ -164,9 +161,7 @@ export class TreasuryService implements OnModuleInit {
         })
         .rpc();
 
-      this.logger.log(
-        `Paid out $${amountUsd} USDT from vault: ${txSignature}`,
-      );
+      this.logger.log(`Paid out $${amountUsd} USDT from vault: ${txSignature}`);
       return txSignature;
     } catch (error) {
       this.logger.error(`Payout $${amountUsd} failed:`, error);
@@ -182,7 +177,7 @@ export class TreasuryService implements OnModuleInit {
 
     try {
       // Fetch vault state
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const vault = await (this.program!.account as any).treasuryVault.fetch(
         this.vaultPda!,
       );
@@ -224,6 +219,147 @@ export class TreasuryService implements OnModuleInit {
       this.logger.error('Failed to fetch vault info:', error);
       throw new BadRequestException('Could not fetch vault information');
     }
+  }
+
+  // ─── Withdrawal Requests ────────────────────────────────
+
+  /**
+   * Create on-chain withdrawal request PDA for a user.
+   * User can then claim USDT by signing with their wallet.
+   */
+  async createWithdrawalRequest(
+    userPubkey: string,
+    amountUsd: number,
+    expiresInSeconds = 3600,
+  ): Promise<string> {
+    this.ensureEnabled();
+
+    if (amountUsd <= 0) {
+      throw new BadRequestException('Amount must be greater than zero');
+    }
+
+    const amountRaw = this.usdToRaw(amountUsd);
+    const usdtMint = this.getUsdtMint();
+    const user = new PublicKey(userPubkey);
+
+    try {
+      const txSignature = await this.program!.methods.createWithdrawal(
+        amountRaw,
+        new BN(expiresInSeconds),
+      )
+        .accounts({
+          authority: this.authorityKeypair!.publicKey,
+          usdtMint,
+          vaultTokenAccount: this.vaultTokenAccount!,
+          user,
+        })
+        .rpc();
+
+      this.logger.log(
+        `Created withdrawal request: $${amountUsd} USDT for ${userPubkey}, tx: ${txSignature}`,
+      );
+      return txSignature;
+    } catch (error) {
+      this.logger.error(
+        `Create withdrawal request failed for ${userPubkey}:`,
+        error,
+      );
+      throw new BadRequestException(
+        'Failed to create on-chain withdrawal request',
+      );
+    }
+  }
+
+  /**
+   * Cancel an expired withdrawal request.
+   * Returns rent to authority.
+   */
+  async cancelWithdrawalRequest(userPubkey: string): Promise<string> {
+    this.ensureEnabled();
+
+    const user = new PublicKey(userPubkey);
+
+    try {
+      const txSignature = await this.program!.methods.cancelWithdrawal()
+        .accounts({
+          authority: this.authorityKeypair!.publicKey,
+          user,
+        })
+        .rpc();
+
+      this.logger.log(
+        `Cancelled withdrawal request for ${userPubkey}: ${txSignature}`,
+      );
+      return txSignature;
+    } catch (error) {
+      this.logger.error(`Cancel withdrawal failed for ${userPubkey}:`, error);
+      throw new BadRequestException('Failed to cancel withdrawal request');
+    }
+  }
+
+  /**
+   * Read on-chain withdrawal request PDA state for a user.
+   * Returns null if no active request exists.
+   */
+  async getWithdrawalRequest(userPubkey: string): Promise<{
+    vault: string;
+    user: string;
+    amount: number;
+    createdAt: string;
+    expiresAt: string;
+    pdaAddress: string;
+  } | null> {
+    this.ensureEnabled();
+
+    const user = new PublicKey(userPubkey);
+
+    // Derive withdrawal request PDA
+    const [withdrawalPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from('withdrawal'), this.vaultPda!.toBuffer(), user.toBuffer()],
+      this.program!.programId,
+    );
+
+    try {
+      const request = await (
+        this.program!.account as any
+      ).withdrawalRequest.fetch(withdrawalPda);
+
+      const decimals = SOLANA_TOKENS.USDT.decimals;
+      const divisor = Math.pow(10, decimals);
+
+      return {
+        vault: request.vault.toBase58(),
+        user: request.user.toBase58(),
+        amount: Number(request.amount) / divisor,
+        createdAt: new Date(Number(request.createdAt) * 1000).toISOString(),
+        expiresAt: new Date(Number(request.expiresAt) * 1000).toISOString(),
+        pdaAddress: withdrawalPda.toBase58(),
+      };
+    } catch {
+      // Account doesn't exist — no active withdrawal request
+      return null;
+    }
+  }
+
+  /**
+   * Get info needed for frontend to build claim transaction
+   */
+  getClaimInfo(): {
+    programId: string;
+    vaultAddress: string;
+    authorityAddress: string;
+    usdtMint: string;
+    vaultTokenAccount: string;
+  } {
+    this.ensureEnabled();
+
+    return {
+      programId: this.program!.programId.toBase58(),
+      vaultAddress: this.vaultPda!.toBase58(),
+      authorityAddress: this.authorityKeypair!.publicKey.toBase58(),
+      usdtMint: this.getUsdtMint().toBase58(),
+      vaultTokenAccount: this.vaultTokenAccount!.toBase58(),
+    };
   }
 
   // ─── Deposit Cron ────────────────────────────────────────

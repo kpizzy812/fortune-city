@@ -8,6 +8,7 @@ import { TransactionsService } from './transactions.service';
 import { FundSourceService } from './fund-source.service';
 import { SettingsService } from '../../settings/settings.service';
 import { ReferralsService } from '../../referrals/referrals.service';
+import { FameService } from '../../fame/fame.service';
 import { Prisma } from '@prisma/client';
 
 describe('PurchaseService', () => {
@@ -48,12 +49,12 @@ describe('PurchaseService', () => {
     userId: mockUserId,
     tier: 1,
     purchasePrice: new Prisma.Decimal(10),
-    totalYield: new Prisma.Decimal(13.5),
-    profitAmount: new Prisma.Decimal(3.5),
-    lifespanDays: 7,
+    totalYield: new Prisma.Decimal(14.5),
+    profitAmount: new Prisma.Decimal(4.5),
+    lifespanDays: 3,
     startedAt: new Date(),
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    ratePerSecond: new Prisma.Decimal(0.0000223214),
+    expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+    ratePerSecond: new Prisma.Decimal(0.0000559414),
     accumulatedIncome: new Prisma.Decimal(0),
     lastCalculatedAt: new Date(),
     profitPaidOut: new Prisma.Decimal(0),
@@ -118,6 +119,9 @@ describe('PurchaseService', () => {
 
     const mockSettingsService = {
       getMaxGlobalTier: jest.fn().mockResolvedValue(1), // Default tier 1 available
+      getSettings: jest.fn().mockResolvedValue({
+        fameUnlockCostByTier: {},
+      }),
     };
 
     const mockReferralsService = {
@@ -136,6 +140,10 @@ describe('PurchaseService', () => {
       applyUpgradesToMachine: jest.fn().mockResolvedValue({}),
     };
 
+    const mockFameService = {
+      earnPurchaseFame: jest.fn().mockResolvedValue(0),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PurchaseService,
@@ -146,6 +154,7 @@ describe('PurchaseService', () => {
         { provide: FundSourceService, useValue: mockFundSourceService },
         { provide: SettingsService, useValue: mockSettingsService },
         { provide: ReferralsService, useValue: mockReferralsService },
+        { provide: FameService, useValue: mockFameService },
       ],
     }).compile();
 

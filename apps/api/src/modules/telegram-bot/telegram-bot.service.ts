@@ -125,9 +125,7 @@ export class TelegramBotService {
       const command = extractCommand(message.text);
       const telegramChatId = String(message.chat.id);
       const lang = getLang(message.from?.language_code);
-      const telegramUserId = message.from
-        ? String(message.from.id)
-        : undefined;
+      const telegramUserId = message.from ? String(message.from.id) : undefined;
 
       // Сохраняем язык юзера для будущих уведомлений
       if (telegramUserId) {
@@ -237,8 +235,7 @@ export class TelegramBotService {
         },
       });
 
-      const userName =
-        user.firstName || (lang === 'ru' ? 'Игрок' : 'Player');
+      const userName = user.firstName || (lang === 'ru' ? 'Игрок' : 'Player');
       const browserUrl = await this.buildBrowserUrl(telegramUserId);
 
       const keyboard: TelegramInlineKeyboard = {
@@ -293,10 +290,7 @@ export class TelegramBotService {
   /**
    * /help
    */
-  private async handleHelp(
-    telegramChatId: string,
-    lang: Lang,
-  ): Promise<void> {
+  private async handleHelp(telegramChatId: string, lang: Lang): Promise<void> {
     const msg = getMessages(lang);
     await this.sendMessage(telegramChatId, msg.help);
   }

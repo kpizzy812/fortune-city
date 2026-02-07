@@ -16,3 +16,20 @@ export interface VaultInfoResponseDto {
   paused: boolean;
   solscanUrl: string;
 }
+
+export interface ClaimInfoResponseDto {
+  programId: string;
+  vaultAddress: string;
+  authorityAddress: string;
+  usdtMint: string;
+  vaultTokenAccount: string;
+}
+
+export interface WithdrawalRequestResponseDto {
+  vault: string;
+  user: string;
+  amount: number;
+  createdAt: string;
+  expiresAt: string;
+  pdaAddress: string;
+}

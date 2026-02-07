@@ -4,8 +4,8 @@ export const MACHINE_TIERS = [
     name: 'RUSTY LEVER',
     emoji: '🟤',
     price: 10,
-    lifespanDays: 7,
-    yieldPercent: 135,
+    lifespanDays: 3,
+    yieldPercent: 145,
     imageUrl: '/machines/tier-1.png',
   },
   {
@@ -13,80 +13,80 @@ export const MACHINE_TIERS = [
     name: 'LUCKY CHERRY',
     emoji: '🟠',
     price: 30,
-    lifespanDays: 10,
-    yieldPercent: 150,
+    lifespanDays: 4,
+    yieldPercent: 152,
     imageUrl: '/machines/tier-2.png',
   },
   {
     tier: 3,
     name: 'GOLDEN 7s',
     emoji: '🟡',
-    price: 80,
-    lifespanDays: 14,
-    yieldPercent: 170,
+    price: 75,
+    lifespanDays: 5,
+    yieldPercent: 155,
     imageUrl: '/machines/tier-3.png',
   },
   {
     tier: 4,
     name: 'NEON NIGHTS',
     emoji: '🟢',
-    price: 220,
-    lifespanDays: 18,
-    yieldPercent: 190,
+    price: 200,
+    lifespanDays: 6,
+    yieldPercent: 154,
     imageUrl: '/machines/tier-4.png',
   },
   {
     tier: 5,
     name: 'DIAMOND DASH',
     emoji: '🔵',
-    price: 600,
-    lifespanDays: 22,
-    yieldPercent: 210,
+    price: 500,
+    lifespanDays: 7,
+    yieldPercent: 156,
     imageUrl: '/machines/tier-5.png',
   },
   {
     tier: 6,
     name: 'VEGAS QUEEN',
     emoji: '🟣',
-    price: 1800,
-    lifespanDays: 27,
-    yieldPercent: 235,
+    price: 1500,
+    lifespanDays: 8,
+    yieldPercent: 156,
     imageUrl: '/machines/tier-6.png',
   },
   {
     tier: 7,
     name: 'PLATINUM RUSH',
     emoji: '⚪',
-    price: 5500,
-    lifespanDays: 32,
-    yieldPercent: 260,
+    price: 4000,
+    lifespanDays: 10,
+    yieldPercent: 165,
     imageUrl: '/machines/tier-7.png',
   },
   {
     tier: 8,
     name: 'HIGH ROLLER',
     emoji: '🔴',
-    price: 18000,
-    lifespanDays: 37,
-    yieldPercent: 285,
+    price: 12000,
+    lifespanDays: 11,
+    yieldPercent: 166,
     imageUrl: '/machines/tier-8.png',
   },
   {
     tier: 9,
     name: 'JACKPOT EMPEROR',
     emoji: '⚫',
-    price: 60000,
-    lifespanDays: 42,
-    yieldPercent: 310,
+    price: 35000,
+    lifespanDays: 13,
+    yieldPercent: 172,
     imageUrl: '/machines/tier-9.png',
   },
   {
     tier: 10,
     name: 'FORTUNE KING',
     emoji: '👑',
-    price: 200000,
-    lifespanDays: 48,
-    yieldPercent: 340,
+    price: 100000,
+    lifespanDays: 14,
+    yieldPercent: 170,
     imageUrl: '/machines/tier-10.png',
   },
 ] as const;
@@ -105,18 +105,18 @@ export function getTierConfigOrThrow(tier: number): MachineTier {
   return config;
 }
 
-// Tax rates by max tier reached
+// Tax rates by max tier reached (-5% per tier, withdrawal only)
 export const TAX_RATES_BY_TIER: Record<number, number> = {
-  1: 0.5,   // 50%
-  2: 0.5,
-  3: 0.4,   // 40%
-  4: 0.4,
-  5: 0.3,   // 30%
-  6: 0.3,
-  7: 0.2,   // 20%
-  8: 0.2,
-  9: 0.2,
-  10: 0.1,  // 10%
+  1: 0.50,  // 50%
+  2: 0.45,  // 45%
+  3: 0.40,  // 40%
+  4: 0.35,  // 35%
+  5: 0.30,  // 30%
+  6: 0.25,  // 25%
+  7: 0.20,  // 20%
+  8: 0.15,  // 15%
+  9: 0.10,  // 10%
+  10: 0.05, // 5%
 };
 
 // Reinvest profit reduction - агрессивная шкала для мотивации апгрейда
@@ -157,9 +157,23 @@ export const GAMBLE_WIN_MULTIPLIER = 2.0;
 export const GAMBLE_LOSE_MULTIPLIER = 0.5;
 
 // Collector (Auto Collect) - автосбор при заполнении Coin Box
-// Механика: $5 за найм + 5% от каждого сбора (зарплата)
-export const COLLECTOR_HIRE_COST = 5; // Fixed $5 hire cost
+// Механика: 10% от gross прибыли за найм + 5% от каждого сбора (зарплата)
+// Итого ~22-26% от профита на всех тирах
+export const COLLECTOR_HIRE_PERCENT = 10; // 10% of gross profit (per machine)
 export const COLLECTOR_SALARY_PERCENT = 5; // 5% of each collection
+export const COLLECTOR_HIRE_FAME_HOURS = 5; // Fame alternative: 5 hours of passive farming
+
+// Calculate collector hire cost in FORTUNE for a given tier
+// hirePercent can be overridden from admin settings
+export function calculateCollectorHireCost(
+  tier: number,
+  hirePercent: number = COLLECTOR_HIRE_PERCENT,
+): number {
+  const config = getTierConfig(tier);
+  if (!config) return 0;
+  const grossProfit = config.price * (config.yieldPercent / 100 - 1);
+  return grossProfit * (hirePercent / 100);
+}
 
 export type FortuneGambleLevel = (typeof FORTUNE_GAMBLE_LEVELS)[number];
 

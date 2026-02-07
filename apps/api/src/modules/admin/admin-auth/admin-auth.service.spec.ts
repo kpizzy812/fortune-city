@@ -3,6 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import { AdminAuthService, AdminJwtPayload } from './admin-auth.service';
+import { AdminRefreshTokenService } from './admin-refresh-token.service';
+
+const mockRefreshTokenService = {
+  createToken: jest.fn().mockResolvedValue('mock-refresh-token'),
+  rotateToken: jest.fn(),
+  revokeToken: jest.fn(),
+};
 
 describe('AdminAuthService', () => {
   let service: AdminAuthService;
@@ -37,6 +44,10 @@ describe('AdminAuthService', () => {
             sign: jest.fn().mockReturnValue('mock-admin-jwt-token'),
             verify: jest.fn(),
           },
+        },
+        {
+          provide: AdminRefreshTokenService,
+          useValue: mockRefreshTokenService,
         },
       ],
     }).compile();
@@ -246,6 +257,10 @@ describe('AdminAuthService', () => {
               verify: jest.fn(),
             },
           },
+          {
+            provide: AdminRefreshTokenService,
+            useValue: mockRefreshTokenService,
+          },
         ],
       }).compile();
 
@@ -291,6 +306,10 @@ describe('AdminAuthService', () => {
               sign: jest.fn().mockReturnValue('token'),
               verify: jest.fn(),
             },
+          },
+          {
+            provide: AdminRefreshTokenService,
+            useValue: mockRefreshTokenService,
           },
         ],
       }).compile();

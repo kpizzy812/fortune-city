@@ -69,9 +69,7 @@ export class ReferralMilestonesService {
       }),
     ]);
 
-    const claimedMap = new Map(
-      claimed.map((c) => [c.milestone, c.claimedAt]),
-    );
+    const claimedMap = new Map(claimed.map((c) => [c.milestone, c.claimedAt]));
 
     const milestones: MilestoneStatus[] = MILESTONES.map((m) => {
       const claimedAt = claimedMap.get(m.milestone);

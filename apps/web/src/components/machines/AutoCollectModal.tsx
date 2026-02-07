@@ -3,15 +3,16 @@
 import { useTranslations } from 'next-intl';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { Briefcase, Clock, Coins, Percent } from 'lucide-react';
-import type { AutoCollectInfo } from '@/types';
+import { Briefcase, Percent } from 'lucide-react';
+import type { AutoCollectInfo, PaymentMethod } from '@/types';
 
 interface AutoCollectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (paymentMethod: PaymentMethod) => void;
   autoCollectInfo: AutoCollectInfo | null;
   userBalance: number;
+  userFame: number;
   isLoading: boolean;
 }
 
@@ -21,144 +22,115 @@ export function AutoCollectModal({
   onConfirm,
   autoCollectInfo,
   userBalance,
+  userFame,
   isLoading,
 }: AutoCollectModalProps) {
   const t = useTranslations('collector');
   const tCommon = useTranslations('common');
 
-  // Handle null or incomplete data
   if (!autoCollectInfo || autoCollectInfo.hireCost === undefined) return null;
 
-  const canAfford = userBalance >= autoCollectInfo.hireCost;
+  const canAffordFortune = userBalance >= autoCollectInfo.hireCost;
+  const canAffordFame = userFame >= (autoCollectInfo.hireCostFame ?? Infinity);
   const alreadyPurchased = autoCollectInfo.alreadyPurchased;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`💼 ${t('title')}`}>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {alreadyPurchased ? (
-          <div className="text-center py-6">
-            <div className="text-6xl mb-4">🕴️</div>
-            <h3 className="text-xl font-bold text-white mb-2">{t('activeTitle')}</h3>
-            <p className="text-[#b0b0b0]">
-              {t('activeDescription')}
-            </p>
-            <div className="mt-4 bg-[#1a0a2e] rounded-lg p-3 border border-[#ffd700]/30">
+          <div className="text-center py-4">
+            <div className="text-5xl mb-3">🕴️</div>
+            <h3 className="text-lg font-bold text-white mb-1">{t('activeTitle')}</h3>
+            <p className="text-sm text-[#b0b0b0]">{t('activeDescription')}</p>
+            <div className="mt-3 bg-[#1a0a2e] rounded-lg p-2 border border-[#ffd700]/30">
               <p className="text-xs text-[#b0b0b0]">
                 {t('salaryInfo', { percent: autoCollectInfo.salaryPercent })}
               </p>
             </div>
             {autoCollectInfo.purchasedAt && (
-              <p className="text-xs text-[#00d4ff] mt-2">
+              <p className="text-[10px] text-[#00d4ff] mt-2">
                 {t('hiredAt')} {new Date(autoCollectInfo.purchasedAt).toLocaleString()}
               </p>
             )}
+            <div className="mt-3">
+              <Button variant="primary" size="md" fullWidth onClick={onClose}>
+                {tCommon('close')}
+              </Button>
+            </div>
           </div>
         ) : (
           <>
-            {/* Hero section */}
-            <div className="bg-gradient-to-br from-[#ffd700]/10 to-[#ff2d95]/10 rounded-lg p-4 border border-[#ffd700]/30">
-              <div className="flex items-center justify-center gap-3 mb-3">
-                <Briefcase className="w-8 h-8 text-[#ffd700]" />
-                <h3 className="text-lg font-bold text-white">{t('hireTitle')}</h3>
+            {/* Compact hero */}
+            <div className="bg-gradient-to-br from-[#ffd700]/10 to-[#ff2d95]/10 rounded-lg p-3 border border-[#ffd700]/30">
+              <div className="flex items-center gap-2 mb-1">
+                <Briefcase className="w-5 h-5 text-[#ffd700] shrink-0" />
+                <h3 className="text-sm font-bold text-white">{t('hireTitle')}</h3>
               </div>
-              <p className="text-sm text-center text-[#b0b0b0]">
-                {t('hireDescription')}
-              </p>
+              <p className="text-xs text-[#b0b0b0]">{t('hireDescription')}</p>
             </div>
 
-            {/* Benefits grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-[#1a0a2e] rounded-lg p-3 border border-[#00d4ff]/20">
-                <div className="flex flex-col items-center text-center">
-                  <Clock className="w-6 h-6 text-[#00d4ff] mb-2" />
-                  <p className="text-xs font-semibold text-white mb-1">{t('feature247')}</p>
-                  <p className="text-[10px] text-[#b0b0b0]">{t('feature247Desc')}</p>
-                </div>
-              </div>
-              <div className="bg-[#1a0a2e] rounded-lg p-3 border border-[#00ff88]/20">
-                <div className="flex flex-col items-center text-center">
-                  <Coins className="w-6 h-6 text-[#00ff88] mb-2" />
-                  <p className="text-xs font-semibold text-white mb-1">{t('featureAutomatic')}</p>
-                  <p className="text-[10px] text-[#b0b0b0]">{t('featureAutomaticDesc')}</p>
-                </div>
-              </div>
+            {/* Terms — compact list */}
+            <div className="flex items-center gap-3 text-xs text-[#b0b0b0] px-1">
+              <span className="flex items-center gap-1">
+                <Percent className="w-3 h-3 text-[#ff2d95]" />
+                {t('termSalary', { percent: autoCollectInfo.salaryPercent })}
+              </span>
             </div>
 
-            {/* Pricing terms */}
-            <div className="bg-[#1a0a2e] rounded-lg p-3 border border-[#ff2d95]/20">
-              <p className="text-xs text-[#b0b0b0] mb-2">
-                <span className="text-white font-semibold">{t('terms')}</span>
-              </p>
-              <ul className="space-y-2 text-xs text-[#b0b0b0]">
-                <li className="flex items-center gap-2">
-                  <span className="text-[#ffd700]">💰</span>
-                  <span>{t('termHireCost', { cost: autoCollectInfo.hireCost })}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Percent className="w-4 h-4 text-[#ff2d95]" />
-                  <span>{t('termSalary', { percent: autoCollectInfo.salaryPercent })}</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#00d4ff]">ⓘ</span>
-                  <span>{t('termNote')}</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Cost */}
-            <div className="bg-[#1a0a2e] rounded-lg p-4 border border-[#ffd700]/30">
-              <div className="flex justify-between items-center">
-                <span className="text-[#b0b0b0]">{t('hireFee')}</span>
-                <div className="text-right">
-                  <div className="text-xl font-bold text-white">
-                    ${autoCollectInfo.hireCost.toFixed(2)}
-                  </div>
-                  <div className="text-xs text-[#b0b0b0]">
-                    {tCommon('yourBalance')}: ${userBalance.toFixed(2)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Insufficient balance warning */}
-            {!canAfford && (
-              <div className="bg-[#ff4444]/10 rounded-lg p-3 border border-[#ff4444]/30">
-                <p className="text-xs text-center text-[#ff4444]">
-                  {t('insufficientBalance', { amount: (autoCollectInfo.hireCost - userBalance).toFixed(2) })}
+            {/* Payment options — two buttons side by side */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* Fortune */}
+              <div className={`rounded-lg p-2.5 border ${canAffordFortune ? 'bg-[#1a0a2e] border-[#ffd700]/30' : 'bg-[#1a0a2e]/50 border-white/10 opacity-50'}`}>
+                <p className="text-[10px] text-[#b0b0b0] mb-1 text-center">
+                  ${userBalance.toFixed(2)}
                 </p>
+                <Button
+                  variant="gold"
+                  size="sm"
+                  fullWidth
+                  onClick={() => onConfirm('fortune')}
+                  loading={isLoading}
+                  disabled={!canAffordFortune}
+                >
+                  ${autoCollectInfo.hireCost}
+                </Button>
               </div>
+              {/* Fame */}
+              <div className={`rounded-lg p-2.5 border ${canAffordFame ? 'bg-[#1a0a2e] border-[#a855f7]/30' : 'bg-[#1a0a2e]/50 border-white/10 opacity-50'}`}>
+                <p className="text-[10px] text-[#b0b0b0] mb-1 text-center">
+                  {userFame}⚡
+                </p>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  fullWidth
+                  onClick={() => onConfirm('fame')}
+                  loading={isLoading}
+                  disabled={!canAffordFame}
+                >
+                  {autoCollectInfo.hireCostFame}⚡
+                </Button>
+              </div>
+            </div>
+
+            {/* Warning if can't afford either */}
+            {!canAffordFortune && !canAffordFame && (
+              <p className="text-[10px] text-center text-[#ff4444]">
+                {t('insufficientBoth')}
+              </p>
             )}
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="secondary"
-                size="md"
-                fullWidth
-                onClick={onClose}
-                disabled={isLoading}
-              >
-                {tCommon('cancel')}
-              </Button>
-              <Button
-                variant="gold"
-                size="md"
-                fullWidth
-                onClick={onConfirm}
-                loading={isLoading}
-                disabled={!canAfford}
-              >
-                💼 {t('hire')}
-              </Button>
-            </div>
+            {/* Cancel */}
+            <Button
+              variant="secondary"
+              size="sm"
+              fullWidth
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              {tCommon('cancel')}
+            </Button>
           </>
-        )}
-
-        {/* Close button for already purchased */}
-        {alreadyPurchased && (
-          <Button variant="primary" size="md" fullWidth onClick={onClose}>
-            {tCommon('close')}
-          </Button>
         )}
       </div>
     </Modal>

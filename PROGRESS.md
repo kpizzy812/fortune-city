@@ -791,6 +791,53 @@ Fame (⚡) — расходуемый ресурс прогрессии. Зар�
 
 ---
 
+## Phase 15.4: Fame Payment for AutoCollect + Overclock Boost (COMPLETED)
+
+**Date:** 2026-02-08
+**Plan:** [replicated-twirling-hummingbird.md](.claude/plans/replicated-twirling-hummingbird.md)
+
+### Концепция
+Две новые траты Fame: оплата инкассатора за Fame (альтернатива $5) и покупка Overclock буста (множитель x1.2/x1.5/x2.0 для следующего сбора).
+
+### 15.4.1 AutoCollect — Fame Payment (COMPLETED)
+- [x] Schema: FameSource.collector_hire, SystemSettings.collectorHireCostFame
+- [x] Shared: COLLECTOR_HIRE_COST_FAME = 700
+- [x] AutoCollectService: dual payment (fortune/fame), FameService integration
+- [x] Controller: paymentMethod в body POST /machines/:id/purchase-auto-collect
+- [x] AutoCollectModal: компактный dual payment (Fortune | Fame) side-by-side
+- [x] API, Store, Types обновлены
+
+### 15.4.2 Overclock Boost (COMPLETED)
+- [x] Schema: Machine.overclockMultiplier (Decimal 3,1), TransactionType.overclock_purchase, FameSource.overclock_purchase
+- [x] Shared: OVERCLOCK_LEVELS, OVERCLOCK_PRICES (10 тиров × 3 уровня × 2 валюты)
+- [x] OverclockService: getOverclockInfo, purchaseOverclock (dual payment)
+- [x] MachinesService.collectCoins(): overclock multiplier applied + reset
+- [x] RiskyCollectService.riskyCollect(): overclock applied before gamble + reset
+- [x] Controller: GET /machines/:id/overclock-info, POST /machines/:id/overclock
+- [x] OverclockModal: 3 level cards + expandable payment section
+- [x] MachineCard: overclock badge (x1.5 etc.) + Boost button
+- [x] CasinoFloor: overclock indicator on machine image
+- [x] page.tsx: handlers, modal state, integration
+- [x] i18n: overclock section в en.json и ru.json
+
+### Overclock Levels
+| Level | Bonus | $ Price (% of purchasePrice) | Fame Price (by tier) |
+|-------|-------|------------------------------|---------------------|
+| x1.2 | +20% | 0.5% | 50-500⚡ |
+| x1.5 | +50% | 1.5% | 150-1500⚡ |
+| x2.0 | +100% | 4.0% | 400-4000⚡ |
+
+### Edge Cases Handled
+- Overclock + expired → blocked
+- Overclock stacking → blocked (multiplier > 0 check)
+- Overclock + auto-collect → works (applied + reset in collectCoins)
+- Overclock + risky collect → works (boost applied before gamble)
+- Race conditions → $transaction + WHERE checks
+
+**Build Status:** API и Web собираются успешно
+
+---
+
 ## Notes
 
 - Используем существующие паттерны из auth, machines, economy модулей

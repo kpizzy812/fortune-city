@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { AdminUsersService } from './admin-users.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { MachinesService } from '../../machines/machines.service';
 
 describe('AdminUsersService', () => {
   let service: AdminUsersService;
@@ -81,6 +82,12 @@ describe('AdminUsersService', () => {
             auditLog: {
               create: jest.fn(),
             },
+          },
+        },
+        {
+          provide: MachinesService,
+          useValue: {
+            findByUserId: jest.fn().mockResolvedValue([]),
           },
         },
       ],

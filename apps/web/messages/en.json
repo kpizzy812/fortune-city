@@ -15,6 +15,7 @@
     "stayTuned": "Stay tuned for updates",
     "balance": "Balance",
     "yourBalance": "Your Balance",
+    "yourFame": "Your Fame",
     "days": "days",
     "day": "day",
     "hours": "hours",
@@ -186,7 +187,9 @@
     "hireCollector": "Hire Collector",
     "collectorActive": "Collector Active",
     "auto": "Auto",
-    "upgrade": "Upgrade"
+    "upgrade": "Upgrade",
+    "boost": "Boost",
+    "boostActive": "Boosted"
   },
   "riskyCollect": {
     "title": "Fortune's Gamble",
@@ -226,7 +229,19 @@
     "termNote": "Contract valid until machine cycle ends",
     "hireFee": "Hiring Fee:",
     "insufficientBalance": "Insufficient balance. Need ${amount} more.",
-    "hire": "Hire"
+    "hire": "Hire",
+    "hireFor": "Hire for {cost}",
+    "insufficientBoth": "Not enough FORTUNE or Fame to hire a collector."
+  },
+  "overclock": {
+    "title": "Overclock",
+    "description": "Boost the next collection from this machine. The multiplier applies once and resets after collection.",
+    "activeTitle": "Overclock {mult} Active",
+    "activeDescription": "Your next collection will be boosted. Collect coins to use it!",
+    "unavailable": "Overclock is only available for active machines.",
+    "nextCollect": "Next collection",
+    "warning": "Boost is lost if the machine expires before collection.",
+    "purchaseSuccess": "Overclock activated!"
   },
   "coinBoxUpgrade": {
     "title": "Upgrade Coin Box",

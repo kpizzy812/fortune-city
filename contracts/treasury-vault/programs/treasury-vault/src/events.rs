@@ -34,3 +34,30 @@ pub struct VaultPausedEvent {
     pub paused: bool,
     pub timestamp: i64,
 }
+
+#[event]
+pub struct WithdrawalCreatedEvent {
+    pub vault: Pubkey,
+    pub user: Pubkey,
+    pub amount: u64,
+    pub expires_at: i64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct WithdrawalClaimedEvent {
+    pub vault: Pubkey,
+    pub user: Pubkey,
+    pub amount: u64,
+    pub total_paid_out: u64,
+    pub payout_count: u32,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct WithdrawalCancelledEvent {
+    pub vault: Pubkey,
+    pub user: Pubkey,
+    pub amount: u64,
+    pub timestamp: i64,
+}

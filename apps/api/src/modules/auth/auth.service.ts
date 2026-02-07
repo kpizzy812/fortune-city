@@ -487,9 +487,7 @@ export class AuthService {
   /**
    * Обмен одноразового токена из Telegram бота на JWT
    */
-  async exchangeTelegramBotToken(
-    rawToken: string,
-  ): Promise<AuthResponseDto> {
+  async exchangeTelegramBotToken(rawToken: string): Promise<AuthResponseDto> {
     const hashedToken = crypto
       .createHash('sha256')
       .update(rawToken)

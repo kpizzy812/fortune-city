@@ -34,6 +34,9 @@ export class MachineResponseDto {
   coinBoxCurrent: string;
   reinvestRound: number;
   profitReductionRate: string;
+  autoCollectEnabled: boolean;
+  autoCollectPurchasedAt: Date | null;
+  overclockMultiplier: string;
   status: string;
   createdAt: Date;
   tierInfo: {
@@ -68,6 +71,9 @@ export class CollectCoinsResponseDto {
   collected: number;
   machine: MachineResponseDto;
   fameEarned: number;
+  overclockApplied: boolean;
+  overclockMultiplier: number;
+  baseAmount: number;
 }
 
 export class TierInfoDto {

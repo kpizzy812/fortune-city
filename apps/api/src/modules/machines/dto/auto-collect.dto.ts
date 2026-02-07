@@ -1,4 +1,10 @@
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsIn } from 'class-validator';
+
+export class PurchaseAutoCollectDto {
+  @IsOptional()
+  @IsIn(['fortune', 'fame'])
+  paymentMethod?: 'fortune' | 'fame';
+}
 
 // Response DTOs
 export class AutoCollectInfoResponseDto {
@@ -6,10 +12,13 @@ export class AutoCollectInfoResponseDto {
   enabled: boolean;
 
   @IsNotEmpty()
-  hireCost: number; // Fixed $5 hire cost
+  hireCost: number;
 
   @IsNotEmpty()
-  salaryPercent: number; // 5% of each collection
+  hireCostFame: number;
+
+  @IsNotEmpty()
+  salaryPercent: number;
 
   purchasedAt: Date | null;
 
@@ -26,6 +35,9 @@ export class PurchaseAutoCollectResponseDto {
 
   @IsNotEmpty()
   cost: number;
+
+  @IsNotEmpty()
+  paymentMethod: 'fortune' | 'fame';
 
   @IsNotEmpty()
   user: {

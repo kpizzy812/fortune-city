@@ -136,6 +136,9 @@ model Machine {
   fameGenerated        Int      @default(0) @map("fame_generated")
   lastFameCalculatedAt DateTime @default(now()) @map("last_fame_calculated_at")
 
+  // Overclock (income boost for next collect, 0 = none, 1.2/1.5/2.0 = active)
+  overclockMultiplier Decimal @default(0) @map("overclock_multiplier") @db.Decimal(3, 1)
+
   // Fund source tracking
   fundSource FundSource?
 
@@ -235,6 +238,7 @@ enum TransactionType {
   upgrade_purchase
   collector_hire           // Hired auto-collect worker
   collector_salary         // Auto-collect worker salary deduction
+  overclock_purchase       // Purchased overclock boost for machine
 }
 
 enum TransactionStatus {
@@ -273,6 +277,8 @@ enum FameSource {
   daily_login
   machine_purchase
   tier_unlock
+  collector_hire
+  overclock_purchase
   admin_adjustment
 }
 
@@ -468,15 +474,15 @@ model SystemSettings {
   // Coin Box - fixed capacity for all machines
   coinBoxCapacityHours Int @default(12) @map("coin_box_capacity_hours")
 
-  // Collector (Auto Collect) - hire cost + salary
-  collectorHireCost      Decimal @default(5) @map("collector_hire_cost") @db.Decimal(10, 2) // $5 to hire
+  // Collector (Auto Collect) - hire cost (% of gross profit) + salary
+  collectorHirePercent   Decimal @default(10) @map("collector_hire_percent") @db.Decimal(5, 2) // 10% of gross profit
   collectorSalaryPercent Decimal @default(5) @map("collector_salary_percent") @db.Decimal(5, 2) // 5% of each collect
 
   // Fortune Wheel settings
   wheelBetAmount     Decimal @default(1) @map("wheel_bet_amount") @db.Decimal(10, 2)  // $1 per spin
   wheelMultipliers   Json    @default("[1, 5, 10, 25, 50]") @map("wheel_multipliers") // Multi-spin options
   wheelFreeSpinsBase Int     @default(1) @map("wheel_free_spins_base")               // Free spins per day
-  wheelFreeSpinsPerRef Int   @default(5) @map("wheel_free_spins_per_ref")            // Per active referral
+  wheelFreeSpinsPerRef Int   @default(1) @map("wheel_free_spins_per_ref")            // Per active referral
   wheelJackpotCap    Decimal @default(1000) @map("wheel_jackpot_cap") @db.Decimal(20, 2)
   wheelBurnRate      Decimal @default(0.80) @map("wheel_burn_rate") @db.Decimal(5, 4)   // 80% of losses burn
   wheelPoolRate      Decimal @default(0.20) @map("wheel_pool_rate") @db.Decimal(5, 4)   // 20% to jackpot
@@ -493,6 +499,10 @@ model SystemSettings {
   famePurchaseByTier    Json @default("{\"1\":15,\"2\":25,\"3\":40,\"4\":60,\"5\":100,\"6\":150,\"7\":250,\"8\":400,\"9\":600,\"10\":1000}") @map("fame_purchase_by_tier")
   fameUpgradeMultiplier Int  @default(2) @map("fame_upgrade_multiplier")
   fameUnlockCostByTier  Json @default("{\"2\":250,\"3\":500,\"4\":1000,\"5\":2000,\"6\":4000,\"7\":7500,\"8\":14000,\"9\":26000,\"10\":45000}") @map("fame_unlock_cost_by_tier")
+
+  // Overclock prices (JSON: {tier: {level: {fortune, fame}}})
+  overclockFortunePrices Json @default("{\"1\":{\"1.2\":0.5,\"1.5\":1,\"2\":2},\"2\":{\"1.2\":0.5,\"1.5\":1.5,\"2\":3},\"3\":{\"1.2\":1,\"1.5\":3,\"2\":6},\"4\":{\"1.2\":2,\"1.5\":5,\"2\":12},\"5\":{\"1.2\":5,\"1.5\":12,\"2\":30},\"6\":{\"1.2\":12,\"1.5\":35,\"2\":80},\"7\":{\"1.2\":35,\"1.5\":100,\"2\":250},\"8\":{\"1.2\":100,\"1.5\":300,\"2\":800},\"9\":{\"1.2\":350,\"1.5\":1000,\"2\":2500},\"10\":{\"1.2\":1000,\"1.5\":3500,\"2\":9000}}") @map("overclock_fortune_prices")
+  overclockFamePrices    Json @default("{\"1\":{\"1.2\":12,\"1.5\":30,\"2\":70},\"2\":{\"1.2\":18,\"1.5\":45,\"2\":100},\"3\":{\"1.2\":30,\"1.5\":75,\"2\":180},\"4\":{\"1.2\":50,\"1.5\":120,\"2\":290},\"5\":{\"1.2\":70,\"1.5\":175,\"2\":430},\"6\":{\"1.2\":110,\"1.5\":260,\"2\":650},\"7\":{\"1.2\":170,\"1.5\":400,\"2\":1000},\"8\":{\"1.2\":250,\"1.5\":600,\"2\":1500},\"9\":{\"1.2\":400,\"1.5\":950,\"2\":2400},\"10\":{\"1.2\":600,\"1.5\":1500,\"2\":3600}}") @map("overclock_fame_prices")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

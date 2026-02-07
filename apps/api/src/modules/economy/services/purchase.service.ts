@@ -356,7 +356,9 @@ export class PurchaseService {
     const fameUnlockRequired = tier > user.maxTierUnlocked;
     const settings = await this.settingsService.getSettings();
     const unlockCosts = settings.fameUnlockCostByTier as Record<string, number>;
-    const fameUnlockCost = fameUnlockRequired ? (unlockCosts[String(tier)] ?? null) : null;
+    const fameUnlockCost = fameUnlockRequired
+      ? (unlockCosts[String(tier)] ?? null)
+      : null;
 
     return {
       canAfford: totalBalance >= price,

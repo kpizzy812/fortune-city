@@ -141,11 +141,15 @@ export class MachinesService {
       .mul(tierConfig.yieldPercent)
       .div(100);
     const profitAmount = totalYield.sub(tierConfig.price);
-    const actualTotalYield = new Prisma.Decimal(tierConfig.price).add(profitAmount);
+    const actualTotalYield = new Prisma.Decimal(tierConfig.price).add(
+      profitAmount,
+    );
 
     const lifespanSeconds = tierConfig.lifespanDays * 24 * 60 * 60;
     const ratePerSecond = actualTotalYield.div(lifespanSeconds);
-    const coinBoxCapacity = ratePerSecond.mul(COIN_BOX_CAPACITY_HOURS * 60 * 60);
+    const coinBoxCapacity = ratePerSecond.mul(
+      COIN_BOX_CAPACITY_HOURS * 60 * 60,
+    );
 
     const now = new Date();
     const expiresAt = new Date(
@@ -303,6 +307,9 @@ export class MachinesService {
     machine: Machine;
     newBalance: number;
     fameEarned: number;
+    overclockApplied: boolean;
+    overclockMultiplier: number;
+    baseAmount: number;
   }> {
     const machine = await this.findByIdOrThrow(machineId);
 
@@ -320,9 +327,9 @@ export class MachinesService {
       );
     }
 
-    const collected = incomeState.coinBoxCurrent;
+    const baseCollected = incomeState.coinBoxCurrent;
 
-    if (collected === 0) {
+    if (baseCollected === 0) {
       const currentMachine = await this.findByIdOrThrow(machineId);
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -332,42 +339,60 @@ export class MachinesService {
         machine: currentMachine,
         newBalance: Number(user?.fortuneBalance ?? 0),
         fameEarned: 0,
+        overclockApplied: false,
+        overclockMultiplier: 0,
+        baseAmount: 0,
       };
     }
 
+    // Overclock: boost collection if active
+    const overclockMultiplier = Number(machine.overclockMultiplier);
+    const hasOverclock = overclockMultiplier > 0;
+    const overclockBonus = hasOverclock
+      ? baseCollected * (overclockMultiplier - 1)
+      : 0;
+    const effectiveCollected = baseCollected + overclockBonus;
+
     // Atomic transaction: coinBox → fortuneBalance + create transaction record
     const result = await this.prisma.$transaction(async (tx) => {
-      // 1. Update machine: reset coinBox, update lastCalculatedAt, track payouts
+      // 1. Update machine: reset coinBox, track payouts, reset overclock
+      const machineUpdateData: any = {
+        coinBoxCurrent: 0,
+        lastCalculatedAt: new Date(),
+        profitPaidOut: {
+          increment: incomeState.currentProfit + overclockBonus,
+        },
+        principalPaidOut: {
+          increment: incomeState.currentPrincipal,
+        },
+      };
+
+      // Reset overclock after collection
+      if (hasOverclock) {
+        machineUpdateData.overclockMultiplier = 0;
+      }
+
       const updatedMachine = await tx.machine.update({
         where: { id: machineId },
-        data: {
-          coinBoxCurrent: 0,
-          lastCalculatedAt: new Date(),
-          profitPaidOut: {
-            increment: incomeState.currentProfit,
-          },
-          principalPaidOut: {
-            increment: incomeState.currentPrincipal,
-          },
-        },
+        data: machineUpdateData,
       });
 
-      // 2. Add to user balance
+      // 2. Add to user balance (with overclock bonus)
       const updatedUser = await tx.user.update({
         where: { id: userId },
         data: {
           fortuneBalance: {
-            increment: collected,
+            increment: effectiveCollected,
           },
         },
       });
 
-      // 3. Track profit collection for user-level fund source tracking
-      // Only the profit portion counts as profit collected (for tax calculation on withdrawal)
-      if (incomeState.currentProfit > 0) {
+      // 3. Track profit collection (including overclock bonus as profit)
+      const totalProfit = incomeState.currentProfit + overclockBonus;
+      if (totalProfit > 0) {
         await this.fundSourceService.recordProfitCollection(
           userId,
-          incomeState.currentProfit,
+          totalProfit,
           tx,
         );
       }
@@ -378,9 +403,9 @@ export class MachinesService {
           userId,
           machineId,
           type: 'machine_income',
-          amount: collected,
+          amount: effectiveCollected,
           currency: 'FORTUNE',
-          netAmount: collected,
+          netAmount: effectiveCollected,
           status: 'completed',
         },
       });
@@ -416,10 +441,13 @@ export class MachinesService {
     });
 
     return {
-      collected,
+      collected: effectiveCollected,
       machine: result.machine,
       newBalance: result.newBalance,
       fameEarned: result.fameEarned,
+      overclockApplied: hasOverclock,
+      overclockMultiplier: hasOverclock ? overclockMultiplier : 0,
+      baseAmount: baseCollected,
     };
   }
 

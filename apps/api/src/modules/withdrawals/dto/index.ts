@@ -59,14 +59,22 @@ export interface WithdrawalPreviewResponse {
 
 export interface PreparedAtomicWithdrawalResponse {
   withdrawalId: string;
-  // Base64 encoded serialized transaction (partially signed by hot wallet)
-  serializedTransaction: string;
+  // On-chain claim info for building claim_withdrawal transaction
+  claimInfo: {
+    programId: string;
+    vaultAddress: string;
+    authorityAddress: string;
+    usdtMint: string;
+    vaultTokenAccount: string;
+    withdrawalRequestPda: string;
+  };
   // Amounts for display
   requestedAmount: number;
   netAmount: number;
   usdtAmount: number;
   taxAmount: number;
-  feeSol: number;
+  // Expiry info
+  expiresAt: string;
   // Recipient address (user's wallet)
   recipientAddress: string;
 }

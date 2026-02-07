@@ -16,6 +16,7 @@ interface MachineCardProps {
   onCollect: () => void;
   onRiskyCollect?: () => void;
   onAutoCollectClick?: () => void;
+  onOverclockClick?: () => void;
   isCollecting: boolean;
 }
 
@@ -72,6 +73,7 @@ export function MachineCard({
   onCollect,
   onRiskyCollect,
   onAutoCollectClick,
+  onOverclockClick,
   isCollecting,
 }: MachineCardProps) {
   const t = useTranslations('machines');
@@ -161,6 +163,15 @@ export function MachineCard({
               >
                 <Zap className="w-2.5 h-2.5" />
                 {t('auto')}
+              </motion.span>
+            )}
+            {Number(machine.overclockMultiplier) > 0 && !isExpired && (
+              <motion.span
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="text-[10px] px-1.5 py-0.5 bg-[#ff2d95]/20 text-[#ff2d95] rounded font-bold"
+              >
+                x{Number(machine.overclockMultiplier)}
               </motion.span>
             )}
           </div>
@@ -262,16 +273,27 @@ export function MachineCard({
         )}
       </div>
 
-      {/* Auto Collect button */}
-      {!isExpired && onAutoCollectClick && (
-        <div className="mt-3 pt-3 border-t border-[#ff2d95]/20">
-          <button
-            onClick={onAutoCollectClick}
-            className="w-full flex items-center justify-center gap-2 text-xs text-[#00ff88] hover:text-[#00d4ff] transition-colors group"
-          >
-            <Zap className="w-3.5 h-3.5 group-hover:animate-pulse" />
-            <span>{machine.autoCollectEnabled ? t('collectorActive') : t('hireCollector')}</span>
-          </button>
+      {/* Action buttons: Auto Collect + Overclock */}
+      {!isExpired && (onAutoCollectClick || onOverclockClick) && (
+        <div className="mt-3 pt-3 border-t border-[#ff2d95]/20 flex items-center gap-3">
+          {onAutoCollectClick && (
+            <button
+              onClick={onAutoCollectClick}
+              className="flex-1 flex items-center justify-center gap-1.5 text-xs text-[#00ff88] hover:text-[#00d4ff] transition-colors group"
+            >
+              <Zap className="w-3.5 h-3.5 group-hover:animate-pulse" />
+              <span>{machine.autoCollectEnabled ? t('collectorActive') : t('hireCollector')}</span>
+            </button>
+          )}
+          {onOverclockClick && (
+            <button
+              onClick={onOverclockClick}
+              className="flex-1 flex items-center justify-center gap-1.5 text-xs text-[#ff2d95] hover:text-[#ffd700] transition-colors group"
+            >
+              <span className="group-hover:animate-pulse">⚡</span>
+              <span>{Number(machine.overclockMultiplier) > 0 ? t('boostActive') : t('boost')}</span>
+            </button>
+          )}
         </div>
       )}
     </motion.div>

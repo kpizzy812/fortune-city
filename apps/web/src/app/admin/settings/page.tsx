@@ -33,7 +33,7 @@ function settingsToFormData(settings: AdminSettingsResponse | null): UpdateSetti
     gambleLoseMultiplier: settings.gambleLoseMultiplier,
     gambleLevels: settings.gambleLevels,
     coinBoxCapacityHours: settings.coinBoxCapacityHours,
-    collectorHireCost: settings.collectorHireCost,
+    collectorHirePercent: settings.collectorHirePercent,
     collectorSalaryPercent: settings.collectorSalaryPercent,
   };
 }
@@ -355,14 +355,15 @@ function SettingsForm({ settings, isSaving, error, onSave, onReset, onRefresh, o
             hint="How long before coin box is full (default: 12h)"
           />
           <InputField
-            label="Collector Hire Cost"
-            value={formData.collectorHireCost ?? 5}
-            onChange={(v) => handleInputChange('collectorHireCost', v)}
+            label="Collector Hire %"
+            value={formData.collectorHirePercent ?? 10}
+            onChange={(v) => handleInputChange('collectorHirePercent', v)}
             type="number"
             min={0}
-            step={0.01}
-            prefix="$"
-            hint="One-time cost to hire collector (default: $5)"
+            max={100}
+            step={1}
+            suffix="%"
+            hint="% of gross profit to hire collector (default: 10%)"
           />
           <InputField
             label="Collector Salary"

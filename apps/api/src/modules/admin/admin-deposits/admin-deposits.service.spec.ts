@@ -3,6 +3,9 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { AdminDepositsService } from './admin-deposits.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PriceOracleService } from '../../deposits/services/price-oracle.service';
+import { DepositsGateway } from '../../deposits/deposits.gateway';
+import { ConfigService } from '@nestjs/config';
 
 describe('AdminDepositsService', () => {
   let service: AdminDepositsService;
@@ -65,6 +68,24 @@ describe('AdminDepositsService', () => {
               create: jest.fn(),
             },
             $transaction: jest.fn(),
+          },
+        },
+        {
+          provide: PriceOracleService,
+          useValue: {
+            getPrice: jest.fn().mockResolvedValue(1),
+          },
+        },
+        {
+          provide: DepositsGateway,
+          useValue: {
+            emitDepositUpdate: jest.fn(),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue(null),
           },
         },
       ],

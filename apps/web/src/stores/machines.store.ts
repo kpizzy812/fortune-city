@@ -13,6 +13,9 @@ import type {
   UpgradeGambleResult,
   AutoCollectInfo,
   PurchaseAutoCollectResult,
+  OverclockInfo,
+  PurchaseOverclockResult,
+  PaymentMethod,
 } from '@/types';
 
 interface MachinesState {
@@ -24,6 +27,7 @@ interface MachinesState {
   lastGambleResult: RiskyCollectResult | null;
   gambleInfos: Record<string, GambleInfo>;
   autoCollectInfos: Record<string, AutoCollectInfo>;
+  overclockInfos: Record<string, OverclockInfo>;
 
   // Loading states
   isLoadingMachines: boolean;
@@ -46,8 +50,10 @@ interface MachinesState {
   riskyCollect: (token: string, machineId: string) => Promise<RiskyCollectResult>;
   upgradeGamble: (token: string, machineId: string) => Promise<UpgradeGambleResult>;
   fetchGambleInfo: (token: string, machineId: string) => Promise<void>;
-  purchaseAutoCollect: (token: string, machineId: string) => Promise<PurchaseAutoCollectResult>;
+  purchaseAutoCollect: (token: string, machineId: string, paymentMethod?: PaymentMethod) => Promise<PurchaseAutoCollectResult>;
   fetchAutoCollectInfo: (token: string, machineId: string) => Promise<AutoCollectInfo | null>;
+  fetchOverclockInfo: (token: string, machineId: string) => Promise<OverclockInfo | null>;
+  purchaseOverclock: (token: string, machineId: string, level: number, paymentMethod: PaymentMethod) => Promise<PurchaseOverclockResult>;
 
   // Real-time income interpolation
   interpolateIncome: (machineId: string) => void;
@@ -68,6 +74,7 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
   lastGambleResult: null,
   gambleInfos: {},
   autoCollectInfos: {},
+  overclockInfos: {},
   isLoadingMachines: false,
   isLoadingTiers: false,
   isPurchasing: false,
@@ -258,9 +265,9 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
     }
   },
 
-  purchaseAutoCollect: async (token, machineId) => {
+  purchaseAutoCollect: async (token, machineId, paymentMethod) => {
     try {
-      const result = await api.purchaseAutoCollect(token, machineId);
+      const result = await api.purchaseAutoCollect(token, machineId, paymentMethod);
       // Update machine in list
       set((state) => ({
         machines: state.machines.map((m) =>
@@ -270,9 +277,8 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
         autoCollectInfos: {
           ...state.autoCollectInfos,
           [machineId]: {
+            ...state.autoCollectInfos[machineId],
             enabled: true,
-            hireCost: result.cost,
-            salaryPercent: 5, // Fixed 5%
             purchasedAt: new Date().toISOString(),
             canPurchase: false,
             alreadyPurchased: true,
@@ -295,6 +301,43 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
     } catch {
       // Silent fail
       return null;
+    }
+  },
+
+  fetchOverclockInfo: async (token, machineId) => {
+    try {
+      const info = await api.getOverclockInfo(token, machineId);
+      set((state) => ({
+        overclockInfos: { ...state.overclockInfos, [machineId]: info },
+      }));
+      return info;
+    } catch {
+      return null;
+    }
+  },
+
+  purchaseOverclock: async (token, machineId, level, paymentMethod) => {
+    try {
+      const result = await api.purchaseOverclock(token, machineId, level, paymentMethod);
+      // Update machine in list
+      set((state) => ({
+        machines: state.machines.map((m) =>
+          m.id === machineId ? result.machine : m
+        ),
+        // Update overclock info cache
+        overclockInfos: {
+          ...state.overclockInfos,
+          [machineId]: {
+            ...state.overclockInfos[machineId],
+            currentMultiplier: level,
+            isActive: true,
+            canPurchase: false,
+          },
+        },
+      }));
+      return result;
+    } catch (e) {
+      throw e;
     }
   },
 
@@ -350,6 +393,7 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
       lastGambleResult: null,
       gambleInfos: {},
       autoCollectInfos: {},
+      overclockInfos: {},
       isLoadingMachines: false,
       isLoadingTiers: false,
       isPurchasing: false,

@@ -50,6 +50,7 @@ export interface Machine {
   fortuneGambleLevel: number;
   autoCollectEnabled: boolean;
   autoCollectPurchasedAt: string | null;
+  overclockMultiplier: string;
   status: MachineStatus;
   createdAt: string;
   updatedAt: string;
@@ -71,6 +72,9 @@ export interface CollectResult {
   newBalance: number;
   machine: Machine;
   fameEarned: number;
+  overclockApplied?: boolean;
+  overclockMultiplier?: number;
+  baseAmount?: number;
 }
 
 // ============================================
@@ -112,9 +116,12 @@ export interface UpgradeGambleResult {
 // Collector (Auto Collect) Types
 // ============================================
 
+export type PaymentMethod = 'fortune' | 'fame';
+
 export interface AutoCollectInfo {
   enabled: boolean;
-  hireCost: number; // Fixed $5 hire cost
+  hireCost: number; // 10% of gross profit (dynamic per tier)
+  hireCostFame: number; // Fame alternative (5h of passive farming)
   salaryPercent: number; // 5% of each collection
   purchasedAt: string | null;
   canPurchase: boolean;
@@ -124,10 +131,39 @@ export interface AutoCollectInfo {
 export interface PurchaseAutoCollectResult {
   machine: Machine;
   cost: number;
+  paymentMethod: PaymentMethod;
   user: {
     fortuneBalance: string;
   };
   newBalance: number;
+}
+
+// ============================================
+// Overclock (Income Boost) Types
+// ============================================
+
+export interface OverclockLevelInfo {
+  level: number;
+  bonusPercent: number;
+  fortunePrice: number;
+  famePrice: number;
+}
+
+export interface OverclockInfo {
+  currentMultiplier: number;
+  isActive: boolean;
+  canPurchase: boolean;
+  levels: OverclockLevelInfo[];
+}
+
+export interface PurchaseOverclockResult {
+  machine: Machine;
+  level: number;
+  cost: number;
+  paymentMethod: PaymentMethod;
+  user: {
+    fortuneBalance: string;
+  };
 }
 
 // ============================================

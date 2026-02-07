@@ -1703,7 +1703,7 @@ export interface AdminSettingsResponse {
   gambleLevels: GambleLevel[];
   // Coin Box & Collector
   coinBoxCapacityHours: number;
-  collectorHireCost: number;
+  collectorHirePercent: number;
   collectorSalaryPercent: number;
   createdAt: string;
   updatedAt: string;
@@ -1725,7 +1725,7 @@ export interface UpdateSettingsRequest {
   gambleLevels?: GambleLevel[];
   // Coin Box & Collector
   coinBoxCapacityHours?: number;
-  collectorHireCost?: number;
+  collectorHirePercent?: number;
   collectorSalaryPercent?: number;
 }
 

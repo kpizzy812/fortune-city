@@ -3,6 +3,7 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { AdminWithdrawalsService } from './admin-withdrawals.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 describe('AdminWithdrawalsService', () => {
   let service: AdminWithdrawalsService;
@@ -68,6 +69,12 @@ describe('AdminWithdrawalsService', () => {
               create: jest.fn(),
             },
             $transaction: jest.fn(),
+          },
+        },
+        {
+          provide: NotificationsService,
+          useValue: {
+            notify: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

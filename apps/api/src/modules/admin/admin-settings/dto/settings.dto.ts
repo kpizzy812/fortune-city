@@ -171,7 +171,8 @@ export class UpdateAllSettingsDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  collectorHireCost?: number; // $5 default
+  @Max(100)
+  collectorHirePercent?: number; // 10% of gross profit (default)
 
   @IsOptional()
   @IsNumber()
@@ -205,7 +206,7 @@ export interface SettingsResponse {
   gambleLevels: GambleLevel[];
   // Coin Box & Collector
   coinBoxCapacityHours: number;
-  collectorHireCost: number;
+  collectorHirePercent: number;
   collectorSalaryPercent: number;
   createdAt: string;
   updatedAt: string;

@@ -6,7 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-treasury_vault = "5bdiY9qaWc5qYtxgHzydCmU4dpssmCXLqXQBtG6Q2pa4"
+treasury_vault = "9brgETdzzaoxH9DcctMx7KprqpQkdDtcdQmM1y6pgDgD"
+
+[programs.devnet]
+treasury_vault = "9brgETdzzaoxH9DcctMx7KprqpQkdDtcdQmM1y6pgDgD"
 
 [registry]
 url = "https://api.apr.dev"

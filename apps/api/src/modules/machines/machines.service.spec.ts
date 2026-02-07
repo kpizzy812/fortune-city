@@ -3,8 +3,14 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { MachinesService } from './machines.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FundSourceService } from '../economy/services/fund-source.service';
+import { TierCacheService } from './services/tier-cache.service';
+import { FameService } from '../fame/fame.service';
 import { Prisma } from '@prisma/client';
-import { calculateEarlySellCommission } from '@fortune-city/shared';
+import {
+  calculateEarlySellCommission,
+  MACHINE_TIERS,
+  REINVEST_REDUCTION,
+} from '@fortune-city/shared';
 
 describe('MachinesService', () => {
   let service: MachinesService;
@@ -17,12 +23,12 @@ describe('MachinesService', () => {
     userId: mockUserId,
     tier: 1,
     purchasePrice: new Prisma.Decimal(10),
-    totalYield: new Prisma.Decimal(13.5),
-    profitAmount: new Prisma.Decimal(3.5),
-    lifespanDays: 7,
+    totalYield: new Prisma.Decimal(14.5),
+    profitAmount: new Prisma.Decimal(4.5),
+    lifespanDays: 3,
     startedAt: new Date('2026-01-01T00:00:00Z'),
-    expiresAt: new Date('2026-01-08T00:00:00Z'),
-    ratePerSecond: new Prisma.Decimal(0.0000223214),
+    expiresAt: new Date('2026-01-04T00:00:00Z'),
+    ratePerSecond: new Prisma.Decimal(0.0000559414),
     accumulatedIncome: new Prisma.Decimal(0),
     lastCalculatedAt: new Date('2026-01-01T00:00:00Z'),
     profitPaidOut: new Prisma.Decimal(0),
@@ -59,6 +65,23 @@ describe('MachinesService', () => {
           },
         },
         {
+          provide: TierCacheService,
+          useValue: {
+            getTierOrThrow: jest.fn().mockImplementation((tier: number) => {
+              const config = MACHINE_TIERS.find((t) => t.tier === tier);
+              if (!config)
+                throw new Error(
+                  `Invalid tier: ${tier}. Must be between 1 and 10`,
+                );
+              return config;
+            }),
+            getTier: jest.fn().mockImplementation((tier: number) => {
+              return MACHINE_TIERS.find((t) => t.tier === tier) ?? null;
+            }),
+            getAllTiers: jest.fn().mockReturnValue([...MACHINE_TIERS]),
+          },
+        },
+        {
           provide: FundSourceService,
           useValue: {
             recordProfitCollection: jest.fn().mockResolvedValue(undefined),
@@ -67,6 +90,13 @@ describe('MachinesService', () => {
               freshPortion: new Prisma.Decimal(0),
               profitPortion: new Prisma.Decimal(0),
             }),
+          },
+        },
+        {
+          provide: FameService,
+          useValue: {
+            earnMachinePassiveFame: jest.fn().mockResolvedValue(0),
+            earnManualCollectFame: jest.fn().mockResolvedValue(0),
           },
         },
       ],
@@ -175,7 +205,7 @@ describe('MachinesService', () => {
           userId: mockUserId,
           tier: 1,
           purchasePrice: 10,
-          lifespanDays: 7,
+          lifespanDays: 3,
           reinvestRound: 1,
           profitReductionRate: 0,
           status: 'active',
@@ -194,7 +224,7 @@ describe('MachinesService', () => {
       expect(prismaService.machine.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           reinvestRound: 3,
-          profitReductionRate: 0.1, // -10% for round 3
+          profitReductionRate: REINVEST_REDUCTION[3], // -50% for round 3
         }),
       });
     });
@@ -210,8 +240,8 @@ describe('MachinesService', () => {
       expect(prismaService.machine.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           tier: 5,
-          purchasePrice: 600,
-          lifespanDays: 22,
+          purchasePrice: 500,
+          lifespanDays: 7,
         }),
       });
     });
@@ -241,7 +271,7 @@ describe('MachinesService', () => {
 
       const result = await service.calculateIncome('machine-123');
 
-      expect(result.ratePerSecond).toBeCloseTo(0.0000223214, 8);
+      expect(result.ratePerSecond).toBeCloseTo(0.0000559414, 8);
       expect(result.coinBoxCurrent).toBeGreaterThan(0);
       expect(result.isFull).toBe(false);
       expect(result.isExpired).toBe(false);
@@ -255,7 +285,7 @@ describe('MachinesService', () => {
         startedAt,
         lastCalculatedAt: startedAt,
         expiresAt: new Date(now.getTime() + 5 * 24 * 3600 * 1000),
-        ratePerSecond: new Prisma.Decimal(0.0000223214),
+        ratePerSecond: new Prisma.Decimal(0.0000559414),
         coinBoxCapacity: new Prisma.Decimal(0.1), // Small capacity
         coinBoxCurrent: new Prisma.Decimal(0),
       });
@@ -316,14 +346,14 @@ describe('MachinesService', () => {
     it('should correctly track profit and principal payouts when no payouts yet', async () => {
       const now = new Date();
       const mockMachine = createMockMachine({
-        profitAmount: new Prisma.Decimal(3.5), // $3.50 profit
+        profitAmount: new Prisma.Decimal(4.5), // $4.50 profit
         purchasePrice: new Prisma.Decimal(10), // $10 principal
         profitPaidOut: new Prisma.Decimal(0),
         principalPaidOut: new Prisma.Decimal(0),
         coinBoxCurrent: new Prisma.Decimal(2), // $2 in coinBox
         coinBoxCapacity: new Prisma.Decimal(10),
         lastCalculatedAt: now,
-        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+        expiresAt: new Date(now.getTime() + 3 * 24 * 3600 * 1000),
       });
       (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
         mockMachine,
@@ -334,7 +364,7 @@ describe('MachinesService', () => {
       // Should have payout tracking fields
       expect(result.profitPaidOut).toBe(0);
       expect(result.principalPaidOut).toBe(0);
-      expect(result.profitRemaining).toBe(3.5);
+      expect(result.profitRemaining).toBe(4.5);
       expect(result.principalRemaining).toBe(10);
 
       // Current coinBox should be all profit (since profit comes first)
@@ -346,14 +376,14 @@ describe('MachinesService', () => {
     it('should correctly split coinBox between profit and principal after partial profit payout', async () => {
       const now = new Date();
       const mockMachine = createMockMachine({
-        profitAmount: new Prisma.Decimal(3.5),
+        profitAmount: new Prisma.Decimal(4.5),
         purchasePrice: new Prisma.Decimal(10),
         profitPaidOut: new Prisma.Decimal(2), // $2 of profit already paid
         principalPaidOut: new Prisma.Decimal(0),
         coinBoxCurrent: new Prisma.Decimal(3), // $3 in coinBox
         coinBoxCapacity: new Prisma.Decimal(10),
         lastCalculatedAt: now,
-        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+        expiresAt: new Date(now.getTime() + 3 * 24 * 3600 * 1000),
       });
       (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
         mockMachine,
@@ -363,26 +393,26 @@ describe('MachinesService', () => {
 
       expect(result.profitPaidOut).toBe(2);
       expect(result.principalPaidOut).toBe(0);
-      expect(result.profitRemaining).toBe(1.5); // 3.5 - 2 = 1.5
+      expect(result.profitRemaining).toBe(2.5); // 4.5 - 2 = 2.5
       expect(result.principalRemaining).toBe(10);
 
-      // $1.5 profit remaining, $3 in coinBox = $1.5 profit + $1.5 principal
-      expect(result.currentProfit).toBe(1.5);
-      expect(result.currentPrincipal).toBe(1.5);
+      // $2.5 profit remaining, $3 in coinBox = $2.5 profit + $0.5 principal
+      expect(result.currentProfit).toBe(2.5);
+      expect(result.currentPrincipal).toBe(0.5);
       expect(result.isBreakevenReached).toBe(false);
     });
 
     it('should mark breakeven reached when all profit is paid out', async () => {
       const now = new Date();
       const mockMachine = createMockMachine({
-        profitAmount: new Prisma.Decimal(3.5),
+        profitAmount: new Prisma.Decimal(4.5),
         purchasePrice: new Prisma.Decimal(10),
-        profitPaidOut: new Prisma.Decimal(3.5), // All profit paid
+        profitPaidOut: new Prisma.Decimal(4.5), // All profit paid
         principalPaidOut: new Prisma.Decimal(2), // Partial principal paid
         coinBoxCurrent: new Prisma.Decimal(5), // $5 in coinBox (all principal now)
         coinBoxCapacity: new Prisma.Decimal(10),
         lastCalculatedAt: now,
-        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+        expiresAt: new Date(now.getTime() + 3 * 24 * 3600 * 1000),
       });
       (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
         mockMachine,
@@ -390,7 +420,7 @@ describe('MachinesService', () => {
 
       const result = await service.calculateIncome('machine-123');
 
-      expect(result.profitPaidOut).toBe(3.5);
+      expect(result.profitPaidOut).toBe(4.5);
       expect(result.principalPaidOut).toBe(2);
       expect(result.profitRemaining).toBe(0);
       expect(result.principalRemaining).toBe(8); // 10 - 2 = 8
@@ -410,7 +440,7 @@ describe('MachinesService', () => {
         coinBoxCurrent: new Prisma.Decimal(0.1),
         coinBoxCapacity: new Prisma.Decimal(1), // Not full
         lastCalculatedAt: now,
-        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+        expiresAt: new Date(now.getTime() + 3 * 24 * 3600 * 1000),
       });
       (prismaService.machine.findUnique as jest.Mock).mockResolvedValue(
         mockMachine,
@@ -428,7 +458,7 @@ describe('MachinesService', () => {
         coinBoxCurrent: new Prisma.Decimal(0.64),
         coinBoxCapacity: new Prisma.Decimal(0.64), // Full
         lastCalculatedAt: now,
-        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+        expiresAt: new Date(now.getTime() + 3 * 24 * 3600 * 1000),
       });
       const mockUser = {
         id: mockUserId,
@@ -530,14 +560,14 @@ describe('MachinesService', () => {
     it('should correctly increment profitPaidOut when collecting pure profit', async () => {
       const now = new Date();
       const mockMachine = createMockMachine({
-        profitAmount: new Prisma.Decimal(3.5),
+        profitAmount: new Prisma.Decimal(4.5),
         purchasePrice: new Prisma.Decimal(10),
         profitPaidOut: new Prisma.Decimal(0),
         principalPaidOut: new Prisma.Decimal(0),
         coinBoxCurrent: new Prisma.Decimal(2), // $2 pure profit
         coinBoxCapacity: new Prisma.Decimal(2),
         lastCalculatedAt: now,
-        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+        expiresAt: new Date(now.getTime() + 3 * 24 * 3600 * 1000),
       });
       const mockUser = {
         id: mockUserId,
@@ -584,14 +614,14 @@ describe('MachinesService', () => {
     it('should correctly split payout tracking between profit and principal', async () => {
       const now = new Date();
       const mockMachine = createMockMachine({
-        profitAmount: new Prisma.Decimal(3.5),
+        profitAmount: new Prisma.Decimal(4.5),
         purchasePrice: new Prisma.Decimal(10),
-        profitPaidOut: new Prisma.Decimal(2), // $1.5 profit remaining
+        profitPaidOut: new Prisma.Decimal(2), // $2.5 profit remaining
         principalPaidOut: new Prisma.Decimal(0),
-        coinBoxCurrent: new Prisma.Decimal(3), // $1.5 profit + $1.5 principal
+        coinBoxCurrent: new Prisma.Decimal(3), // $2.5 profit + $0.5 principal
         coinBoxCapacity: new Prisma.Decimal(3),
         lastCalculatedAt: now,
-        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+        expiresAt: new Date(now.getTime() + 3 * 24 * 3600 * 1000),
       });
       const mockUser = {
         id: mockUserId,
@@ -623,25 +653,25 @@ describe('MachinesService', () => {
 
       await service.collectCoins('machine-123', mockUserId);
 
-      // Should increment profitPaidOut by 1.5, principalPaidOut by 1.5
-      expect(updateCallData.profitPaidOut).toEqual({ increment: 1.5 });
-      expect(updateCallData.principalPaidOut).toEqual({ increment: 1.5 });
+      // Should increment profitPaidOut by 2.5, principalPaidOut by 0.5
+      expect(updateCallData.profitPaidOut).toEqual({ increment: 2.5 });
+      expect(updateCallData.principalPaidOut).toEqual({ increment: 0.5 });
     });
   });
 
   describe('sellMachineEarly', () => {
     it('should sell machine early with 20% commission (0-20% progress to BE)', async () => {
       const now = new Date();
-      // Progress: 0.35 / 3.5 = 10% to BE → 20% commission
+      // Progress: 0.45 / 4.5 = 10% to BE → 20% commission
       const mockMachine = createMockMachine({
-        profitAmount: new Prisma.Decimal(3.5),
+        profitAmount: new Prisma.Decimal(4.5),
         purchasePrice: new Prisma.Decimal(10),
-        profitPaidOut: new Prisma.Decimal(0.35), // 10% progress
+        profitPaidOut: new Prisma.Decimal(0.45), // 10% progress
         principalPaidOut: new Prisma.Decimal(0),
         coinBoxCurrent: new Prisma.Decimal(0.5), // $0.5 profit in coinBox
         coinBoxCapacity: new Prisma.Decimal(1),
         lastCalculatedAt: now,
-        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+        expiresAt: new Date(now.getTime() + 3 * 24 * 3600 * 1000),
       });
       const mockUser = {
         id: mockUserId,
@@ -673,7 +703,7 @@ describe('MachinesService', () => {
 
       const result = await service.sellMachineEarly('machine-123', mockUserId);
 
-      // Profit remaining: 3.5 - 0.35 = 3.15, in coinBox: 0.5 profit
+      // Profit remaining: 4.5 - 0.45 = 4.05, in coinBox: 0.5 profit
       // Principal remaining: 10.0, in coinBox: 0 principal
       // Principal not in coinBox: 10 - 0 = 10, commission 20% = 2.0
       // Principal returned: 10 * 0.8 = 8.0
@@ -687,16 +717,16 @@ describe('MachinesService', () => {
 
     it('should sell machine early with 35% commission (20-40% progress to BE)', async () => {
       const now = new Date();
-      // Progress: 1.2 / 3.5 = 34.3% to BE → 35% commission
+      // Progress: 1.5 / 4.5 = 33.3% to BE → 35% commission
       const mockMachine = createMockMachine({
-        profitAmount: new Prisma.Decimal(3.5),
+        profitAmount: new Prisma.Decimal(4.5),
         purchasePrice: new Prisma.Decimal(10),
-        profitPaidOut: new Prisma.Decimal(1.2), // 34% progress
+        profitPaidOut: new Prisma.Decimal(1.5), // 33% progress
         principalPaidOut: new Prisma.Decimal(0),
         coinBoxCurrent: new Prisma.Decimal(2), // $2 profit + $0 principal
         coinBoxCapacity: new Prisma.Decimal(2),
         lastCalculatedAt: now,
-        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+        expiresAt: new Date(now.getTime() + 3 * 24 * 3600 * 1000),
       });
       const mockUser = {
         id: mockUserId,
@@ -736,16 +766,16 @@ describe('MachinesService', () => {
 
     it('should sell machine early with 90% commission (80-100% progress to BE)', async () => {
       const now = new Date();
-      // Progress: 3.2 / 3.5 = 91.4% to BE → 90% commission
+      // Progress: 4.1 / 4.5 = 91.1% to BE → 90% commission
       const mockMachine = createMockMachine({
-        profitAmount: new Prisma.Decimal(3.5),
+        profitAmount: new Prisma.Decimal(4.5),
         purchasePrice: new Prisma.Decimal(10),
-        profitPaidOut: new Prisma.Decimal(3.2), // 91% progress
+        profitPaidOut: new Prisma.Decimal(4.1), // 91% progress
         principalPaidOut: new Prisma.Decimal(0),
-        coinBoxCurrent: new Prisma.Decimal(1), // $0.3 profit + $0.7 principal
+        coinBoxCurrent: new Prisma.Decimal(1), // $0.4 profit + $0.6 principal
         coinBoxCapacity: new Prisma.Decimal(1),
         lastCalculatedAt: now,
-        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+        expiresAt: new Date(now.getTime() + 3 * 24 * 3600 * 1000),
       });
       const mockUser = {
         id: mockUserId,
@@ -776,25 +806,25 @@ describe('MachinesService', () => {
 
       // Commission should be 90%
       expect(result.commissionRate).toBe(0.9);
-      // Principal not in coinBox: 10 - 0.7 = 9.3, commission 90% = 8.37
-      // Principal returned: 9.3 * 0.1 = 0.93
-      // Total: 1.0 (coinBox) + 0.93 = 1.93
-      expect(result.totalReturned).toBeCloseTo(1.93, 2);
-      expect(result.commission).toBeCloseTo(8.37, 2);
+      // Principal not in coinBox: 10 - 0.6 = 9.4, commission 90% = 8.46
+      // Principal returned: 9.4 * 0.1 = 0.94
+      // Total: 1.0 (coinBox) + 0.94 = 1.94
+      expect(result.totalReturned).toBeCloseTo(1.94, 2);
+      expect(result.commission).toBeCloseTo(8.46, 2);
     });
 
     it('should sell machine early with 100% commission (after BE reached)', async () => {
       const now = new Date();
-      // Progress: 3.5 / 3.5 = 100% → 100% commission (principal non-withdrawable)
+      // Progress: 4.5 / 4.5 = 100% → 100% commission (principal non-withdrawable)
       const mockMachine = createMockMachine({
-        profitAmount: new Prisma.Decimal(3.5),
+        profitAmount: new Prisma.Decimal(4.5),
         purchasePrice: new Prisma.Decimal(10),
-        profitPaidOut: new Prisma.Decimal(3.5), // 100% progress (BE reached)
+        profitPaidOut: new Prisma.Decimal(4.5), // 100% progress (BE reached)
         principalPaidOut: new Prisma.Decimal(2), // Some principal paid
         coinBoxCurrent: new Prisma.Decimal(5), // All principal
         coinBoxCapacity: new Prisma.Decimal(5),
         lastCalculatedAt: now,
-        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+        expiresAt: new Date(now.getTime() + 3 * 24 * 3600 * 1000),
       });
       const mockUser = {
         id: mockUserId,
@@ -861,7 +891,7 @@ describe('MachinesService', () => {
         principalPaidOut: new Prisma.Decimal(0),
         coinBoxCurrent: new Prisma.Decimal(1),
         lastCalculatedAt: now,
-        expiresAt: new Date(now.getTime() + 7 * 24 * 3600 * 1000),
+        expiresAt: new Date(now.getTime() + 3 * 24 * 3600 * 1000),
       });
       const mockUser = {
         id: mockUserId,
@@ -964,11 +994,11 @@ describe('MachinesService', () => {
         price: 10,
         lifespanDays: 7,
         yieldPercent: 135,
-        profit: 4, // Math.round(10 * 1.35 - 10) = 4 (rounded from 3.5)
+        profit: 5, // Math.round(10 * 1.45 - 10) = 5 (rounded from 4.5)
         dailyRate: expect.any(Number),
       });
       expect(tiers[9].tier).toBe(10);
-      expect(tiers[9].price).toBe(200000);
+      expect(tiers[9].price).toBe(100000);
     });
   });
 
@@ -982,7 +1012,7 @@ describe('MachinesService', () => {
         name: 'RUSTY LEVER',
         emoji: '🟤',
         imageUrl: '/machines/tier-1.png',
-        yieldPercent: 135,
+        yieldPercent: 145,
       });
     });
   });
@@ -1110,18 +1140,18 @@ describe('MachinesService', () => {
     });
 
     it('should work with decimal profitAmount and profitPaidOut', () => {
-      const profitAmount = 3.5; // Real profit from tier 1 machine
-      const profitPaidOut = 0.69; // 19.7% paid
+      const profitAmount = 4.5; // Real profit from tier 1 machine
+      const profitPaidOut = 0.89; // 19.8% paid
       expect(calculateEarlySellCommission(profitPaidOut, profitAmount)).toBe(
         0.2,
       );
 
-      const profitPaidOut2 = 1.75; // 50% paid
+      const profitPaidOut2 = 2.25; // 50% paid
       expect(calculateEarlySellCommission(profitPaidOut2, profitAmount)).toBe(
         0.55,
       );
 
-      const profitPaidOut3 = 3.5; // 100% paid (breakeven)
+      const profitPaidOut3 = 4.5; // 100% paid (breakeven)
       expect(calculateEarlySellCommission(profitPaidOut3, profitAmount)).toBe(
         1.0,
       );

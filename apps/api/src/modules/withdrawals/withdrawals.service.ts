@@ -5,20 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  PublicKey,
-  Transaction,
-  SystemProgram,
-  LAMPORTS_PER_SOL,
-} from '@solana/web3.js';
-import {
-  getAssociatedTokenAddress,
-  createTransferInstruction,
-  createAssociatedTokenAccountInstruction,
-  getAccount,
-  TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
+import { Cron } from '@nestjs/schedule';
+import { PublicKey } from '@solana/web3.js';
 import { PrismaService } from '../prisma/prisma.service';
 import { SolanaRpcService } from '../deposits/services/solana-rpc.service';
 import { FundSourceService } from '../economy/services/fund-source.service';
@@ -33,8 +21,8 @@ import {
 } from './dto';
 import { Withdrawal } from '@prisma/client';
 
-// Withdrawal fee in SOL (user pays this for atomic withdrawal)
-const WITHDRAWAL_FEE_SOL = 0.001; // 0.001 SOL
+// On-chain withdrawal request PDA expiry (seconds)
+const WITHDRAWAL_EXPIRY_SECONDS = 3600; // 1 hour
 
 @Injectable()
 export class WithdrawalsService {
@@ -98,17 +86,17 @@ export class WithdrawalsService {
       taxAmount,
       netAmount,
       usdtAmount: netAmount, // 1:1 for USDT
-      feeSol: WITHDRAWAL_FEE_SOL,
+      feeSol: 0, // User pays only Solana network fee for claim tx
     };
   }
 
   /**
-   * Prepare atomic withdrawal transaction for wallet_connect method.
-   * Creates a transaction with:
-   * 1. User → Hot Wallet: fee in SOL
-   * 2. Hot Wallet → User: USDT payout
+   * Prepare atomic withdrawal via on-chain claim.
+   * 1. Deducts balance from user
+   * 2. Creates on-chain WithdrawalRequest PDA (authority pays rent ~0.001 SOL)
+   * 3. Returns claim info for frontend to build claim_withdrawal tx
    *
-   * Returns partially signed transaction (signed by hot wallet) for user to sign.
+   * User then signs claim_withdrawal with their wallet → USDT from vault → user ATA.
    */
   async prepareAtomicWithdrawal(
     userId: string,
@@ -116,51 +104,29 @@ export class WithdrawalsService {
     userWalletAddress: string,
   ): Promise<PreparedAtomicWithdrawalResponse> {
     // Validate user wallet address
-    let userPubkey: PublicKey;
     try {
-      userPubkey = new PublicKey(userWalletAddress);
+      new PublicKey(userWalletAddress);
     } catch {
       throw new BadRequestException('Invalid wallet address');
+    }
+
+    // Treasury must be enabled for on-chain withdrawal
+    if (!this.treasury.isEnabled()) {
+      throw new BadRequestException('Withdrawal service not configured');
     }
 
     // Get preview for tax calculation
     const preview = await this.previewWithdrawal(userId, amount);
 
-    // Check payout wallet (separate from hot wallet for security)
-    const payoutWallet = this.solanaRpc.getPayoutWalletKeypair();
-    if (!payoutWallet) {
-      throw new BadRequestException('Withdrawal service not configured');
-    }
-
-    // Check payout wallet USDT balance
-    const usdtMint =
-      this.config.get<string>('USDT_MINT') || SOLANA_TOKENS.USDT.mint;
-    const payoutWalletUsdtBalance = await this.solanaRpc.getTokenBalance(
-      payoutWallet.publicKey,
-      usdtMint,
-    );
-    const requiredUsdtRaw = Math.floor(
-      preview.usdtAmount * Math.pow(10, SOLANA_TOKENS.USDT.decimals),
-    );
-
-    if (payoutWalletUsdtBalance < requiredUsdtRaw) {
-      throw new BadRequestException('Withdrawal temporarily unavailable');
-    }
-
-    // Create withdrawal record (pending)
+    // Create withdrawal record (pending) and deduct balance
     const withdrawal = await this.prisma.$transaction(async (tx) => {
-      // Deduct from user balance
       await tx.user.update({
         where: { id: userId },
-        data: {
-          fortuneBalance: { decrement: amount },
-        },
+        data: { fortuneBalance: { decrement: amount } },
       });
 
-      // Update fund trackers
       await this.fundSource.recordWithdrawal(userId, amount, tx);
 
-      // Create withdrawal record
       return tx.withdrawal.create({
         data: {
           userId,
@@ -175,7 +141,6 @@ export class WithdrawalsService {
           taxRate: preview.taxRate,
           netAmount: preview.netAmount,
           usdtAmount: preview.usdtAmount,
-          feeSolAmount: WITHDRAWAL_FEE_SOL,
           status: 'pending',
         },
       });
@@ -198,95 +163,53 @@ export class WithdrawalsService {
       },
     });
 
-    // Release USDT from vault to payout wallet (graceful — skip if disabled/fails)
-    await this.tryVaultPayout(preview.usdtAmount);
-
-    // Build transaction
-    const connection = this.solanaRpc.getConnection();
-    const transaction = new Transaction();
-
-    // Get recent blockhash
-    const { blockhash, lastValidBlockHeight } =
-      await connection.getLatestBlockhash('confirmed');
-    transaction.recentBlockhash = blockhash;
-    transaction.lastValidBlockHeight = lastValidBlockHeight;
-
-    // Instruction 1: User pays fee to payout wallet
-    const feeInLamports = Math.floor(WITHDRAWAL_FEE_SOL * LAMPORTS_PER_SOL);
-    transaction.add(
-      SystemProgram.transfer({
-        fromPubkey: userPubkey,
-        toPubkey: payoutWallet.publicKey,
-        lamports: feeInLamports,
-      }),
-    );
-
-    // Instruction 2: Payout wallet sends USDT to user
-    const usdtMintPubkey = new PublicKey(usdtMint);
-    const payoutWalletAta = await getAssociatedTokenAddress(
-      usdtMintPubkey,
-      payoutWallet.publicKey,
-    );
-    const userAta = await getAssociatedTokenAddress(usdtMintPubkey, userPubkey);
-
-    // Check if user has USDT ATA, if not create it
+    // Create on-chain WithdrawalRequest PDA
     try {
-      await getAccount(connection, userAta);
-    } catch {
-      // ATA doesn't exist, add instruction to create it
-      transaction.add(
-        createAssociatedTokenAccountInstruction(
-          payoutWallet.publicKey, // payer (payout wallet pays for ATA creation)
-          userAta,
-          userPubkey,
-          usdtMintPubkey,
-          TOKEN_PROGRAM_ID,
-          ASSOCIATED_TOKEN_PROGRAM_ID,
-        ),
+      await this.treasury.createWithdrawalRequest(
+        userWalletAddress,
+        preview.usdtAmount,
+        WITHDRAWAL_EXPIRY_SECONDS,
       );
+    } catch (error) {
+      // On-chain PDA creation failed → rollback
+      this.logger.error(
+        'On-chain withdrawal request failed, rolling back:',
+        error,
+      );
+      await this.rollbackWithdrawal(withdrawal);
+      await this.prisma.withdrawal.update({
+        where: { id: withdrawal.id },
+        data: {
+          status: 'failed',
+          errorMessage: 'On-chain request creation failed',
+        },
+      });
+      throw new BadRequestException('Failed to create withdrawal request');
     }
 
-    // USDT transfer instruction
-    const usdtAmountRaw = Math.floor(
-      preview.usdtAmount * Math.pow(10, SOLANA_TOKENS.USDT.decimals),
-    );
-    transaction.add(
-      createTransferInstruction(
-        payoutWalletAta,
-        userAta,
-        payoutWallet.publicKey,
-        usdtAmountRaw,
-        [],
-        TOKEN_PROGRAM_ID,
-      ),
-    );
+    // Get claim info for frontend
+    const claimInfo = this.treasury.getClaimInfo();
+    const request = await this.treasury.getWithdrawalRequest(userWalletAddress);
 
-    // Set fee payer to user (they pay the network fee + our fee)
-    transaction.feePayer = userPubkey;
-
-    // Partially sign with payout wallet
-    transaction.partialSign(payoutWallet);
-
-    // Serialize and return
-    const serializedTransaction = transaction
-      .serialize({
-        requireAllSignatures: false,
-        verifySignatures: false,
-      })
-      .toString('base64');
+    const expiresAt = request
+      ? request.expiresAt
+      : new Date(Date.now() + WITHDRAWAL_EXPIRY_SECONDS * 1000).toISOString();
 
     this.logger.log(
-      `Prepared atomic withdrawal ${withdrawal.id} for user ${userId}: $${amount} → $${preview.netAmount} USDT`,
+      `Prepared on-chain withdrawal ${withdrawal.id} for user ${userId}: $${amount} → $${preview.netAmount} USDT`,
     );
 
     return {
       withdrawalId: withdrawal.id,
-      serializedTransaction,
+      claimInfo: {
+        ...claimInfo,
+        withdrawalRequestPda: request?.pdaAddress || '',
+      },
       requestedAmount: amount,
       netAmount: preview.netAmount,
       usdtAmount: preview.usdtAmount,
       taxAmount: preview.taxAmount,
-      feeSol: WITHDRAWAL_FEE_SOL,
+      expiresAt,
       recipientAddress: userWalletAddress,
     };
   }
@@ -368,7 +291,8 @@ export class WithdrawalsService {
   }
 
   /**
-   * Cancel pending atomic withdrawal (if user didn't sign).
+   * Cancel pending atomic withdrawal.
+   * For wallet_connect: only allowed after on-chain PDA expires (prevents double-spend).
    */
   async cancelAtomicWithdrawal(
     userId: string,
@@ -390,29 +314,50 @@ export class WithdrawalsService {
       throw new BadRequestException('Withdrawal already processed');
     }
 
-    // Rollback and cancel
+    // For wallet_connect: must cancel on-chain PDA first (requires expiry)
+    if (withdrawal.method === 'wallet_connect' && this.treasury.isEnabled()) {
+      const request = await this.treasury.getWithdrawalRequest(
+        withdrawal.walletAddress,
+      );
+
+      if (request) {
+        const expiresAt = new Date(request.expiresAt).getTime();
+        if (Date.now() < expiresAt) {
+          throw new BadRequestException(
+            `Cannot cancel: on-chain claim is active until ${request.expiresAt}. Claim or wait for auto-expiry.`,
+          );
+        }
+
+        // PDA expired — cancel on-chain (returns rent to authority)
+        try {
+          await this.treasury.cancelWithdrawalRequest(withdrawal.walletAddress);
+        } catch (error) {
+          this.logger.error(
+            `On-chain cancel failed for ${withdrawal.walletAddress}:`,
+            error,
+          );
+          throw new BadRequestException(
+            'Failed to cancel on-chain withdrawal request',
+          );
+        }
+      }
+      // PDA doesn't exist — already cancelled by cron or never created
+    }
+
+    // Rollback DB balance
     await this.rollbackWithdrawal(withdrawal);
 
     const updated = await this.prisma.withdrawal.update({
       where: { id: withdrawalId },
-      data: {
-        status: 'cancelled',
-      },
+      data: { status: 'cancelled' },
     });
 
-    // Update transaction record
     await this.prisma.transaction.updateMany({
-      where: {
-        userId,
-        type: 'withdrawal',
-        status: 'pending',
-      },
-      data: {
-        status: 'cancelled',
-      },
+      where: { userId, type: 'withdrawal', status: 'pending' },
+      data: { status: 'cancelled' },
     });
 
-    this.logger.log(`Atomic withdrawal ${withdrawalId} cancelled by user`);
+    this.logger.log(`Withdrawal ${withdrawalId} cancelled`);
 
     return this.mapWithdrawalToResponse(updated);
   }
@@ -612,6 +557,90 @@ export class WithdrawalsService {
 
     return this.mapWithdrawalToResponse(withdrawal);
   }
+
+  // ─── Cleanup Cron ────────────────────────────────────────
+
+  /**
+   * Every 5 min: find expired wallet_connect withdrawals,
+   * cancel on-chain PDA, rollback user balance.
+   */
+  @Cron('0 */5 * * * *')
+  async cleanupExpiredWithdrawals(): Promise<void> {
+    if (!this.treasury.isEnabled()) return;
+
+    const expiryCutoff = new Date(
+      Date.now() - WITHDRAWAL_EXPIRY_SECONDS * 1000,
+    );
+
+    const expired = await this.prisma.withdrawal.findMany({
+      where: {
+        method: 'wallet_connect',
+        status: 'pending',
+        createdAt: { lt: expiryCutoff },
+      },
+    });
+
+    if (expired.length === 0) return;
+
+    this.logger.log(
+      `Cleanup cron: found ${expired.length} expired withdrawal(s)`,
+    );
+
+    for (const withdrawal of expired) {
+      try {
+        // Try to cancel on-chain PDA if it still exists
+        const request = await this.treasury.getWithdrawalRequest(
+          withdrawal.walletAddress,
+        );
+
+        if (request) {
+          try {
+            await this.treasury.cancelWithdrawalRequest(
+              withdrawal.walletAddress,
+            );
+            this.logger.log(
+              `Cancelled on-chain PDA for withdrawal ${withdrawal.id}`,
+            );
+          } catch (error) {
+            this.logger.error(
+              `Failed to cancel PDA for ${withdrawal.id}:`,
+              error,
+            );
+            continue; // Retry next cycle
+          }
+        }
+
+        // Rollback user balance
+        await this.rollbackWithdrawal(withdrawal);
+
+        await this.prisma.withdrawal.update({
+          where: { id: withdrawal.id },
+          data: {
+            status: 'cancelled',
+            errorMessage: 'Withdrawal request expired (auto-cancelled)',
+          },
+        });
+
+        await this.prisma.transaction.updateMany({
+          where: {
+            userId: withdrawal.userId,
+            type: 'withdrawal',
+            status: 'pending',
+          },
+          data: { status: 'cancelled' },
+        });
+
+        this.logger.log(`Expired and rolled back withdrawal ${withdrawal.id}`);
+      } catch (error) {
+        this.logger.error(
+          `Cleanup failed for withdrawal ${withdrawal.id}:`,
+          error,
+        );
+      }
+    }
+  }
+
+  // ─── Helpers ────────────────────────────────────────────
 
   /**
    * Rollback withdrawal - return funds to user.

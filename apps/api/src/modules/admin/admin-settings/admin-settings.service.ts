@@ -96,8 +96,8 @@ export class AdminSettingsService {
     if (dto.coinBoxCapacityHours !== undefined) {
       updateData.coinBoxCapacityHours = dto.coinBoxCapacityHours;
     }
-    if (dto.collectorHireCost !== undefined) {
-      updateData.collectorHireCost = dto.collectorHireCost;
+    if (dto.collectorHirePercent !== undefined) {
+      updateData.collectorHirePercent = dto.collectorHirePercent;
     }
     if (dto.collectorSalaryPercent !== undefined) {
       updateData.collectorSalaryPercent = dto.collectorSalaryPercent;
@@ -170,7 +170,7 @@ export class AdminSettingsService {
     gambleLoseMultiplier: Decimal;
     gambleLevels: unknown;
     coinBoxCapacityHours: number;
-    collectorHireCost: Decimal;
+    collectorHirePercent: Decimal;
     collectorSalaryPercent: Decimal;
     createdAt: Date;
     updatedAt: Date;
@@ -194,7 +194,7 @@ export class AdminSettingsService {
       gambleLoseMultiplier: Number(settings.gambleLoseMultiplier),
       gambleLevels: settings.gambleLevels as GambleLevel[],
       coinBoxCapacityHours: settings.coinBoxCapacityHours,
-      collectorHireCost: Number(settings.collectorHireCost),
+      collectorHirePercent: Number(settings.collectorHirePercent),
       collectorSalaryPercent: Number(settings.collectorSalaryPercent),
       createdAt: settings.createdAt.toISOString(),
       updatedAt: settings.updatedAt.toISOString(),

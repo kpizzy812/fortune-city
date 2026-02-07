@@ -2,6 +2,28 @@ use anchor_lang::prelude::*;
 
 #[account]
 #[derive(InitSpace)]
+pub struct WithdrawalRequest {
+    /// Which vault this withdrawal is from
+    pub vault: Pubkey,
+
+    /// User who can claim this withdrawal
+    pub user: Pubkey,
+
+    /// Amount in raw USDT units (6 decimals)
+    pub amount: u64,
+
+    /// Unix timestamp when request was created
+    pub created_at: i64,
+
+    /// Unix timestamp after which claim is no longer possible
+    pub expires_at: i64,
+
+    /// PDA bump seed
+    pub bump: u8,
+}
+
+#[account]
+#[derive(InitSpace)]
 pub struct TreasuryVault {
     /// Authority (backend wallet) — only this key can call deposit/payout
     pub authority: Pubkey,

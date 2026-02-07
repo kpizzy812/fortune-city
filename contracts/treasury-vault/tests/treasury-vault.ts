@@ -9,7 +9,12 @@ import {
   getAccount,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { Keypair, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import {
+  Keypair,
+  PublicKey,
+  LAMPORTS_PER_SOL,
+  SystemProgram,
+} from "@solana/web3.js";
 import { assert, expect } from "chai";
 
 describe("treasury-vault", () => {
@@ -455,6 +460,352 @@ describe("treasury-vault", () => {
         // PDA seeds не совпадают — vault для attacker не существует
         assert.ok(err);
       }
+    });
+  });
+
+  // ─── Withdrawal Requests ──────────────────────────────────
+
+  describe("withdrawal requests", () => {
+    let userA: Keypair;
+    let userB: Keypair;
+    let withdrawalPdaA: PublicKey;
+    let withdrawalPdaB: PublicKey;
+
+    before(async () => {
+      userA = Keypair.generate();
+      userB = Keypair.generate();
+
+      // Airdrop SOL to users (for ATA creation and tx fees)
+      const sigA = await provider.connection.requestAirdrop(
+        userA.publicKey,
+        2 * LAMPORTS_PER_SOL
+      );
+      await provider.connection.confirmTransaction(sigA);
+
+      const sigB = await provider.connection.requestAirdrop(
+        userB.publicKey,
+        2 * LAMPORTS_PER_SOL
+      );
+      await provider.connection.confirmTransaction(sigB);
+
+      // Derive withdrawal PDAs
+      [withdrawalPdaA] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("withdrawal"),
+          vaultPda.toBuffer(),
+          userA.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+      [withdrawalPdaB] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("withdrawal"),
+          vaultPda.toBuffer(),
+          userB.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+    });
+
+    // ─── create_withdrawal ───────────────────────────────────
+
+    it("creates withdrawal request for userA", async () => {
+      const amount = new BN(20 * ONE_USDT);
+      const expiresIn = new BN(3600); // 1 hour
+
+      const tx = await program.methods
+        .createWithdrawal(amount, expiresIn)
+        .accounts({
+          authority: authority.publicKey,
+          usdtMint,
+          vaultTokenAccount,
+          user: userA.publicKey,
+        })
+        .rpc();
+
+      console.log("  Create withdrawal tx:", tx);
+
+      // Verify PDA state
+      const request =
+        await program.account.withdrawalRequest.fetch(withdrawalPdaA);
+
+      assert.ok(request.vault.equals(vaultPda));
+      assert.ok(request.user.equals(userA.publicKey));
+      assert.equal(request.amount.toNumber(), 20 * ONE_USDT);
+      assert.ok(request.createdAt.toNumber() > 0);
+      assert.ok(request.expiresAt.toNumber() > request.createdAt.toNumber());
+    });
+
+    it("rejects duplicate withdrawal request for same user", async () => {
+      try {
+        await program.methods
+          .createWithdrawal(new BN(10 * ONE_USDT), new BN(3600))
+          .accounts({
+            authority: authority.publicKey,
+            usdtMint,
+            vaultTokenAccount,
+            user: userA.publicKey,
+          })
+          .rpc();
+        assert.fail("Should have failed");
+      } catch (err) {
+        // PDA already exists — init fails
+        assert.ok(err);
+      }
+    });
+
+    // ─── claim_withdrawal ────────────────────────────────────
+
+    it("rejects claim by unauthorized user", async () => {
+      try {
+        // userB tries to claim, but PDA [withdrawal, vault, userB] doesn't exist
+        await program.methods
+          .claimWithdrawal()
+          .accounts({
+            user: userB.publicKey,
+            authority: authority.publicKey,
+            usdtMint,
+            vaultTokenAccount,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .signers([userB])
+          .rpc();
+        assert.fail("Should have failed");
+      } catch (err) {
+        // No withdrawal request exists for userB
+        assert.ok(err);
+      }
+    });
+
+    it("userA claims withdrawal successfully", async () => {
+      // Record vault state before claim
+      const vaultBefore = await program.account.treasuryVault.fetch(vaultPda);
+      const vaultBalanceBefore = (
+        await getAccount(
+          provider.connection,
+          vaultTokenAccount,
+          undefined,
+          TOKEN_PROGRAM_ID
+        )
+      ).amount;
+
+      const tx = await program.methods
+        .claimWithdrawal()
+        .accounts({
+          user: userA.publicKey,
+          authority: authority.publicKey,
+          usdtMint,
+          vaultTokenAccount,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .signers([userA])
+        .rpc();
+
+      console.log("  Claim withdrawal tx:", tx);
+
+      // Verify user received USDT
+      const userAta = await getAssociatedTokenAddress(
+        usdtMint,
+        userA.publicKey,
+        false,
+        TOKEN_PROGRAM_ID
+      );
+      const userAcc = await getAccount(
+        provider.connection,
+        userAta,
+        undefined,
+        TOKEN_PROGRAM_ID
+      );
+      assert.equal(Number(userAcc.amount), 20 * ONE_USDT);
+
+      // Verify vault balance decreased
+      const vaultBalanceAfter = (
+        await getAccount(
+          provider.connection,
+          vaultTokenAccount,
+          undefined,
+          TOKEN_PROGRAM_ID
+        )
+      ).amount;
+      assert.equal(
+        Number(vaultBalanceBefore) - Number(vaultBalanceAfter),
+        20 * ONE_USDT
+      );
+
+      // Verify vault stats updated
+      const vaultAfter = await program.account.treasuryVault.fetch(vaultPda);
+      assert.equal(
+        vaultAfter.totalPaidOut.toNumber(),
+        vaultBefore.totalPaidOut.toNumber() + 20 * ONE_USDT
+      );
+      assert.equal(vaultAfter.payoutCount, vaultBefore.payoutCount + 1);
+
+      // Verify PDA is closed
+      const pdaAccount = await provider.connection.getAccountInfo(
+        withdrawalPdaA
+      );
+      assert.isNull(pdaAccount, "Withdrawal PDA should be closed after claim");
+    });
+
+    // ─── Expiry tests ────────────────────────────────────────
+
+    it("creates short-lived withdrawal for userB (2s expiry)", async () => {
+      const amount = new BN(10 * ONE_USDT);
+      const expiresIn = new BN(2); // 2 seconds
+
+      await program.methods
+        .createWithdrawal(amount, expiresIn)
+        .accounts({
+          authority: authority.publicKey,
+          usdtMint,
+          vaultTokenAccount,
+          user: userB.publicKey,
+        })
+        .rpc();
+
+      const request =
+        await program.account.withdrawalRequest.fetch(withdrawalPdaB);
+      assert.equal(request.amount.toNumber(), 10 * ONE_USDT);
+    });
+
+    it("rejects cancel before expiry", async () => {
+      try {
+        await program.methods
+          .cancelWithdrawal()
+          .accounts({
+            authority: authority.publicKey,
+            user: userB.publicKey,
+          })
+          .rpc();
+        assert.fail("Should have failed");
+      } catch (_err) {
+        expect(_err).to.be.instanceOf(AnchorError);
+        const err = _err as AnchorError;
+        expect(err.error.errorCode.code).to.equal("WithdrawalNotExpired");
+      }
+    });
+
+    it("rejects claim after expiry", async () => {
+      // Wait for expiry (2s + buffer)
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      try {
+        await program.methods
+          .claimWithdrawal()
+          .accounts({
+            user: userB.publicKey,
+            authority: authority.publicKey,
+            usdtMint,
+            vaultTokenAccount,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .signers([userB])
+          .rpc();
+        assert.fail("Should have failed");
+      } catch (_err) {
+        expect(_err).to.be.instanceOf(AnchorError);
+        const err = _err as AnchorError;
+        expect(err.error.errorCode.code).to.equal("WithdrawalExpired");
+      }
+    });
+
+    it("cancels expired withdrawal request", async () => {
+      const tx = await program.methods
+        .cancelWithdrawal()
+        .accounts({
+          authority: authority.publicKey,
+          user: userB.publicKey,
+        })
+        .rpc();
+
+      console.log("  Cancel withdrawal tx:", tx);
+
+      // Verify PDA is closed
+      const pdaAccount = await provider.connection.getAccountInfo(
+        withdrawalPdaB
+      );
+      assert.isNull(
+        pdaAccount,
+        "Withdrawal PDA should be closed after cancel"
+      );
+    });
+
+    // ─── Pause interaction ───────────────────────────────────
+
+    it("rejects create_withdrawal when vault is paused", async () => {
+      // Pause vault
+      await program.methods
+        .setPaused(true)
+        .accounts({ authority: authority.publicKey })
+        .rpc();
+
+      try {
+        await program.methods
+          .createWithdrawal(new BN(5 * ONE_USDT), new BN(3600))
+          .accounts({
+            authority: authority.publicKey,
+            usdtMint,
+            vaultTokenAccount,
+            user: userA.publicKey,
+          })
+          .rpc();
+        assert.fail("Should have failed");
+      } catch (_err) {
+        expect(_err).to.be.instanceOf(AnchorError);
+        const err = _err as AnchorError;
+        expect(err.error.errorCode.code).to.equal("VaultPaused");
+      }
+
+      // Unpause for next test
+      await program.methods
+        .setPaused(false)
+        .accounts({ authority: authority.publicKey })
+        .rpc();
+    });
+
+    it("rejects claim when vault is paused", async () => {
+      // Create a new withdrawal request (vault is unpaused now)
+      await program.methods
+        .createWithdrawal(new BN(5 * ONE_USDT), new BN(3600))
+        .accounts({
+          authority: authority.publicKey,
+          usdtMint,
+          vaultTokenAccount,
+          user: userA.publicKey,
+        })
+        .rpc();
+
+      // Now pause vault
+      await program.methods
+        .setPaused(true)
+        .accounts({ authority: authority.publicKey })
+        .rpc();
+
+      try {
+        await program.methods
+          .claimWithdrawal()
+          .accounts({
+            user: userA.publicKey,
+            authority: authority.publicKey,
+            usdtMint,
+            vaultTokenAccount,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .signers([userA])
+          .rpc();
+        assert.fail("Should have failed");
+      } catch (_err) {
+        expect(_err).to.be.instanceOf(AnchorError);
+        const err = _err as AnchorError;
+        expect(err.error.errorCode.code).to.equal("VaultPaused");
+      }
+
+      // Unpause for cleanup
+      await program.methods
+        .setPaused(false)
+        .accounts({ authority: authority.publicKey })
+        .rpc();
     });
   });
 });

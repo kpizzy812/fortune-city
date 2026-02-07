@@ -4,9 +4,21 @@ import { ActivityItem } from './dto/activity.dto';
 
 // Seed names (masked format)
 const SEED_NAMES = [
-  'Al***ex', 'Vi***or', 'Ni***ai', 'An***ey', 'Se***ey',
-  'Di***ry', 'Ma***im', 'Pa***el', 'Ar***em', 'Iv***an',
-  'Da***la', 'Mi***el', 'Ol***eg', 'Ro***an', 'Ti***ey',
+  'Al***ex',
+  'Vi***or',
+  'Ni***ai',
+  'An***ey',
+  'Se***ey',
+  'Di***ry',
+  'Ma***im',
+  'Pa***el',
+  'Ar***em',
+  'Iv***an',
+  'Da***la',
+  'Mi***el',
+  'Ol***eg',
+  'Ro***an',
+  'Ti***ey',
 ];
 
 const MIN_SEED_ITEMS = 15;
@@ -33,7 +45,9 @@ export class ActivityService {
     for (const p of purchases) {
       items.push({
         type: 'machine_purchase',
-        username: this.maskUsername(p.user.username || p.user.firstName || 'Player'),
+        username: this.maskUsername(
+          p.user.username || p.user.firstName || 'Player',
+        ),
         amount: Math.abs(Number(p.amount)),
         tier: p.machine?.tier,
         createdAt: p.createdAt.toISOString(),
@@ -53,7 +67,9 @@ export class ActivityService {
     for (const w of withdrawals) {
       items.push({
         type: 'withdrawal',
-        username: this.maskUsername(w.user.username || w.user.firstName || 'Player'),
+        username: this.maskUsername(
+          w.user.username || w.user.firstName || 'Player',
+        ),
         amount: Number(w.usdtAmount),
         createdAt: w.createdAt.toISOString(),
       });

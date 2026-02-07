@@ -17,7 +17,16 @@ jest.mock('nanoid', () => ({
   nanoid: jest.fn().mockReturnValue('ABC12345'),
 }));
 
+// Mock jose (ESM module) — imported transitively via supabase-auth.service
+jest.mock('jose', () => ({
+  createRemoteJWKSet: jest.fn(),
+  jwtVerify: jest.fn(),
+}));
+
 import { validate, parse } from '@tma.js/init-data-node';
+import { SupabaseAuthService } from './supabase-auth.service';
+import { RefreshTokenService } from './refresh-token.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -30,17 +39,25 @@ describe('AuthService', () => {
   const mockUser = {
     id: 'user-123',
     telegramId: '12345678',
+    email: null,
+    web3Address: null,
     username: 'testuser',
     firstName: 'Test',
     lastName: 'User',
+    avatarUrl: null,
     fortuneBalance: { toString: () => '100.00' },
     referralBalance: { toString: () => '0.00' },
     usdtBalance: { toString: () => '50.00' },
     maxTierReached: 1,
     maxTierUnlocked: 1,
     currentTaxRate: { toString: () => '0.50' },
+    taxDiscount: { toString: () => '0' },
     referralCode: 'abc123',
     referredById: null,
+    fame: 0,
+    totalFameEarned: 0,
+    loginStreak: 0,
+    lastLoginDate: null,
     freeSpinsRemaining: 0,
     lastSpinAt: null,
     createdAt: new Date(),
@@ -84,6 +101,27 @@ describe('AuthService', () => {
               .mockResolvedValue({ user: mockUser, isNewUser: false }),
             findById: jest.fn().mockResolvedValue(mockUser),
             findByTelegramId: jest.fn().mockResolvedValue(mockUser),
+          },
+        },
+        {
+          provide: SupabaseAuthService,
+          useValue: {
+            verifyToken: jest.fn(),
+          },
+        },
+        {
+          provide: RefreshTokenService,
+          useValue: {
+            createToken: jest.fn().mockResolvedValue('mock-refresh-token'),
+            rotateToken: jest.fn(),
+            revokeToken: jest.fn(),
+            revokeAllUserTokens: jest.fn(),
+          },
+        },
+        {
+          provide: PrismaService,
+          useValue: {
+            user: { findUnique: jest.fn() },
           },
         },
       ],
