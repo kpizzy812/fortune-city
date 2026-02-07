@@ -838,6 +838,63 @@ Fame (⚡) — расходуемый ресурс прогрессии. Зар�
 
 ---
 
+## Phase 16: Treasury Vault — Withdrawal PDA (COMPLETED)
+
+**Date:** 2026-02-08
+**Plan:** [stateful-chasing-dragonfly.md](.claude/plans/stateful-chasing-dragonfly.md)
+
+### Концепция
+Прямой вывод средств через кошелёк пользователя: юзер подключает Solana-кошелёк и забирает USDT напрямую из vault, подписав транзакцию. Прозрачнее и безопаснее — средства идут из on-chain vault прямо в ATA юзера.
+
+### Flow
+```
+1. Backend (authority) → create_withdrawal(user, amount, expiry) → on-chain PDA создан
+2. User (wallet connect) → claim_withdrawal() → USDT из vault → user ATA, PDA закрыт
+3. Если юзер не claim-ит → authority → cancel_withdrawal() → PDA закрыт (после expiry)
+```
+
+### 16.1 Smart Contract (COMPLETED)
+- [x] WithdrawalRequest state (PDA seeds: `[b"withdrawal", vault, user]`)
+- [x] Новые ошибки: WithdrawalExpired, WithdrawalNotExpired
+- [x] Новые events: WithdrawalCreatedEvent, WithdrawalClaimedEvent, WithdrawalCancelledEvent
+- [x] Инструкция `create_withdrawal` — authority создаёт PDA с user, amount, expiry
+- [x] Инструкция `claim_withdrawal` — user подписывает, USDT → user ATA, PDA закрыт
+- [x] Инструкция `cancel_withdrawal` — authority отменяет только истекшие PDA
+- [x] Обновлены lib.rs и mod.rs
+- [x] Anchor build: 287 KB
+
+### 16.2 Tests (COMPLETED)
+- [x] 10 новых тест-кейсов для withdrawal PDA
+- [x] **26/26 тестов пройдено** (localnet)
+
+### 16.3 Backend Integration (COMPLETED)
+- [x] IDL обновлён (`apps/api/src/modules/treasury/idl/treasury_vault.ts`)
+- [x] TreasuryService: createWithdrawalRequest, cancelWithdrawalRequest, getWithdrawalRequest, getClaimInfo
+- [x] TreasuryController: GET /treasury/claim-info, GET /treasury/withdrawal-request/:userPubkey
+- [x] Treasury DTOs: ClaimInfoResponseDto, WithdrawalRequestResponseDto
+- [x] WithdrawalsService: переписан prepareAtomicWithdrawal (вместо partially-signed tx → on-chain PDA)
+- [x] WithdrawalsService: cancelAtomicWithdrawal защищён от double-spend (проверка expiry PDA)
+- [x] WithdrawalsService: cleanupExpiredWithdrawals cron (каждые 5 мин)
+- [x] Withdrawal DTOs: обновлён PreparedAtomicWithdrawalResponse (claimInfo + expiresAt)
+- [x] `pnpm --filter api build` — компиляция без ошибок
+
+### 16.4 Security Audit (COMPLETED)
+- [x] SECURITY_AUDIT.md — переписан в публичный формат (прозрачность, anti-scam, user sovereignty)
+- [x] SECURITY_AUDIT_RU.md — русская версия
+
+### Защита от double-spend
+- Cancel только после expiry PDA (юзер не может cancel + claim одновременно)
+- Cleanup cron для истекших PDA с rollback баланса
+- `close = authority` на PDA ставит CLOSED_ACCOUNT_DISCRIMINATOR (нет revival)
+
+### 16.5 Frontend (NOT STARTED)
+- [ ] Интеграция claim_withdrawal в withdrawal flow
+- [ ] Юзер подписывает claim транзакцию через WalletConnect
+
+**Build Status:** API собирается успешно
+
+---
+
 ## Notes
 
 - Используем существующие паттерны из auth, machines, economy модулей
