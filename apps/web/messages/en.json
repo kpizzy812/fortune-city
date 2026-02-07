@@ -460,6 +460,11 @@
       "jackpotWon": "{winner} just hit the JACKPOT!",
       "jackpotAmount": "Won: ${amount}",
       "spinNow": "Spin Now!"
+    },
+    "recentWins": {
+      "title": "Recent Wins",
+      "noWinsYet": "No wins yet",
+      "jackpot": "JACKPOT"
     }
   },
   "activity": {

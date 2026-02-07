@@ -1158,6 +1158,13 @@ class ApiClient {
     return this.request<WheelJackpotResponse>('/wheel/jackpot');
   }
 
+  /**
+   * Get recent wins for wheel (public, for social proof)
+   */
+  async getWheelRecentWins(limit: number = 20): Promise<RecentWinItem[]> {
+    return this.request<RecentWinItem[]>(`/wheel/recent-wins?limit=${limit}`);
+  }
+
   // ============================================
   // Activity Feed endpoints
   // ============================================

@@ -460,6 +460,11 @@
       "jackpotWon": "{winner} сорвал ДЖЕКПОТ!",
       "jackpotAmount": "Выигрыш: ${amount}",
       "spinNow": "Крутить!"
+    },
+    "recentWins": {
+      "title": "Последние выигрыши",
+      "noWinsYet": "Пока нет выигрышей",
+      "jackpot": "ДЖЕКПОТ"
     }
   },
   "activity": {

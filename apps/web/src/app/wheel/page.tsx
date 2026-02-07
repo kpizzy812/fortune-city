@@ -10,6 +10,7 @@ import {
   SpinControls,
   SpinResultModal,
   SpinHistory,
+  RecentWins,
 } from '@/components/wheel';
 import { BottomNavigation } from '@/components/layout/BottomNavigation';
 import type { WheelMultiplier, WheelSpinResponse } from '@/lib/api';
@@ -165,6 +166,9 @@ export default function WheelPage() {
           isSpinning={isSpinning || isWheelSpinning}
           onSpin={handleSpin}
         />
+
+        {/* Recent global wins (social proof) */}
+        <RecentWins />
 
         {/* Spin history */}
         <SpinHistory items={history} isLoading={isLoadingHistory} />
