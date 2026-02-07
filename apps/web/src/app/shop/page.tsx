@@ -301,6 +301,11 @@ export default function ShopPage() {
           onBuyTier={handleBuyTier}
           onSellMachine={handleSellMachine}
           onTopUpAndBuy={handleTopUpAndBuy}
+          onTierUnlocked={() => {
+            if (token && user) {
+              checkAllAffordability(token, user.maxTierReached);
+            }
+          }}
           isPurchasing={isPurchasing}
           isLoading={isLoadingTiers}
         />

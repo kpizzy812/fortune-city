@@ -11,10 +11,11 @@ import { FAME_UNLOCK_COST_BY_TIER } from '@fortune-city/shared';
 interface UnlockTierModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onUnlocked?: () => void;
   tier: number;
 }
 
-export function UnlockTierModal({ isOpen, onClose, tier }: UnlockTierModalProps) {
+export function UnlockTierModal({ isOpen, onClose, onUnlocked, tier }: UnlockTierModalProps) {
   const t = useTranslations('fame');
   const { token, user, refreshUser } = useAuthStore();
   const { unlockTier, isUnlocking, error, clearError } = useFameStore();
@@ -28,7 +29,8 @@ export function UnlockTierModal({ isOpen, onClose, tier }: UnlockTierModalProps)
     if (!token || !canUnlock) return;
     try {
       await unlockTier(token, tier);
-      refreshUser();
+      await refreshUser();
+      onUnlocked?.();
       onClose();
     } catch {
       // Error handled by store

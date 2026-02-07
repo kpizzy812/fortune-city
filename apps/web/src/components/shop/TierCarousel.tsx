@@ -19,6 +19,7 @@ interface TierCarouselProps {
   onBuyTier: (tier: number) => void;
   onSellMachine: (machine: Machine) => void;
   onTopUpAndBuy: (tier: TierInfo, shortfall: number) => void;
+  onTierUnlocked?: () => void;
   isPurchasing: boolean;
   isLoading: boolean;
 }
@@ -259,6 +260,7 @@ export function TierCarousel({
   onBuyTier,
   onSellMachine,
   onTopUpAndBuy,
+  onTierUnlocked,
   isPurchasing,
   isLoading,
 }: TierCarouselProps) {
@@ -494,6 +496,7 @@ export function TierCarousel({
         <UnlockTierModal
           isOpen={true}
           onClose={() => setUnlockTierTarget(null)}
+          onUnlocked={onTierUnlocked}
           tier={unlockTierTarget}
         />
       )}
