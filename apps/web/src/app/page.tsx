@@ -6,6 +6,9 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useTelegramWebApp } from '@/providers/TelegramProvider';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { HowItWorks } from '@/components/landing/HowItWorks';
+import { TrustSection } from '@/components/landing/TrustSection';
+import { EarningCalculator } from '@/components/landing/EarningCalculator';
+import { FAQSection } from '@/components/landing/FAQSection';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { MusicToggleButton } from '@/components/layout/MusicToggleButton';
@@ -45,16 +48,31 @@ export default function LandingPage() {
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="h-screen overflow-y-auto snap-y snap-mandatory">
       {/* Top controls */}
       <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
         <MusicToggleButton />
         <LanguageSwitcher />
       </div>
 
-      <HeroSection />
-      <HowItWorks />
-      <LandingFooter />
+      <div className="snap-start">
+        <HeroSection />
+      </div>
+      <div className="snap-start min-h-screen flex items-center">
+        <HowItWorks />
+      </div>
+      <div className="snap-start min-h-screen flex items-center">
+        <TrustSection />
+      </div>
+      <div className="snap-start min-h-screen flex items-center">
+        <EarningCalculator />
+      </div>
+      <div className="snap-start min-h-screen flex items-center">
+        <FAQSection />
+      </div>
+      <div className="snap-start min-h-screen flex items-center">
+        <LandingFooter />
+      </div>
     </main>
   );
 }

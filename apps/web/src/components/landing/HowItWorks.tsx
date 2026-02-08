@@ -36,16 +36,15 @@ export function HowItWorks() {
           {STEPS.map((step, i) => (
             <ScrollFadeIn key={step.titleKey} delay={i * 0.15}>
               <div className="relative group">
-                {/* Step number */}
-                <div
-                  className="absolute -top-3 -left-1 text-6xl font-bold opacity-10"
-                  style={{ color: step.color }}
-                >
-                  {i + 1}
-                </div>
-
                 {/* Card */}
                 <div className="relative bg-[#1a0a2e]/60 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all duration-300 h-full">
+                  {/* Step number — above card so backdrop-blur doesn't smear it */}
+                  <div
+                    className="absolute -top-5 -left-2 text-6xl font-bold opacity-15 pointer-events-none z-10"
+                    style={{ color: step.color }}
+                  >
+                    {i + 1}
+                  </div>
                   {/* Icon */}
                   <div
                     className="w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-shadow duration-300 group-hover:shadow-[0_0_20px_var(--glow)]"
