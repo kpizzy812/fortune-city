@@ -591,9 +591,9 @@
     "calcGrossProfit": "Gross Profit",
     "calcDailyIncome": "Daily Income",
     "calcDailyReturn": "Daily Return",
-    "calcCityFee": "City Fee (withdrawal)",
+    "calcCityFee": "City Fee (profit only)",
     "calcNetProfit": "Net Profit (after fee)",
-    "calcFeeNote": "City fee decreases as you unlock higher tiers. Tier 10 pays only 5%!",
+    "calcFeeNote": "Fee applies only to profit — your deposit is always returned in full. Fee drops as you level up: Tier 10 pays only 5%!",
     "calcCta": "Start Earning Now",
 
     "faqTitle": "FAQ",
