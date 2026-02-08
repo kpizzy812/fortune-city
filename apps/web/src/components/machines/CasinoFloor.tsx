@@ -39,7 +39,6 @@ interface CasinoFloorProps {
   onCollect: (machineId: string) => void;
   onRiskyCollect?: (machineId: string) => void;
   onAutoCollectClick?: (machineId: string) => void;
-  onOverclockClick?: (machineId: string) => void;
   onMachineClick?: (machineId: string) => void;
   isCollecting: Record<string, boolean>;
   isLoading?: boolean;
@@ -51,7 +50,6 @@ export function CasinoFloor({
   onCollect,
   onRiskyCollect,
   onAutoCollectClick,
-  onOverclockClick,
   onMachineClick,
   isCollecting,
   isLoading = false,
@@ -198,21 +196,6 @@ export function CasinoFloor({
                 <span className="absolute top-0 right-0 p-0.5 bg-[#00ff88]/30 rounded">
                   <Zap className="w-2.5 h-2.5 text-[#00ff88]" />
                 </span>
-              )}
-              {/* Overclock: active badge or buy button (bottom-left) */}
-              {!isExpired && (
-                Number(machine.overclockMultiplier) > 0 ? (
-                  <span className="absolute bottom-0 left-0 px-1.5 py-0.5 bg-[#ff2d95]/60 rounded text-[8px] font-bold text-white shadow-[0_0_6px_rgba(255,45,149,0.4)]">
-                    x{Number(machine.overclockMultiplier)}
-                  </span>
-                ) : onOverclockClick ? (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onOverclockClick(machine.id); }}
-                    className="absolute bottom-0 left-0 px-1.5 py-0.5 bg-[#ff2d95]/40 hover:bg-[#ff2d95]/70 rounded text-[8px] font-bold text-white/70 hover:text-white transition-colors"
-                  >
-                    ⚡
-                  </button>
-                ) : null
               )}
               {/* Auto-collect: hire button (bottom-right) */}
               {!isExpired && !machine.autoCollectEnabled && onAutoCollectClick && (

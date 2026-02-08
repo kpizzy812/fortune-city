@@ -9,7 +9,7 @@ import type { TierInfo, CanAffordResponse, Machine } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { UnlockTierModal } from '@/components/fame/UnlockTierModal';
-import { FAME_UNLOCK_COST_BY_TIER } from '@fortune-city/shared';
+import { FAME_AUTO_UNLOCK_THRESHOLDS, calculateTierUnlockFee } from '@fortune-city/shared';
 
 interface TierCarouselProps {
   tiers: TierInfo[];
@@ -165,7 +165,7 @@ function TierCard({
               <span className="flex items-center gap-1 text-[#facc15] text-xs font-medium">
                 <Lock className="w-3 h-3" />
                 <Zap className="w-3 h-3" />
-                {(FAME_UNLOCK_COST_BY_TIER[tier.tier] ?? 0).toLocaleString()}
+                ${calculateTierUnlockFee(tier.price).toLocaleString()}
               </span>
             ) : !hasActiveMachine && isUpgrade ? (
               <Tooltip content={t.reinvestNewTierTooltip} position="top" showIcon={false}>
@@ -217,7 +217,7 @@ function TierCard({
           <Button variant="ghost" size="sm" fullWidth onClick={onUnlock}>
             <span className="flex items-center gap-1">
               <Zap className="w-3.5 h-3.5 text-[#facc15]" />
-              {t.unlockCost({ cost: (FAME_UNLOCK_COST_BY_TIER[tier.tier] ?? 0).toLocaleString() })}
+              {t.unlockCost({ cost: '$' + calculateTierUnlockFee(tier.price).toLocaleString() })}
             </span>
           </Button>
         ) : hasActiveMachine && machine ? (

@@ -1,12 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Zap, Lock, Unlock } from 'lucide-react';
+import { Zap, Lock, Unlock, DollarSign } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/stores/auth.store';
-import { useFameStore } from '@/stores/fame.store';
-import { FAME_UNLOCK_COST_BY_TIER } from '@fortune-city/shared';
+import {
+  FAME_AUTO_UNLOCK_THRESHOLDS,
+  calculateTierUnlockFee,
+  MACHINE_TIERS,
+} from '@fortune-city/shared';
 
 interface UnlockTierModalProps {
   isOpen: boolean;
@@ -18,27 +22,36 @@ interface UnlockTierModalProps {
 export function UnlockTierModal({ isOpen, onClose, onUnlocked, tier }: UnlockTierModalProps) {
   const t = useTranslations('fame');
   const { token, user, refreshUser } = useAuthStore();
-  const { unlockTier, isUnlocking, error, clearError } = useFameStore();
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const cost = FAME_UNLOCK_COST_BY_TIER[tier] ?? 0;
-  const currentFame = user?.fame ?? 0;
-  const canUnlock = currentFame >= cost;
-  const progress = cost > 0 ? Math.min((currentFame / cost) * 100, 100) : 0;
+  const threshold = FAME_AUTO_UNLOCK_THRESHOLDS[tier] ?? Infinity;
+  const totalFameEarned = user?.totalFameEarned ?? 0;
+  const progress = threshold > 0 ? Math.min((totalFameEarned / threshold) * 100, 100) : 0;
+  const isAutoUnlocked = totalFameEarned >= threshold;
 
-  const handleUnlock = async () => {
-    if (!token || !canUnlock) return;
+  const tierConfig = MACHINE_TIERS.find((t) => t.tier === tier);
+  const unlockFee = tierConfig ? calculateTierUnlockFee(tierConfig.price) : 0;
+
+  const handlePurchaseUnlock = async () => {
+    if (!token) return;
+    setIsPurchasing(true);
+    setError(null);
     try {
-      await unlockTier(token, tier);
+      const { api } = await import('@/lib/api');
+      await api.purchaseTierUnlock(token, tier);
       await refreshUser();
       onUnlocked?.();
       onClose();
-    } catch {
-      // Error handled by store
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to purchase tier unlock');
+    } finally {
+      setIsPurchasing(false);
     }
   };
 
   const handleClose = () => {
-    clearError();
+    setError(null);
     onClose();
   };
 
@@ -49,44 +62,44 @@ export function UnlockTierModal({ isOpen, onClose, onUnlocked, tier }: UnlockTie
         <div className="flex justify-center">
           <div className={`
             w-20 h-20 rounded-2xl flex items-center justify-center
-            ${canUnlock
+            ${isAutoUnlocked
               ? 'bg-gradient-to-br from-[#facc15]/20 to-[#facc15]/5 border border-[#facc15]/30'
               : 'bg-gradient-to-br from-[#6b6b6b]/20 to-[#6b6b6b]/5 border border-[#6b6b6b]/30'}
           `}>
-            {canUnlock
+            {isAutoUnlocked
               ? <Unlock className="w-10 h-10 text-[#facc15]" />
               : <Lock className="w-10 h-10 text-[#6b6b6b]" />}
           </div>
         </div>
 
-        {/* Progress bar */}
+        {/* Auto-unlock progress */}
         <div>
           <div className="flex items-center justify-between text-sm mb-2">
             <span className="text-[#b0b0b0]">{t('progress')}</span>
             <span className="font-mono text-white">
-              <Zap className="w-3 h-3 text-[#facc15] inline" /> {currentFame.toLocaleString()} / {cost.toLocaleString()}
+              <Zap className="w-3 h-3 text-[#facc15] inline" /> {totalFameEarned.toLocaleString()} / {threshold.toLocaleString()}
             </span>
           </div>
           <div className="h-3 bg-[#1a0a2e] rounded-full overflow-hidden border border-white/5">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                canUnlock
+                isAutoUnlocked
                   ? 'bg-gradient-to-r from-[#facc15] to-[#ff8c00]'
                   : 'bg-gradient-to-r from-[#facc15]/60 to-[#ff8c00]/60'
               }`}
               style={{ width: `${progress}%` }}
             />
           </div>
-          {!canUnlock && (
+          {!isAutoUnlocked && (
             <p className="text-xs text-[#b0b0b0] mt-1.5">
-              {t('needMore', { amount: (cost - currentFame).toLocaleString() })}
+              {t('needMore', { amount: (threshold - totalFameEarned).toLocaleString() })}
             </p>
           )}
         </div>
 
         {/* Info */}
         <div className="bg-[#1a0a2e]/80 rounded-lg p-3 border border-white/5">
-          <p className="text-sm text-[#b0b0b0]">{t('unlockDescription')}</p>
+          <p className="text-sm text-[#b0b0b0]">{t('autoUnlockDescription')}</p>
         </div>
 
         {/* Error */}
@@ -96,23 +109,21 @@ export function UnlockTierModal({ isOpen, onClose, onUnlocked, tier }: UnlockTie
           </div>
         )}
 
-        {/* Action */}
-        <Button
-          variant="gold"
-          fullWidth
-          onClick={handleUnlock}
-          loading={isUnlocking}
-          disabled={!canUnlock || isUnlocking}
-        >
-          {canUnlock ? (
+        {/* Instant unlock for $ */}
+        {!isAutoUnlocked && unlockFee > 0 && (
+          <Button
+            variant="gold"
+            fullWidth
+            onClick={handlePurchaseUnlock}
+            loading={isPurchasing}
+            disabled={isPurchasing}
+          >
             <span className="flex items-center gap-2">
-              <Unlock className="w-4 h-4" />
-              {t('unlockButton', { cost: cost.toLocaleString() })}
+              <DollarSign className="w-4 h-4" />
+              {t('unlockNow', { cost: unlockFee.toLocaleString() })}
             </span>
-          ) : (
-            t('insufficientFame')
-          )}
-        </Button>
+          </Button>
+        )}
       </div>
     </Modal>
   );

@@ -8,8 +8,6 @@ import type {
   UpgradeGambleResult,
   AutoCollectInfo,
   PurchaseAutoCollectResult,
-  OverclockInfo,
-  PurchaseOverclockResult,
   PaymentMethod,
   CanAffordResponse,
   PurchaseResult,
@@ -222,23 +220,38 @@ class ApiClient {
   }
 
   // ============================================
-  // Overclock endpoints
+  // Speed Up endpoints (v3)
   // ============================================
 
-  async getOverclockInfo(token: string, machineId: string): Promise<OverclockInfo> {
-    return this.request<OverclockInfo>(`/machines/${machineId}/overclock-info`, { token });
+  async getSpeedUpInfo(token: string, machineId: string) {
+    return this.request<any>(`/machines/${machineId}/speed-up-info`, { token });
   }
 
-  async purchaseOverclock(
+  async speedUp(
     token: string,
     machineId: string,
-    level: number,
+    days: number,
     paymentMethod: PaymentMethod,
-  ): Promise<PurchaseOverclockResult> {
-    return this.request<PurchaseOverclockResult>(`/machines/${machineId}/overclock`, {
+  ) {
+    return this.request<any>(`/machines/${machineId}/speed-up`, {
       token,
       method: 'POST',
-      body: JSON.stringify({ level, paymentMethod }),
+      body: JSON.stringify({ days, paymentMethod }),
+    });
+  }
+
+  // ============================================
+  // Tier Unlock Purchase endpoints (v3)
+  // ============================================
+
+  async getTierUnlockInfo(token: string, tier: number) {
+    return this.request<any>(`/machines/tier-unlock/${tier}`, { token });
+  }
+
+  async purchaseTierUnlock(token: string, tier: number) {
+    return this.request<any>(`/machines/tier-unlock/${tier}`, {
+      token,
+      method: 'POST',
     });
   }
 
@@ -1329,16 +1342,6 @@ class ApiClient {
     });
   }
 
-  async unlockTier(
-    token: string,
-    tier: number,
-  ): Promise<import('@/types').UnlockTierResult> {
-    return this.request<import('@/types').UnlockTierResult>('/fame/unlock-tier', {
-      method: 'POST',
-      token,
-      body: JSON.stringify({ tier }),
-    });
-  }
 }
 
 export const api = new ApiClient(API_URL);

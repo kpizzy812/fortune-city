@@ -15,7 +15,7 @@ import { MachineCard } from '@/components/machines/MachineCard';
 import { RiskyCollectModal } from '@/components/machines/RiskyCollectModal';
 import { GambleResultAnimation } from '@/components/machines/GambleResultAnimation';
 import { AutoCollectModal } from '@/components/machines/AutoCollectModal';
-import { OverclockModal } from '@/components/machines/OverclockModal';
+
 import { Tooltip } from '@/components/ui/Tooltip';
 import { useInterval } from '@/hooks/useInterval';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
@@ -28,7 +28,7 @@ import { DailyLoginBanner } from '@/components/fame/DailyLoginBanner';
 import { FameBadge } from '@/components/fame/FameBadge';
 import { getUserInitial } from '@/lib/utils';
 import { useFeedback } from '@/hooks/useFeedback';
-import type { GambleInfo, AutoCollectInfo, OverclockInfo, PaymentMethod } from '@/types';
+import type { GambleInfo, AutoCollectInfo, PaymentMethod } from '@/types';
 
 const TELEGRAM_BOT_NAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || 'FortuneCityAppBot';
 
@@ -73,8 +73,6 @@ export default function Home() {
     fetchGambleInfo,
     purchaseAutoCollect,
     fetchAutoCollectInfo,
-    fetchOverclockInfo,
-    purchaseOverclock,
     interpolateAllIncomes,
     clearError,
     clearLastGambleResult,
@@ -84,14 +82,11 @@ export default function Home() {
   const [isRiskyModalOpen, setIsRiskyModalOpen] = useState(false);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
   const [isAutoCollectModalOpen, setIsAutoCollectModalOpen] = useState(false);
-  const [isOverclockModalOpen, setIsOverclockModalOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null);
   const [currentGambleInfo, setCurrentGambleInfo] = useState<GambleInfo | null>(null);
   const [currentAutoCollectInfo, setCurrentAutoCollectInfo] = useState<AutoCollectInfo | null>(null);
-  const [currentOverclockInfo, setCurrentOverclockInfo] = useState<OverclockInfo | null>(null);
   const [isPurchasingAutoCollect, setIsPurchasingAutoCollect] = useState(false);
-  const [isPurchasingOverclock, setIsPurchasingOverclock] = useState(false);
   const [floorSelectedMachineId, setFloorSelectedMachineId] = useState<string | null>(null);
 
   // User display
@@ -236,42 +231,6 @@ export default function Home() {
       }
     },
     [token, selectedMachineId, purchaseAutoCollect, refreshUser, fetchAutoCollectInfo, fbPurchase]
-  );
-
-  // Handle Overclock (open modal)
-  const handleOverclockClick = useCallback(
-    async (machineId: string) => {
-      if (!token) return;
-      setSelectedMachineId(machineId);
-
-      const info = await fetchOverclockInfo(token, machineId);
-      setCurrentOverclockInfo(info);
-
-      setIsOverclockModalOpen(true);
-    },
-    [token, fetchOverclockInfo]
-  );
-
-  // Confirm Overclock purchase
-  const handleConfirmOverclock = useCallback(
-    async (level: number, paymentMethod: PaymentMethod) => {
-      if (!token || !selectedMachineId) return;
-
-      setIsPurchasingOverclock(true);
-      try {
-        await purchaseOverclock(token, selectedMachineId, level, paymentMethod);
-        fbPurchase();
-        refreshUser();
-        // Refresh info to show active state
-        const info = await fetchOverclockInfo(token, selectedMachineId);
-        setCurrentOverclockInfo(info);
-      } catch {
-        // Error is handled in store
-      } finally {
-        setIsPurchasingOverclock(false);
-      }
-    },
-    [token, selectedMachineId, purchaseOverclock, refreshUser, fetchOverclockInfo, fbPurchase]
   );
 
   // Show loading state
@@ -576,7 +535,6 @@ export default function Home() {
             onCollect={handleCollect}
             onRiskyCollect={handleRiskyCollect}
             onAutoCollectClick={handleAutoCollectClick}
-            onOverclockClick={handleOverclockClick}
             onMachineClick={setFloorSelectedMachineId}
             isCollecting={isCollecting}
             isLoading={isLoadingMachines}
@@ -608,7 +566,6 @@ export default function Home() {
                   onCollect={() => handleCollect(detailMachine.id)}
                   onRiskyCollect={() => handleRiskyCollect(detailMachine.id)}
                   onAutoCollectClick={() => handleAutoCollectClick(detailMachine.id)}
-                  onOverclockClick={() => handleOverclockClick(detailMachine.id)}
                   isCollecting={isCollecting[detailMachine.id] || false}
                 />
               </div>
@@ -640,16 +597,6 @@ export default function Home() {
               userBalance={parseFloat(user?.fortuneBalance || '0')}
               userFame={user?.fame ?? 0}
               isLoading={isPurchasingAutoCollect}
-            />
-            <OverclockModal
-              isOpen={isOverclockModalOpen}
-              onClose={() => setIsOverclockModalOpen(false)}
-              onConfirm={handleConfirmOverclock}
-              overclockInfo={currentOverclockInfo}
-              coinBoxCurrent={incomes[selectedMachineId]?.coinBoxCurrent ?? 0}
-              userBalance={parseFloat(user?.fortuneBalance || '0')}
-              userFame={user?.fame ?? 0}
-              isLoading={isPurchasingOverclock}
             />
           </>
         )}

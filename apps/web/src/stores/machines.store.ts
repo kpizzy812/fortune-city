@@ -13,8 +13,6 @@ import type {
   UpgradeGambleResult,
   AutoCollectInfo,
   PurchaseAutoCollectResult,
-  OverclockInfo,
-  PurchaseOverclockResult,
   PaymentMethod,
 } from '@/types';
 
@@ -27,7 +25,6 @@ interface MachinesState {
   lastGambleResult: RiskyCollectResult | null;
   gambleInfos: Record<string, GambleInfo>;
   autoCollectInfos: Record<string, AutoCollectInfo>;
-  overclockInfos: Record<string, OverclockInfo>;
 
   // Loading states
   isLoadingMachines: boolean;
@@ -52,8 +49,6 @@ interface MachinesState {
   fetchGambleInfo: (token: string, machineId: string) => Promise<void>;
   purchaseAutoCollect: (token: string, machineId: string, paymentMethod?: PaymentMethod) => Promise<PurchaseAutoCollectResult>;
   fetchAutoCollectInfo: (token: string, machineId: string) => Promise<AutoCollectInfo | null>;
-  fetchOverclockInfo: (token: string, machineId: string) => Promise<OverclockInfo | null>;
-  purchaseOverclock: (token: string, machineId: string, level: number, paymentMethod: PaymentMethod) => Promise<PurchaseOverclockResult>;
 
   // Real-time income interpolation
   interpolateIncome: (machineId: string) => void;
@@ -74,7 +69,6 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
   lastGambleResult: null,
   gambleInfos: {},
   autoCollectInfos: {},
-  overclockInfos: {},
   isLoadingMachines: false,
   isLoadingTiers: false,
   isPurchasing: false,
@@ -304,43 +298,6 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
     }
   },
 
-  fetchOverclockInfo: async (token, machineId) => {
-    try {
-      const info = await api.getOverclockInfo(token, machineId);
-      set((state) => ({
-        overclockInfos: { ...state.overclockInfos, [machineId]: info },
-      }));
-      return info;
-    } catch {
-      return null;
-    }
-  },
-
-  purchaseOverclock: async (token, machineId, level, paymentMethod) => {
-    try {
-      const result = await api.purchaseOverclock(token, machineId, level, paymentMethod);
-      // Update machine in list
-      set((state) => ({
-        machines: state.machines.map((m) =>
-          m.id === machineId ? result.machine : m
-        ),
-        // Update overclock info cache
-        overclockInfos: {
-          ...state.overclockInfos,
-          [machineId]: {
-            ...state.overclockInfos[machineId],
-            currentMultiplier: level,
-            isActive: true,
-            canPurchase: false,
-          },
-        },
-      }));
-      return result;
-    } catch (e) {
-      throw e;
-    }
-  },
-
   // Client-side income interpolation (every second)
   interpolateIncome: (machineId) => {
     const { incomes, machines } = get();
@@ -393,7 +350,6 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
       lastGambleResult: null,
       gambleInfos: {},
       autoCollectInfos: {},
-      overclockInfos: {},
       isLoadingMachines: false,
       isLoadingTiers: false,
       isPurchasing: false,

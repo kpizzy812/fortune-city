@@ -140,7 +140,10 @@ model Machine {
   fameGenerated        Int      @default(0) @map("fame_generated")
   lastFameCalculatedAt DateTime @default(now()) @map("last_fame_calculated_at")
 
-  // Overclock (income boost for next collect, 0 = none, 1.2/1.5/2.0 = active)
+  // Speed Up (v3: days skipped, reduces cycle time, yield stays same)
+  speedUpDays Int @default(0) @map("speed_up_days")
+
+  // Legacy: overclock (deprecated in v3, kept for existing data)
   overclockMultiplier Decimal @default(0) @map("overclock_multiplier") @db.Decimal(3, 1)
 
   // Notification dedup timestamps (reset on collect / null until notified)
@@ -251,7 +254,9 @@ enum TransactionType {
   upgrade_purchase
   collector_hire           // Hired auto-collect worker
   collector_salary         // Auto-collect worker salary deduction
-  overclock_purchase       // Purchased overclock boost for machine
+  overclock_purchase       // Purchased overclock boost for machine (deprecated v3)
+  speed_up                 // Speed up machine cycle (v3)
+  tier_unlock_purchase     // Instant tier unlock for $ (v3)
 }
 
 enum TransactionStatus {
@@ -292,6 +297,7 @@ enum FameSource {
   tier_unlock
   collector_hire
   overclock_purchase
+  speed_up
   admin_adjustment
 }
 

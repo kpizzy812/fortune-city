@@ -6,7 +6,6 @@ import type {
   FameBalance,
   FameTransaction,
   DailyLoginResult,
-  UnlockTierResult,
 } from '@/types';
 
 interface FameState {
@@ -21,8 +20,6 @@ interface FameState {
   isLoadingBalance: boolean;
   isLoadingHistory: boolean;
   isClaiming: boolean;
-  isUnlocking: boolean;
-
   // Error
   error: string | null;
 
@@ -30,7 +27,6 @@ interface FameState {
   fetchBalance: (token: string) => Promise<void>;
   fetchHistory: (token: string, page?: number) => Promise<void>;
   claimDailyLogin: (token: string) => Promise<DailyLoginResult>;
-  unlockTier: (token: string, tier: number) => Promise<UnlockTierResult>;
 
   // Helpers
   canClaimToday: () => boolean;
@@ -48,7 +44,6 @@ export const useFameStore = create<FameState>((set, get) => ({
   isLoadingBalance: false,
   isLoadingHistory: false,
   isClaiming: false,
-  isUnlocking: false,
   error: null,
 
   fetchBalance: async (token) => {
@@ -104,29 +99,6 @@ export const useFameStore = create<FameState>((set, get) => ({
     }
   },
 
-  unlockTier: async (token, tier) => {
-    set({ isUnlocking: true, error: null });
-    try {
-      const result = await api.unlockTier(token, tier);
-      // Update local balance
-      set((state) => ({
-        balance: state.balance
-          ? {
-              ...state.balance,
-              fame: result.remainingFame,
-              maxTierUnlocked: result.maxTierUnlocked,
-            }
-          : null,
-        isUnlocking: false,
-      }));
-      return result;
-    } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to unlock tier';
-      set({ error: message, isUnlocking: false });
-      throw e;
-    }
-  },
-
   canClaimToday: () => {
     const { balance } = get();
     if (!balance?.lastLoginDate) return true;
@@ -154,7 +126,6 @@ export const useFameStore = create<FameState>((set, get) => ({
       isLoadingBalance: false,
       isLoadingHistory: false,
       isClaiming: false,
-      isUnlocking: false,
       error: null,
     }),
 }));

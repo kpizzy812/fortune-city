@@ -14,6 +14,8 @@ import { RiskyCollectService } from './services/risky-collect.service';
 import { AutoCollectService } from './services/auto-collect.service';
 import { AuctionService } from './services/auction.service';
 import { PawnshopService } from './services/pawnshop.service';
+import { SpeedUpService } from './services/speed-up.service';
+import { TierUnlockPurchaseService } from './services/tier-unlock-purchase.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { JwtPayload } from '../auth/auth.service';
 import {
@@ -34,6 +36,7 @@ import {
   PurchaseAutoCollectResponseDto,
   PurchaseAutoCollectDto,
 } from './dto/auto-collect.dto';
+import { SpeedUpDto } from './dto/speed-up.dto';
 import {
   AuctionInfoResponseDto,
   ListOnAuctionResponseDto,
@@ -57,6 +60,8 @@ export class MachinesController {
     private readonly autoCollectService: AutoCollectService,
     private readonly auctionService: AuctionService,
     private readonly pawnshopService: PawnshopService,
+    private readonly speedUpService: SpeedUpService,
+    private readonly tierUnlockPurchaseService: TierUnlockPurchaseService,
   ) {}
 
   private toResponseDto(machine: MachineWithTierInfo): MachineResponseDto {
@@ -314,6 +319,81 @@ export class MachinesController {
         fortuneBalance: result.user.fortuneBalance.toString(),
       },
       newBalance: result.newBalance,
+    };
+  }
+
+  // ===== Speed Up Endpoints =====
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/speed-up-info')
+  async getSpeedUpInfo(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.speedUpService.getSpeedUpInfo(id, req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/speed-up')
+  async speedUp(
+    @Param('id') id: string,
+    @Body() dto: SpeedUpDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const result = await this.speedUpService.speedUp(
+      id,
+      req.user.sub,
+      dto.days,
+      dto.paymentMethod,
+    );
+
+    return {
+      machine: this.toResponseDto(
+        this.machinesService.enrichWithTierInfo(result.machine),
+      ),
+      days: result.days,
+      cost: result.cost,
+      paymentMethod: result.paymentMethod,
+      newExpiresAt: result.newExpiresAt,
+      user: {
+        fortuneBalance: result.user.fortuneBalance.toString(),
+      },
+    };
+  }
+
+  // ===== Tier Unlock Purchase Endpoints =====
+
+  @UseGuards(JwtAuthGuard)
+  @Get('tier-unlock/:tier')
+  async getTierUnlockInfo(
+    @Param('tier') tier: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.tierUnlockPurchaseService.getUnlockInfo(
+      req.user.sub,
+      parseInt(tier, 10),
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('tier-unlock/:tier')
+  async purchaseTierUnlock(
+    @Param('tier') tier: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const result = await this.tierUnlockPurchaseService.purchaseUnlock(
+      req.user.sub,
+      parseInt(tier, 10),
+    );
+
+    return {
+      tier: result.tier,
+      fee: result.fee,
+      maxTierUnlocked: result.maxTierUnlocked,
+      user: {
+        fortuneBalance: result.user.fortuneBalance.toString(),
+        maxTierUnlocked: result.user.maxTierUnlocked,
+      },
     };
   }
 

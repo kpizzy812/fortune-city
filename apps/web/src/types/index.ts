@@ -50,7 +50,6 @@ export interface Machine {
   fortuneGambleLevel: number;
   autoCollectEnabled: boolean;
   autoCollectPurchasedAt: string | null;
-  overclockMultiplier: string;
   status: MachineStatus;
   createdAt: string;
   updatedAt: string;
@@ -72,9 +71,6 @@ export interface CollectResult {
   newBalance: number;
   machine: Machine;
   fameEarned: number;
-  overclockApplied?: boolean;
-  overclockMultiplier?: number;
-  baseAmount?: number;
 }
 
 // ============================================
@@ -136,34 +132,6 @@ export interface PurchaseAutoCollectResult {
     fortuneBalance: string;
   };
   newBalance: number;
-}
-
-// ============================================
-// Overclock (Income Boost) Types
-// ============================================
-
-export interface OverclockLevelInfo {
-  level: number;
-  bonusPercent: number;
-  fortunePrice: number;
-  famePrice: number;
-}
-
-export interface OverclockInfo {
-  currentMultiplier: number;
-  isActive: boolean;
-  canPurchase: boolean;
-  levels: OverclockLevelInfo[];
-}
-
-export interface PurchaseOverclockResult {
-  machine: Machine;
-  level: number;
-  cost: number;
-  paymentMethod: PaymentMethod;
-  user: {
-    fortuneBalance: string;
-  };
 }
 
 // ============================================
@@ -567,9 +535,4 @@ export interface DailyLoginResult {
   totalFame: number;
 }
 
-export interface UnlockTierResult {
-  tier: number;
-  cost: number;
-  maxTierUnlocked: number;
-  remainingFame: number;
-}
+
