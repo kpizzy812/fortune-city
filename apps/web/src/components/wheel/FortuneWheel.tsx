@@ -62,7 +62,7 @@ export function FortuneWheel({
 
     if (currentSector !== lastTickSector.current) {
       lastTickSector.current = currentSector;
-      const muted = useUIStore.getState().musicMuted;
+      const muted = useUIStore.getState().soundMuted;
       playTick(muted);
     }
   });

@@ -192,10 +192,10 @@ export function playTick(muted: boolean) {
 
 /**
  * Unified feedback hook: sound + vibration + Telegram haptics.
- * Respects the musicMuted setting from UIStore for sounds.
+ * Sound effects respect soundMuted (separate from musicMuted which only controls background music).
  */
 export function useFeedback() {
-  const musicMuted = useUIStore((s) => s.musicMuted);
+  const soundMuted = useUIStore((s) => s.soundMuted);
   const lastFeedback = useRef<Record<string, number>>({});
 
   const feedback = useCallback(
@@ -205,15 +205,15 @@ export function useFeedback() {
       if (now - (lastFeedback.current[name] || 0) < 100) return;
       lastFeedback.current[name] = now;
 
-      playSound(name, musicMuted);
+      playSound(name, soundMuted);
       vibrate(name);
       telegramHaptic(name);
     },
-    [musicMuted]
+    [soundMuted]
   );
 
-  const tick = useCallback(() => playTick(musicMuted), [musicMuted]);
-  const laser = useCallback(() => playLaser(musicMuted), [musicMuted]);
+  const tick = useCallback(() => playTick(soundMuted), [soundMuted]);
+  const laser = useCallback(() => playLaser(soundMuted), [soundMuted]);
 
   return {
     feedback,
