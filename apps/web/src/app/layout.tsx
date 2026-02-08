@@ -6,7 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import { TelegramProvider } from '@/providers/TelegramProvider';
-import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout';
+import { MusicPlayer } from '@/components/layout/MusicPlayer';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -54,7 +54,8 @@ export default async function RootLayout({
         />
         <NextIntlClientProvider messages={messages}>
           <TelegramProvider>
-            <AuthenticatedLayout>{children}</AuthenticatedLayout>
+            <MusicPlayer />
+            {children}
           </TelegramProvider>
           <Toaster
             position="top-center"

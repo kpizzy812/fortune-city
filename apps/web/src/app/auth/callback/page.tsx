@@ -25,7 +25,7 @@ export default function AuthCallbackPage() {
     // Обрабатываем callback
     handleSupabaseCallback(action)
       .then(() => {
-        router.replace('/');
+        router.replace('/app');
       })
       .catch((err) => {
         console.error('Auth callback error:', err);
@@ -41,7 +41,7 @@ export default function AuthCallbackPage() {
           </h1>
           <p className="text-[#b0b0b0] mb-6">{error}</p>
           <button
-            onClick={() => router.replace('/')}
+            onClick={() => router.replace('/app')}
             className="px-6 py-3 bg-[#ff2d95] text-white rounded-lg hover:bg-[#ff2d95]/80 transition"
           >
             {tCommon('tryAgain')}

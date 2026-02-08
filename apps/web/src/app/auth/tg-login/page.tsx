@@ -16,7 +16,7 @@ function TgLoginContent() {
 
     const token = searchParams.get('token');
     if (!token) {
-      router.replace('/');
+      router.replace('/app');
       return;
     }
 
@@ -26,11 +26,11 @@ function TgLoginContent() {
       .authWithTelegramBotToken(token)
       .then((response) => {
         setAuth(response.accessToken, response.user);
-        router.replace('/');
+        router.replace('/app');
       })
       .catch((error) => {
         console.error('Telegram bot login failed:', error);
-        router.replace('/');
+        router.replace('/app');
       });
   }, [searchParams, setAuth, router]);
 

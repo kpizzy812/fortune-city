@@ -16,11 +16,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { icon: Home, labelKey: 'hall', href: '/' },
-  { icon: ShoppingCart, labelKey: 'shop', href: '/shop' },
-  { icon: FerrisWheel, labelKey: 'wheel', href: '/wheel' },
-  { icon: Users, labelKey: 'refs', href: '/refs' },
-  { icon: Wallet, labelKey: 'cash', href: '/cash' },
+  { icon: Home, labelKey: 'hall', href: '/app' },
+  { icon: ShoppingCart, labelKey: 'shop', href: '/app/shop' },
+  { icon: FerrisWheel, labelKey: 'wheel', href: '/app/wheel' },
+  { icon: Users, labelKey: 'refs', href: '/app/refs' },
+  { icon: Wallet, labelKey: 'cash', href: '/app/cash' },
 ];
 
 export function BottomNavigation() {

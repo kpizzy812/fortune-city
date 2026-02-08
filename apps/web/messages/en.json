@@ -543,6 +543,23 @@
     "totalOut": "Total Out",
     "viewOnSolscan": "View on Solscan"
   },
+  "landing": {
+    "heroTitle": "Build Your Slot Machine Empire",
+    "heroSubtitle": "Buy virtual machines, earn passive income, withdraw real crypto",
+    "cta": "Start Playing",
+    "learnMore": "How It Works",
+    "howItWorks": "How It Works",
+    "step1Title": "Create Account",
+    "step1Desc": "Sign up with email, Telegram, or Solana wallet in seconds",
+    "step2Title": "Buy a Machine",
+    "step2Desc": "Choose from 10 tiers of slot machines — each with increasing returns",
+    "step3Title": "Collect Coins",
+    "step3Desc": "Your machines generate Fortune Coins 24/7 — collect them any time",
+    "step4Title": "Withdraw Profits",
+    "step4Desc": "Convert your earnings to real crypto and withdraw to your wallet",
+    "readyTitle": "Ready to Start?",
+    "readySubtitle": "Join thousands of players already earning"
+  },
   "metadata": {
     "title": "Fortune City",
     "description": "Spin your fortune. Own the floor."

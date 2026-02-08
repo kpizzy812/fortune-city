@@ -82,7 +82,7 @@ export default function ShopPage() {
   // Redirect if not authenticated
   useEffect(() => {
     if (!user || !token) {
-      router.push('/');
+      router.push('/app');
     }
   }, [user, token, router]);
 
@@ -132,7 +132,7 @@ export default function ShopPage() {
       }
       setIsModalOpen(false);
       setSelectedTier(null);
-      router.push('/');
+      router.push('/app');
     } catch {
       // Error is displayed in modal
     }
@@ -213,7 +213,7 @@ export default function ShopPage() {
       checkAllAffordability(token, user.maxTierReached);
     }
     clearPendingPurchase();
-    router.push('/');
+    router.push('/app');
   }, [token, pendingTierInfo, purchaseMachine, refreshUser, user, checkAllAffordability, clearPendingPurchase, router, fbPurchase]);
 
   // Loading state

@@ -42,7 +42,7 @@ export function useWheelSocket(currentUserId?: string) {
           </div>
           <div className="text-sm">{t('jackpotAmount', { amount: data.amount.toFixed(2) })}</div>
           <button
-            onClick={() => router.push('/wheel')}
+            onClick={() => router.push('/app/wheel')}
             className="
               mt-2 px-3 py-1.5 rounded-lg text-sm font-medium
               bg-gradient-to-r from-[#ff2d95] to-[#9333ea]

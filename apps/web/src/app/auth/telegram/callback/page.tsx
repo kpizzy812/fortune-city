@@ -20,7 +20,7 @@ function TelegramCallbackContent() {
     const hash = searchParams.get('hash');
 
     if (!id || !firstName || !authDate || !hash) {
-      router.replace('/');
+      router.replace('/app');
       return;
     }
 
@@ -38,11 +38,11 @@ function TelegramCallbackContent() {
 
     authWithLoginWidget(userData)
       .then(() => {
-        router.replace('/');
+        router.replace('/app');
       })
       .catch((error) => {
         console.error('Telegram auth failed:', error);
-        router.replace('/');
+        router.replace('/app');
       });
   }, [searchParams, authWithLoginWidget, router]);
 

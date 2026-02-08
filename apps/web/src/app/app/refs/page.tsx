@@ -47,7 +47,7 @@ export default function RefsPage() {
   // Redirect if not authenticated
   useEffect(() => {
     if (!user || !token) {
-      router.push('/');
+      router.push('/app');
     }
   }, [user, token, router]);
 

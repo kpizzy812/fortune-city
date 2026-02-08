@@ -174,7 +174,7 @@ export default function CashPage() {
   // Redirect if not authenticated
   useEffect(() => {
     if (!token) {
-      router.push('/');
+      router.push('/app');
     }
   }, [token, router]);
 
