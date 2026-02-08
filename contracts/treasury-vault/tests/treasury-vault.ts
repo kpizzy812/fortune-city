@@ -435,6 +435,58 @@ describe("treasury-vault", () => {
       assert.ok(request.expiresAt.toNumber() > request.createdAt.toNumber());
     });
 
+    it("rejects negative expires_in", async () => {
+      const freshUser = Keypair.generate();
+      const sig = await provider.connection.requestAirdrop(
+        freshUser.publicKey,
+        LAMPORTS_PER_SOL
+      );
+      await provider.connection.confirmTransaction(sig);
+
+      try {
+        await program.methods
+          .createWithdrawal(new BN(1 * ONE_USDT), new BN(-1))
+          .accounts({
+            authority: authority.publicKey,
+            usdtMint,
+            vaultTokenAccount,
+            user: freshUser.publicKey,
+          })
+          .rpc();
+        assert.fail("Should have failed");
+      } catch (_err) {
+        expect(_err).to.be.instanceOf(AnchorError);
+        const err = _err as AnchorError;
+        expect(err.error.errorCode.code).to.equal("InvalidExpiration");
+      }
+    });
+
+    it("rejects zero expires_in", async () => {
+      const freshUser = Keypair.generate();
+      const sig = await provider.connection.requestAirdrop(
+        freshUser.publicKey,
+        LAMPORTS_PER_SOL
+      );
+      await provider.connection.confirmTransaction(sig);
+
+      try {
+        await program.methods
+          .createWithdrawal(new BN(1 * ONE_USDT), new BN(0))
+          .accounts({
+            authority: authority.publicKey,
+            usdtMint,
+            vaultTokenAccount,
+            user: freshUser.publicKey,
+          })
+          .rpc();
+        assert.fail("Should have failed");
+      } catch (_err) {
+        expect(_err).to.be.instanceOf(AnchorError);
+        const err = _err as AnchorError;
+        expect(err.error.errorCode.code).to.equal("InvalidExpiration");
+      }
+    });
+
     it("rejects duplicate withdrawal request for same user", async () => {
       try {
         await program.methods

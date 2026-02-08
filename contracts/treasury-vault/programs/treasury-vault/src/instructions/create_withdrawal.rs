@@ -45,6 +45,7 @@ pub fn handle_create_withdrawal(
     expires_in: i64,
 ) -> Result<()> {
     require!(amount > 0, TreasuryError::ZeroAmount);
+    require!(expires_in > 0, TreasuryError::InvalidExpiration);
 
     // Verify vault has enough balance to cover this withdrawal
     require!(

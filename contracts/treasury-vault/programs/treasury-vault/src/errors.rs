@@ -28,4 +28,7 @@ pub enum TreasuryError {
 
     #[msg("Withdrawal has not expired yet, cannot cancel")]
     WithdrawalNotExpired,
+
+    #[msg("Expiration duration must be positive")]
+    InvalidExpiration,
 }
