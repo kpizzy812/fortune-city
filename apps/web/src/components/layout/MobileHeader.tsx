@@ -38,6 +38,11 @@ export function MobileHeader() {
               <p className="text-sm text-[#ffd700] font-mono font-bold">
                 ${balance.toFixed(2)}
               </p>
+              {parseFloat(user.bonusFortune) > 0 && (
+                <p className="text-[10px] text-[#00d4ff] font-mono">
+                  +${parseFloat(user.bonusFortune).toFixed(2)} bonus
+                </p>
+              )}
               <div className="flex items-center justify-end gap-2">
                 {isRateAvailable() && (
                   <p className="text-[10px] text-[#b0b0b0]">
@@ -51,12 +56,15 @@ export function MobileHeader() {
             {/* Avatar */}
             <button
               onClick={() => setIsProfileOpen(true)}
-              className="
+              className={`
                 w-10 h-10 rounded-full
-                bg-gradient-to-br from-[#ff2d95] to-[#00d4ff]
                 flex items-center justify-center font-bold text-sm text-white
-                hover:shadow-[0_0_15px_rgba(255,45,149,0.5)] transition-shadow
-              "
+                transition-shadow
+                ${user.isOG
+                  ? 'bg-gradient-to-br from-[#ffd700] via-[#ff2d95] to-[#00d4ff] ring-2 ring-[#ffd700]/50 hover:shadow-[0_0_15px_rgba(255,215,0,0.5)]'
+                  : 'bg-gradient-to-br from-[#ff2d95] to-[#00d4ff] hover:shadow-[0_0_15px_rgba(255,45,149,0.5)]'
+                }
+              `}
               title={tProfile('title')}
             >
               {userInitial}

@@ -18,7 +18,7 @@ export interface TierInfo {
 // Machine Types
 // ============================================
 
-export type MachineStatus = 'active' | 'expired' | 'sold_early' | 'sold_auction' | 'sold_pawnshop' | 'listed_auction';
+export type MachineStatus = 'active' | 'frozen' | 'expired' | 'sold_early' | 'sold_auction' | 'sold_pawnshop' | 'listed_auction';
 
 export interface MachineTierInfo {
   name: string;
@@ -176,6 +176,7 @@ export interface CanAffordResponse {
   currentBalance: number;
   fortuneBalance: number;
   referralBalance: number;
+  bonusFortune: number;
   shortfall: number;
   tierLocked: boolean;
   hasActiveMachine: boolean;
@@ -321,6 +322,7 @@ export interface UserData {
   lastName: string | null;
   fortuneBalance: string;
   referralBalance: string;
+  bonusFortune: string;
   maxTierReached: number;
   maxTierUnlocked: number;
   currentTaxRate: string;
@@ -330,6 +332,9 @@ export interface UserData {
   totalFameEarned: number;
   loginStreak: number;
   lastLoginDate: string | null;
+  isOG: boolean;
+  isPrelaunch: boolean;
+  prelaunchEndsAt: string | null;
 }
 
 // ============================================

@@ -1348,6 +1348,7 @@ export interface UserData {
   avatarUrl: string | null;
   fortuneBalance: string;
   referralBalance: string;
+  bonusFortune: string;
   maxTierReached: number;
   maxTierUnlocked: number;
   currentTaxRate: string;
@@ -1358,6 +1359,9 @@ export interface UserData {
   totalFameEarned: number;
   loginStreak: number;
   lastLoginDate: string | null;
+  isOG: boolean;
+  isPrelaunch: boolean;
+  prelaunchEndsAt: string | null;
 }
 
 export interface ReferralStats {

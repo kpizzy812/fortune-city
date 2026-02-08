@@ -35,7 +35,9 @@
     "cash": "Cash",
     "logout": "Logout",
     "expandSidebar": "Expand sidebar",
-    "collapseSidebar": "Collapse sidebar"
+    "collapseSidebar": "Collapse sidebar",
+    "bonus": "bonus",
+    "bonusFortune": "Bonus Fortune (wheel winnings, can be used for purchases)"
   },
   "profile": {
     "title": "Profile",
@@ -137,6 +139,7 @@
     "price": "Price",
     "expectedYield": "Expected Yield",
     "afterPurchase": "After purchase",
+    "bonusBalance": "Bonus Fortune",
     "lowBalanceWarning": "Your balance will be low after this purchase",
     "insufficientBalance": "Insufficient balance. You need ${amount} more.",
     "purchaseConfirm": "Purchase {name}?",
@@ -189,7 +192,10 @@
     "auto": "Auto",
     "upgrade": "Upgrade",
     "boost": "Boost",
-    "boostActive": "Boosted"
+    "boostActive": "Boosted",
+    "frozen": "Frozen",
+    "frozenHint": "Waiting for launch",
+    "frozenDescription": "This machine will activate when the game officially launches"
   },
   "riskyCollect": {
     "title": "Fortune's Gamble",
@@ -457,7 +463,10 @@
     "step3Desc": "Copy your Solana address in Phantom. Paste it in the exchange or bot where you're buying. Funds arrive in Phantom within 1-5 minutes.",
     "step4Title": "Top up your Fortune City balance",
     "step4Desc": "Come back to this page, connect your Phantom wallet and deposit via the 'Wallet' tab. You can deposit SOL or USDT.",
-    "buyCryptoWarning": "Never send crypto to unknown addresses. Only use the official links above. If you have any issues — contact support."
+    "buyCryptoWarning": "Never send crypto to unknown addresses. Only use the official links above. If you have any issues — contact support.",
+    "withdrawalsLocked": "Withdrawals Locked",
+    "withdrawalsLockedDesc": "Withdrawals are disabled during pre-launch. Your machines will activate and start earning when the game officially launches.",
+    "launchDate": "Expected launch: {date}"
   },
   "wheel": {
     "title": "Fortune Wheel",

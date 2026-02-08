@@ -32,6 +32,7 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   CreditCard,
+  Lock,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepositsStore } from '@/stores/deposits.store';
@@ -958,6 +959,20 @@ export default function CashPage() {
         {/* ==================== WITHDRAW TAB ==================== */}
         {mainTab === 'withdraw' && (
           <>
+            {/* Prelaunch withdrawal block */}
+            {user.isPrelaunch && (
+              <div className="bg-[#00d4ff]/5 border border-[#00d4ff]/30 rounded-xl p-6 mb-3 text-center">
+                <Lock className="w-10 h-10 text-[#00d4ff] mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-white mb-2">{t('withdrawalsLocked')}</h3>
+                <p className="text-sm text-[#b0b0b0]">{t('withdrawalsLockedDesc')}</p>
+                {user.prelaunchEndsAt && (
+                  <p className="text-xs text-[#00d4ff] mt-2">
+                    {t('launchDate', { date: new Date(user.prelaunchEndsAt).toLocaleDateString() })}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Withdraw Sub-tabs */}
             <div className="flex bg-[#1a0a2e]/50 rounded-xl p-1 mb-3">
               <button
@@ -1088,6 +1103,7 @@ export default function CashPage() {
                     <button
                       onClick={handleAtomicWithdrawal}
                       disabled={
+                        user.isPrelaunch ||
                         !withdrawAmount ||
                         parseFloat(withdrawAmount) <= 0 ||
                         !preview ||
@@ -1204,6 +1220,7 @@ export default function CashPage() {
                 <button
                   onClick={handleInstantWithdrawal}
                   disabled={
+                    user.isPrelaunch ||
                     !withdrawAmount ||
                     parseFloat(withdrawAmount) <= 0 ||
                     !withdrawAddress ||

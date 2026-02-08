@@ -133,13 +133,24 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       <div className="space-y-6">
         {/* User Info Header */}
         <div className="flex items-center gap-4 pb-4 border-b border-white/10">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#ff2d95] to-[#00d4ff] flex items-center justify-center text-2xl font-bold text-white">
+          <div className={`relative w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white ${
+            user.isOG
+              ? 'bg-gradient-to-br from-[#ffd700] via-[#ff2d95] to-[#00d4ff] ring-2 ring-[#ffd700]/50 shadow-[0_0_20px_rgba(255,215,0,0.3)]'
+              : 'bg-gradient-to-br from-[#ff2d95] to-[#00d4ff]'
+          }`}>
             {initial}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-white truncate">
-              {displayName}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-white truncate">
+                {displayName}
+              </h3>
+              {user.isOG && (
+                <span className="shrink-0 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-[#ffd700] to-[#ffaa00] text-black rounded-full">
+                  OG
+                </span>
+              )}
+            </div>
             {user.referralCode && (
               <p className="text-sm text-[#b0b0b0]">
                 {t('referralCode')}: {user.referralCode}

@@ -104,6 +104,12 @@ export function PurchaseModal({
             <span className="text-[#b0b0b0]">{tCommon('yourBalance')}</span>
             <span className="font-mono text-white">${userBalance.toFixed(2)}</span>
           </div>
+          {canAfford && canAfford.bonusFortune > 0 && (
+            <div className="flex justify-between">
+              <span className="text-[#b0b0b0]">{t('bonusBalance')}</span>
+              <span className="font-mono text-[#00d4ff]">${canAfford.bonusFortune.toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-[#b0b0b0]">{t('afterPurchase')}</span>
             <span

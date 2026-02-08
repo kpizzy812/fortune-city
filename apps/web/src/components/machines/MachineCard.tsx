@@ -80,8 +80,9 @@ export function MachineCard({
   const tCommon = useTranslations('common');
   const [isImageExpanded, setIsImageExpanded] = useState(false);
 
-  const progress = calculateProgress(machine.startedAt, machine.expiresAt);
-  const timeRemaining = formatTimeRemaining(machine.expiresAt, tCommon('expired'));
+  const isFrozen = machine.status === 'frozen';
+  const progress = isFrozen ? 0 : calculateProgress(machine.startedAt, machine.expiresAt);
+  const timeRemaining = isFrozen ? t('frozen') : formatTimeRemaining(machine.expiresAt, tCommon('expired'));
   const isExpired = machine.status === 'expired';
 
   return (
@@ -94,11 +95,13 @@ export function MachineCard({
         border transition-all duration-300
         relative overflow-hidden group
         ${
-          income?.isFull
-            ? 'border-[#00ff88]/50 shadow-[0_0_20px_rgba(0,255,136,0.2)]'
-            : isExpired
-              ? 'border-[#6b6b6b]/50 opacity-75'
-              : 'border-[#ff2d95]/30 hover:border-[#ff2d95]/60 hover:shadow-[0_0_30px_rgba(255,45,149,0.15)]'
+          isFrozen
+            ? 'border-[#00d4ff]/40 opacity-80'
+            : income?.isFull
+              ? 'border-[#00ff88]/50 shadow-[0_0_20px_rgba(0,255,136,0.2)]'
+              : isExpired
+                ? 'border-[#6b6b6b]/50 opacity-75'
+                : 'border-[#ff2d95]/30 hover:border-[#ff2d95]/60 hover:shadow-[0_0_30px_rgba(255,45,149,0.15)]'
         }
       `}
     >
@@ -176,6 +179,15 @@ export function MachineCard({
             )}
           </div>
         </div>
+        {isFrozen && (
+          <motion.span
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-xs px-2 py-1 bg-[#00d4ff]/20 text-[#00d4ff] rounded-full"
+          >
+            {t('frozen')}
+          </motion.span>
+        )}
         {isExpired && (
           <motion.span
             initial={{ scale: 0.8, opacity: 0 }}
@@ -185,7 +197,7 @@ export function MachineCard({
             {tCommon('expired')}
           </motion.span>
         )}
-        {income?.isFull && !isExpired && (
+        {income?.isFull && !isExpired && !isFrozen && (
           <motion.span
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: [1, 1.05, 1], opacity: 1 }}
@@ -234,7 +246,12 @@ export function MachineCard({
 
       {/* Collect button or timer - fixed height container */}
       <div className="min-h-[96px] flex flex-col justify-center">
-        {income?.isFull || isExpired ? (
+        {isFrozen ? (
+          <div className="bg-[#00d4ff]/5 rounded-lg p-3 text-center border border-[#00d4ff]/20">
+            <p className="text-sm font-medium text-[#00d4ff]">{t('frozenHint')}</p>
+            <p className="text-[10px] text-[#b0b0b0] mt-1">{t('frozenDescription')}</p>
+          </div>
+        ) : income?.isFull || isExpired ? (
           <div className="flex gap-2">
             <Button
               variant="gold"
@@ -274,7 +291,7 @@ export function MachineCard({
       </div>
 
       {/* Action buttons: Auto Collect + Overclock */}
-      {!isExpired && (onAutoCollectClick || onOverclockClick) && (
+      {!isExpired && !isFrozen && (onAutoCollectClick || onOverclockClick) && (
         <div className="mt-3 pt-3 border-t border-[#ff2d95]/20 flex items-center gap-3">
           {onAutoCollectClick && (
             <button

@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { FundSourceService } from '../economy/services/fund-source.service';
 import { TierCacheService } from './services/tier-cache.service';
 import { FameService } from '../fame/fame.service';
+import { SettingsService } from '../settings/settings.service';
 import { Prisma } from '@prisma/client';
 import {
   calculateEarlySellCommission,
@@ -97,6 +98,16 @@ describe('MachinesService', () => {
           useValue: {
             earnMachinePassiveFame: jest.fn().mockResolvedValue(0),
             earnManualCollectFame: jest.fn().mockResolvedValue(0),
+          },
+        },
+        {
+          provide: SettingsService,
+          useValue: {
+            getSettings: jest.fn().mockResolvedValue({
+              collectorHirePercent: 10,
+              collectorSalaryPercent: 5,
+            }),
+            isPrelaunch: jest.fn().mockResolvedValue(false),
           },
         },
       ],
@@ -933,24 +944,15 @@ describe('MachinesService', () => {
   });
 
   describe('checkAndExpireMachines', () => {
-    it('should expire machines past their expiry date', async () => {
+    it('should expire machines past their expiry date and return data', async () => {
       const mockMachines = [
         createMockMachine({ id: 'machine-1', tier: 1 }),
         createMockMachine({ id: 'machine-2', tier: 2 }),
         createMockMachine({ id: 'machine-3', tier: 3 }),
-        createMockMachine({ id: 'machine-4', tier: 4 }),
-        createMockMachine({ id: 'machine-5', tier: 5 }),
       ];
-      const mockUser = { id: mockUserId, maxTierUnlocked: 5 };
-
-      // Add user to each machine
-      const machinesWithUser = mockMachines.map((m) => ({
-        ...m,
-        user: mockUser,
-      }));
 
       (prismaService.machine.findMany as jest.Mock).mockResolvedValue(
-        machinesWithUser,
+        mockMachines,
       );
       (prismaService.$transaction as jest.Mock) = jest
         .fn()
@@ -959,25 +961,33 @@ describe('MachinesService', () => {
             machine: {
               update: jest.fn().mockResolvedValue({}),
             },
-            user: {
-              update: jest.fn().mockResolvedValue(mockUser),
-            },
           };
           return callback(mockTx);
         });
 
       const result = await service.checkAndExpireMachines();
 
-      expect(result).toBe(5);
+      expect(result).toHaveLength(3);
+      expect(result[0]).toEqual({
+        id: 'machine-1',
+        userId: mockUserId,
+        tier: 1,
+        accumulatedIncome: 0,
+      });
       expect(prismaService.machine.findMany).toHaveBeenCalledWith({
         where: {
           status: 'active',
           expiresAt: { lte: expect.any(Date) },
         },
-        include: {
-          user: true,
-        },
       });
+    });
+
+    it('should return empty array when no machines expired', async () => {
+      (prismaService.machine.findMany as jest.Mock).mockResolvedValue([]);
+
+      const result = await service.checkAndExpireMachines();
+
+      expect(result).toEqual([]);
     });
   });
 

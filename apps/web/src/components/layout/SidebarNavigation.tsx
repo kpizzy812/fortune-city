@@ -110,9 +110,12 @@ export function SidebarNavigation() {
             <button
               onClick={() => setIsProfileOpen(true)}
               className={`
-                rounded-full bg-gradient-to-br from-[#ff2d95] to-[#00d4ff]
-                flex items-center justify-center font-bold shrink-0
-                hover:shadow-[0_0_15px_rgba(255,45,149,0.5)] transition-shadow cursor-pointer
+                rounded-full flex items-center justify-center font-bold shrink-0
+                transition-shadow cursor-pointer
+                ${user.isOG
+                  ? 'bg-gradient-to-br from-[#ffd700] via-[#ff2d95] to-[#00d4ff] ring-2 ring-[#ffd700]/50 hover:shadow-[0_0_15px_rgba(255,215,0,0.5)]'
+                  : 'bg-gradient-to-br from-[#ff2d95] to-[#00d4ff] hover:shadow-[0_0_15px_rgba(255,45,149,0.5)]'
+                }
                 ${sidebarCollapsed ? 'w-12 h-12 text-sm' : 'w-10 h-10 text-sm'}
               `}
               title={sidebarCollapsed ? `${displayName} — ${tProfile('title')}` : tProfile('title')}
@@ -146,6 +149,11 @@ export function SidebarNavigation() {
               <p className="text-lg lg:text-xl text-[#ffd700] font-mono font-bold">
                 ${parseFloat(user.fortuneBalance).toFixed(2)}
               </p>
+              {parseFloat(user.bonusFortune) > 0 && (
+                <p className="text-xs text-[#00d4ff] font-mono mt-0.5" title={t('bonusFortune')}>
+                  +${parseFloat(user.bonusFortune).toFixed(2)} {t('bonus')}
+                </p>
+              )}
               <div className="mt-1">
                 <FameBadge size="sm" />
               </div>
@@ -154,7 +162,7 @@ export function SidebarNavigation() {
           {sidebarCollapsed && (
             <div
               className="mt-2 text-center"
-              title={`$${parseFloat(user.fortuneBalance).toFixed(2)}`}
+              title={`$${parseFloat(user.fortuneBalance).toFixed(2)}${parseFloat(user.bonusFortune) > 0 ? ` + $${parseFloat(user.bonusFortune).toFixed(2)} ${t('bonus')}` : ''}`}
             >
               <p className="text-xs text-[#ffd700] font-mono font-bold truncate">
                 ${parseFloat(user.fortuneBalance).toFixed(0)}
