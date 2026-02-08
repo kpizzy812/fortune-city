@@ -64,6 +64,10 @@ export class PawnshopService {
       throw new BadRequestException('Machine does not belong to user');
     }
 
+    if (machine.isFree) {
+      throw new BadRequestException('Free machines cannot be sold');
+    }
+
     if (machine.status !== 'active') {
       throw new BadRequestException(
         'Only active machines can be sold to pawnshop',
@@ -218,7 +222,10 @@ export class PawnshopService {
     let canSell = true;
     let reason: string | undefined;
 
-    if (machine.status !== 'active') {
+    if (machine.isFree) {
+      canSell = false;
+      reason = 'Free machines cannot be sold';
+    } else if (machine.status !== 'active') {
       canSell = false;
       reason = 'Only active machines can be sold to pawnshop';
     } else if (!isAvailable) {

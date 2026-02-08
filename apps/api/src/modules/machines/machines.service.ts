@@ -133,7 +133,8 @@ export class MachinesService {
   }
 
   /**
-   * Create a free machine (milestone reward) — no payment, reinvestRound=1
+   * Create a free machine (milestone reward) — no payment, only profit yield
+   * Cannot be sold or upgraded. Disappears on expiry like normal machines.
    */
   async createFreeMachine(
     userId: string,
@@ -143,14 +144,13 @@ export class MachinesService {
     const client = tx ?? this.prisma;
     const tierConfig = this.tierCacheService.getTierOrThrow(tier);
 
-    // Same yield calculation as regular purchase, reinvestRound = 1 (no penalty)
-    const totalYield = new Prisma.Decimal(tierConfig.price)
+    // Free machine: only profit portion, no principal
+    // T1 example: gross=$14.50, profit=$4.50 → totalYield=$4.50
+    const grossYield = new Prisma.Decimal(tierConfig.price)
       .mul(tierConfig.yieldPercent)
       .div(100);
-    const profitAmount = totalYield.sub(tierConfig.price);
-    const actualTotalYield = new Prisma.Decimal(tierConfig.price).add(
-      profitAmount,
-    );
+    const profitAmount = grossYield.sub(tierConfig.price);
+    const actualTotalYield = profitAmount; // Only profit, no principal
 
     const lifespanSeconds = tierConfig.lifespanDays * 24 * 60 * 60;
     const ratePerSecond = actualTotalYield.div(lifespanSeconds);
@@ -170,7 +170,7 @@ export class MachinesService {
       data: {
         userId,
         tier: tierConfig.tier,
-        purchasePrice: 0, // Free machine
+        purchasePrice: 0,
         totalYield: actualTotalYield,
         profitAmount,
         lifespanDays: tierConfig.lifespanDays,
@@ -180,6 +180,7 @@ export class MachinesService {
         coinBoxCapacity,
         reinvestRound: 1,
         profitReductionRate: 0,
+        isFree: true,
         status,
       },
     });
@@ -570,6 +571,10 @@ export class MachinesService {
 
     if (machine.userId !== userId) {
       throw new BadRequestException('Machine does not belong to user');
+    }
+
+    if (machine.isFree) {
+      throw new BadRequestException('Free machines cannot be sold');
     }
 
     if (machine.status !== 'active') {

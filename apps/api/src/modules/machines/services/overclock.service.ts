@@ -72,6 +72,10 @@ export class OverclockService {
       throw new BadRequestException('Machine does not belong to user');
     }
 
+    if (machine.isFree) {
+      throw new BadRequestException('Free machines cannot be upgraded');
+    }
+
     if (machine.status !== 'active') {
       throw new BadRequestException('Cannot overclock expired machine');
     }

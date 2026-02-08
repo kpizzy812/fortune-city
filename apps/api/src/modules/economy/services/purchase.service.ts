@@ -89,12 +89,13 @@ export class PurchaseService {
       );
     }
 
-    // Check if user already has an active/frozen machine of this tier
-    // Only one active machine per tier allowed
+    // Check if user already has an active/frozen PAID machine of this tier
+    // Free machines don't block purchasing a paid one
     const activeMachineOfSameTier = await this.prisma.machine.findFirst({
       where: {
         userId,
         tier: input.tier,
+        isFree: false,
         status: { in: ['active', 'frozen'] },
       },
     });
@@ -107,16 +108,17 @@ export class PurchaseService {
 
     // Calculate reinvestRound automatically
     // If upgrading to a new tier (higher than ever reached), reset to 1
-    // Otherwise, count completed machines of this tier + 1
+    // Otherwise, count completed PAID machines of this tier + 1
+    // Free machines don't count toward reinvest penalty
     let reinvestRound = 1;
     const isUpgrade = input.tier > user.maxTierReached;
 
     if (!isUpgrade) {
-      // Count completed machines of this tier (not active, not listed)
       const completedMachinesCount = await this.prisma.machine.count({
         where: {
           userId,
           tier: input.tier,
+          isFree: false,
           status: {
             in: ['expired', 'sold_early', 'sold_auction', 'sold_pawnshop'],
           },
@@ -335,36 +337,36 @@ export class PurchaseService {
     const maxAllowedTier = Math.max(maxGlobalTier, user.maxTierUnlocked);
 
     // Check if user already has an active/frozen machine of this tier
+    // Free machines don't block purchasing a paid one
     const activeMachineOfSameTier = await this.prisma.machine.findFirst({
       where: {
         userId,
         tier,
+        isFree: false,
         status: { in: ['active', 'frozen'] },
       },
     });
 
-    // Calculate reinvest penalty info
+    // Calculate reinvest penalty info (free machines excluded)
     const isUpgrade = tier > user.maxTierReached;
     let nextReinvestRound = 1;
     let currentProfitReduction = 0;
     let nextProfitReduction = 0;
 
     if (!isUpgrade) {
-      // Count completed machines of this tier
       const completedMachinesCount = await this.prisma.machine.count({
         where: {
           userId,
           tier,
+          isFree: false,
           status: {
             in: ['expired', 'sold_early', 'sold_auction', 'sold_pawnshop'],
           },
         },
       });
       nextReinvestRound = completedMachinesCount + 1;
-      // Current reduction (what active machine has, if any)
       currentProfitReduction =
         (REINVEST_REDUCTION[completedMachinesCount] ?? 0.85) * 100;
-      // Next reduction (what new machine will have)
       nextProfitReduction =
         (REINVEST_REDUCTION[nextReinvestRound] ?? 0.85) * 100;
     }

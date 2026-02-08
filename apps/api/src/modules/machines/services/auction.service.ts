@@ -72,6 +72,10 @@ export class AuctionService {
       throw new BadRequestException('Machine does not belong to user');
     }
 
+    if (machine.isFree) {
+      throw new BadRequestException('Free machines cannot be sold');
+    }
+
     if (machine.status !== 'active') {
       throw new BadRequestException(
         'Only active machines can be listed on auction',
@@ -365,7 +369,10 @@ export class AuctionService {
     let canList = true;
     let reason: string | undefined;
 
-    if (machine.status === 'listed_auction') {
+    if (machine.isFree) {
+      canList = false;
+      reason = 'Free machines cannot be sold';
+    } else if (machine.status === 'listed_auction') {
       canList = false;
       reason = 'Machine is already listed on auction';
     } else if (machine.status !== 'active') {

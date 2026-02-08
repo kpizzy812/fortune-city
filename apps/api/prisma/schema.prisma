@@ -148,6 +148,9 @@ model Machine {
   coinBoxFullNotifiedAt       DateTime? @map("coin_box_full_notified_at")
   coinBoxAlmostFullNotifiedAt DateTime? @map("coin_box_almost_full_notified_at")
 
+  // Free machine (milestone reward) — cannot be sold or upgraded
+  isFree Boolean @default(false) @map("is_free")
+
   // Fund source tracking
   fundSource FundSource?
 
