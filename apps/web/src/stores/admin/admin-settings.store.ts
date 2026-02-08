@@ -18,6 +18,7 @@ interface AdminSettingsState {
   fetchSettings: () => Promise<void>;
   updateSettings: (data: UpdateSettingsRequest) => Promise<AdminSettingsResponse>;
   resetSettings: () => Promise<void>;
+  endPrelaunch: () => Promise<number>;
   clearError: () => void;
 }
 
@@ -74,6 +75,24 @@ export const useAdminSettingsStore = create<AdminSettingsState>((set) => ({
       set({ settings, isSaving: false });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to reset settings';
+      set({ error: message, isSaving: false });
+      throw error;
+    }
+  },
+
+  endPrelaunch: async () => {
+    const token = useAdminAuthStore.getState().token;
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    set({ isSaving: true, error: null });
+    try {
+      const result = await api.adminEndPrelaunch(token);
+      set({ settings: result.settings, isSaving: false });
+      return result.activated;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to end prelaunch';
       set({ error: message, isSaving: false });
       throw error;
     }

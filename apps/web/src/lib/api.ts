@@ -742,6 +742,16 @@ class ApiClient {
     });
   }
 
+  /**
+   * End prelaunch: activate frozen machines, reset maxGlobalTier
+   */
+  async adminEndPrelaunch(token: string): Promise<{ activated: number; settings: AdminSettingsResponse }> {
+    return this.request<{ activated: number; settings: AdminSettingsResponse }>('/admin/settings/end-prelaunch', {
+      method: 'POST',
+      token,
+    });
+  }
+
   // ============================================
   // Admin Users endpoints
   // ============================================
@@ -1718,6 +1728,9 @@ export interface AdminSettingsResponse {
   coinBoxCapacityHours: number;
   collectorHirePercent: number;
   collectorSalaryPercent: number;
+  // Prelaunch
+  isPrelaunch: boolean;
+  prelaunchEndsAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1740,6 +1753,9 @@ export interface UpdateSettingsRequest {
   coinBoxCapacityHours?: number;
   collectorHirePercent?: number;
   collectorSalaryPercent?: number;
+  // Prelaunch
+  isPrelaunch?: boolean;
+  prelaunchEndsAt?: string | null;
 }
 
 // ============================================

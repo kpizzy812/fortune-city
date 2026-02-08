@@ -318,9 +318,6 @@ export class MachinesService {
     machine: Machine;
     newBalance: number;
     fameEarned: number;
-    overclockApplied: boolean;
-    overclockMultiplier: number;
-    baseAmount: number;
   }> {
     const machine = await this.findByIdOrThrow(machineId);
 
@@ -338,9 +335,9 @@ export class MachinesService {
       );
     }
 
-    const baseCollected = incomeState.coinBoxCurrent;
+    const collected = incomeState.coinBoxCurrent;
 
-    if (baseCollected === 0) {
+    if (collected === 0) {
       const currentMachine = await this.findByIdOrThrow(machineId);
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -350,62 +347,43 @@ export class MachinesService {
         machine: currentMachine,
         newBalance: Number(user?.fortuneBalance ?? 0),
         fameEarned: 0,
-        overclockApplied: false,
-        overclockMultiplier: 0,
-        baseAmount: 0,
       };
     }
 
-    // Overclock: boost collection if active
-    const overclockMultiplier = Number(machine.overclockMultiplier);
-    const hasOverclock = overclockMultiplier > 0;
-    const overclockBonus = hasOverclock
-      ? baseCollected * (overclockMultiplier - 1)
-      : 0;
-    const effectiveCollected = baseCollected + overclockBonus;
-
     // Atomic transaction: coinBox → fortuneBalance + create transaction record
     const result = await this.prisma.$transaction(async (tx) => {
-      // 1. Update machine: reset coinBox, track payouts, reset overclock, reset notification dedup
-      const machineUpdateData: any = {
-        coinBoxCurrent: 0,
-        lastCalculatedAt: new Date(),
-        profitPaidOut: {
-          increment: incomeState.currentProfit + overclockBonus,
-        },
-        principalPaidOut: {
-          increment: incomeState.currentPrincipal,
-        },
-        coinBoxFullNotifiedAt: null,
-        coinBoxAlmostFullNotifiedAt: null,
-      };
-
-      // Reset overclock after collection
-      if (hasOverclock) {
-        machineUpdateData.overclockMultiplier = 0;
-      }
-
+      // 1. Update machine: reset coinBox, track payouts, reset notification dedup
       const updatedMachine = await tx.machine.update({
         where: { id: machineId },
-        data: machineUpdateData,
+        data: {
+          coinBoxCurrent: 0,
+          lastCalculatedAt: new Date(),
+          profitPaidOut: {
+            increment: incomeState.currentProfit,
+          },
+          principalPaidOut: {
+            increment: incomeState.currentPrincipal,
+          },
+          coinBoxFullNotifiedAt: null,
+          coinBoxAlmostFullNotifiedAt: null,
+        },
       });
 
-      // 2. Add to user balance (with overclock bonus)
+      // 2. Add to user balance
       const updatedUser = await tx.user.update({
         where: { id: userId },
         data: {
           fortuneBalance: {
-            increment: effectiveCollected,
+            increment: collected,
           },
         },
       });
 
-      // 3. Track profit collection (including overclock bonus as profit)
-      const totalProfit = incomeState.currentProfit + overclockBonus;
-      if (totalProfit > 0) {
+      // 3. Track profit collection
+      if (incomeState.currentProfit > 0) {
         await this.fundSourceService.recordProfitCollection(
           userId,
-          totalProfit,
+          incomeState.currentProfit,
           tx,
         );
       }
@@ -416,9 +394,9 @@ export class MachinesService {
           userId,
           machineId,
           type: 'machine_income',
-          amount: effectiveCollected,
+          amount: collected,
           currency: 'FORTUNE',
-          netAmount: effectiveCollected,
+          netAmount: collected,
           status: 'completed',
         },
       });
@@ -454,13 +432,10 @@ export class MachinesService {
     });
 
     return {
-      collected: effectiveCollected,
+      collected,
       machine: result.machine,
       newBalance: result.newBalance,
       fameEarned: result.fameEarned,
-      overclockApplied: hasOverclock,
-      overclockMultiplier: hasOverclock ? overclockMultiplier : 0,
-      baseAmount: baseCollected,
     };
   }
 

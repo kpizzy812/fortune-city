@@ -8,15 +8,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { Prisma, FameSource } from '@prisma/client';
 import {
-  calculateDailyLoginFame,
   getFamePerHour,
-  FAME_PER_MANUAL_COLLECT,
+  getMaxUnlockedTierByFame,
 } from '@fortune-city/shared';
 import {
   FameBalanceResponse,
   FameHistoryResponse,
   DailyLoginResponse,
-  UnlockTierResponse,
 } from './dto/fame.dto';
 
 @Injectable()
@@ -53,7 +51,7 @@ export class FameService {
         fame: { increment: amount },
         totalFameEarned: { increment: amount },
       },
-      select: { fame: true },
+      select: { fame: true, totalFameEarned: true, maxTierUnlocked: true },
     });
 
     await client.fameTransaction.create({
@@ -66,6 +64,9 @@ export class FameService {
         machineId: opts?.machineId,
       },
     });
+
+    // Auto-unlock tiers based on totalFameEarned
+    await this.checkAutoUnlock(userId, user.totalFameEarned, user.maxTierUnlocked, client);
 
     return user.fame;
   }
@@ -248,69 +249,31 @@ export class FameService {
     });
   }
 
-  // ==================== Tier Unlock ====================
+  // ==================== Auto-unlock Tiers ====================
 
-  async unlockTier(userId: string, tier: number): Promise<UnlockTierResponse> {
-    if (tier < 2 || tier > 10) {
-      throw new BadRequestException('Tier must be between 2 and 10');
-    }
+  /**
+   * Check if user's totalFameEarned qualifies them for higher tiers.
+   * Called automatically after every earnFame().
+   * No fame is spent — purely based on lifetime earned fame.
+   */
+  private async checkAutoUnlock(
+    userId: string,
+    totalFameEarned: number,
+    currentMaxTier: number,
+    client: Prisma.TransactionClient | PrismaService,
+  ): Promise<void> {
+    const newMaxTier = getMaxUnlockedTierByFame(totalFameEarned);
 
-    return this.prisma.$transaction(async (tx) => {
-      const user = await tx.user.findUniqueOrThrow({
+    if (newMaxTier > currentMaxTier) {
+      await client.user.update({
         where: { id: userId },
-        select: { fame: true, maxTierUnlocked: true },
-      });
-
-      // Must unlock sequentially: tier must be exactly maxTierUnlocked + 1
-      if (tier !== user.maxTierUnlocked + 1) {
-        throw new BadRequestException(
-          `Cannot unlock tier ${tier}. Current max unlocked: ${user.maxTierUnlocked}. Next unlock: ${user.maxTierUnlocked + 1}`,
-        );
-      }
-
-      // Get cost from settings
-      const settings = await this.settingsService.getSettings();
-      const unlockCosts = settings.fameUnlockCostByTier as Record<
-        string,
-        number
-      >;
-      const cost = unlockCosts[String(tier)];
-      if (!cost) {
-        throw new BadRequestException(
-          `No unlock cost defined for tier ${tier}`,
-        );
-      }
-
-      if (user.fame < cost) {
-        throw new BadRequestException(
-          `Not enough Fame. Need ${cost}, have ${user.fame}`,
-        );
-      }
-
-      // Spend Fame
-      await this.spendFame(userId, cost, 'tier_unlock', {
-        description: `Unlocked tier ${tier}`,
-        tx,
-      });
-
-      // Update maxTierUnlocked
-      const updated = await tx.user.update({
-        where: { id: userId },
-        data: { maxTierUnlocked: tier },
-        select: { fame: true, maxTierUnlocked: true },
+        data: { maxTierUnlocked: newMaxTier },
       });
 
       this.logger.log(
-        `Tier unlocked: user=${userId} tier=${tier} cost=${cost}`,
+        `Auto-unlock: user=${userId} tier ${currentMaxTier}→${newMaxTier} (totalFame=${totalFameEarned})`,
       );
-
-      return {
-        tier,
-        cost,
-        maxTierUnlocked: updated.maxTierUnlocked,
-        remainingFame: updated.fame,
-      };
-    });
+    }
   }
 
   // ==================== Machine passive Fame ====================

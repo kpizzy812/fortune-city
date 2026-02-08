@@ -16,6 +16,8 @@ import {
   getTierConfigOrThrow,
   TAX_RATES_BY_TIER,
   REINVEST_REDUCTION,
+  getAutoUnlockThreshold,
+  calculateTierUnlockFee,
 } from '@fortune-city/shared';
 
 export interface PurchaseMachineInput {
@@ -314,10 +316,11 @@ export class PurchaseService {
     nextReinvestRound: number;
     currentProfitReduction: number;
     nextProfitReduction: number;
-    // Fame info
-    fameUnlockRequired: boolean;
-    fameUnlockCost: number | null;
-    userFame: number;
+    // Tier unlock info (v3: auto-unlock by totalFameEarned)
+    tierUnlockRequired: boolean;
+    autoUnlockThreshold: number | null;
+    tierUnlockFee: number | null;
+    userTotalFameEarned: number;
   }> {
     const tierConfig = getTierConfigOrThrow(tier);
     const user = await this.prisma.user.findUnique({
@@ -371,12 +374,13 @@ export class PurchaseService {
         (REINVEST_REDUCTION[nextReinvestRound] ?? 0.85) * 100;
     }
 
-    // Fame unlock info
-    const fameUnlockRequired = tier > user.maxTierUnlocked;
-    const settings = await this.settingsService.getSettings();
-    const unlockCosts = settings.fameUnlockCostByTier as Record<string, number>;
-    const fameUnlockCost = fameUnlockRequired
-      ? (unlockCosts[String(tier)] ?? null)
+    // Tier unlock info (v3: auto-unlock by totalFameEarned or $ purchase)
+    const tierUnlockRequired = tier > user.maxTierUnlocked;
+    const autoUnlockThreshold = tierUnlockRequired
+      ? getAutoUnlockThreshold(tier)
+      : null;
+    const tierUnlockFee = tierUnlockRequired
+      ? calculateTierUnlockFee(tierConfig.price)
       : null;
 
     return {
@@ -393,9 +397,10 @@ export class PurchaseService {
       nextReinvestRound,
       currentProfitReduction,
       nextProfitReduction,
-      fameUnlockRequired,
-      fameUnlockCost,
-      userFame: user.fame,
+      tierUnlockRequired,
+      autoUnlockThreshold,
+      tierUnlockFee,
+      userTotalFameEarned: user.totalFameEarned,
     };
   }
 }

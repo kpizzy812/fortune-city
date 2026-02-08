@@ -313,6 +313,29 @@
 
 ---
 
+## Phase 3.7: Economy v3 Redesign — В ПРОЦЕССЕ
+
+**Дизайн-документ:** [economy-v3-redesign.md](./economy-v3-redesign.md)
+
+### Ключевые изменения
+- [ ] **Auto-unlock тиров** по totalFameEarned (не тратить fame на unlock)
+- [ ] **Удалить Overclock** — убыточен для казны (создаёт доп. yield)
+- [ ] **Удалить Extend Life** — убыточен для казны (создаёт доп. yield)
+- [ ] **Tier Unlock Purchase** — мгновенный доступ к тиру за 10% цены (чистый доход)
+- [ ] **Speed Up** — ускорение цикла машины, yield тот же (чистый доход)
+- [ ] **Fame prices ×2.5** для collector (FAME_PER_HOUR × 12.5)
+
+### Код
+- [ ] shared/constants/fame.ts — удалить overclock/extend/unlock costs, добавить speed up + tier unlock fee
+- [ ] shared/constants/tiers.ts — cleanup
+- [ ] apps/api fame.service — auto-unlock logic при earnFame()
+- [ ] apps/api — TierUnlockPurchaseService
+- [ ] apps/api — SpeedUpService
+- [ ] Prisma schema — speedUpDays, удалить overclockMultiplier
+- [ ] Frontend — убрать overclock/extend UI, добавить speed up + unlock purchase
+
+---
+
 ## Phase 4: Launch
 
 - [ ] Лидерборд

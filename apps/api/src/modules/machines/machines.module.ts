@@ -6,7 +6,6 @@ import { RiskyCollectService } from './services/risky-collect.service';
 import { AutoCollectService } from './services/auto-collect.service';
 import { AuctionService } from './services/auction.service';
 import { PawnshopService } from './services/pawnshop.service';
-import { OverclockService } from './services/overclock.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { EconomyModule } from '../economy/economy.module';
@@ -27,7 +26,6 @@ import { SettingsModule } from '../settings/settings.module';
     MachinesService,
     RiskyCollectService,
     AutoCollectService,
-    OverclockService,
     AuctionService,
     PawnshopService,
   ],
@@ -36,7 +34,6 @@ import { SettingsModule } from '../settings/settings.module';
     MachinesService,
     RiskyCollectService,
     AutoCollectService,
-    OverclockService,
     AuctionService,
     PawnshopService,
   ],

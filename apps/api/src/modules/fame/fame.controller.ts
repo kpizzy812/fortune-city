@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   Get,
-  Body,
   Query,
   UseGuards,
   Request,
@@ -10,11 +9,9 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { FameService } from './fame.service';
 import {
-  UnlockTierDto,
   FameBalanceResponse,
   FameHistoryResponse,
   DailyLoginResponse,
-  UnlockTierResponse,
 } from './dto/fame.dto';
 
 interface AuthRequest extends Request {
@@ -62,15 +59,4 @@ export class FameController {
     return this.fameService.claimDailyLogin(req.user.sub);
   }
 
-  /**
-   * POST /fame/unlock-tier
-   */
-  @Post('unlock-tier')
-  @UseGuards(JwtAuthGuard)
-  async unlockTier(
-    @Request() req: AuthRequest,
-    @Body() dto: UnlockTierDto,
-  ): Promise<UnlockTierResponse> {
-    return this.fameService.unlockTier(req.user.sub, dto.tier);
-  }
 }

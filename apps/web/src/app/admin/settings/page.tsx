@@ -14,6 +14,7 @@ import {
   RotateCcw,
   RefreshCw,
   Box,
+  Rocket,
 } from 'lucide-react';
 
 function settingsToFormData(settings: AdminSettingsResponse | null): UpdateSettingsRequest {
@@ -35,6 +36,8 @@ function settingsToFormData(settings: AdminSettingsResponse | null): UpdateSetti
     coinBoxCapacityHours: settings.coinBoxCapacityHours,
     collectorHirePercent: settings.collectorHirePercent,
     collectorSalaryPercent: settings.collectorSalaryPercent,
+    isPrelaunch: settings.isPrelaunch,
+    prelaunchEndsAt: settings.prelaunchEndsAt,
   };
 }
 
@@ -84,9 +87,11 @@ interface SettingsFormProps {
 }
 
 function SettingsForm({ settings, isSaving, error, onSave, onReset, onRefresh, onClearError }: SettingsFormProps) {
+  const { endPrelaunch } = useAdminSettingsStore();
   const [formData, setFormData] = useState<UpdateSettingsRequest>(() => settingsToFormData(settings));
   const [hasChanges, setHasChanges] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
+  const [endPrelaunchConfirm, setEndPrelaunchConfirm] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof UpdateSettingsRequest, value: number | string) => {
@@ -191,6 +196,82 @@ function SettingsForm({ settings, isSaving, error, onSave, onReset, onRefresh, o
 
       {/* Settings Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Prelaunch Mode */}
+        <SettingsCard
+          icon={Rocket}
+          title="Prelaunch Mode"
+          description="Frozen machines, all tiers open"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-300">Prelaunch Active</p>
+              <p className="text-xs text-slate-500">Machines are frozen, all tiers available</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={formData.isPrelaunch ?? false}
+              onClick={() => {
+                setFormData((prev) => ({ ...prev, isPrelaunch: !prev.isPrelaunch }));
+                setHasChanges(true);
+              }}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
+                formData.isPrelaunch ? 'bg-amber-500' : 'bg-slate-700'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${
+                  formData.isPrelaunch ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Countdown End Date</label>
+            <input
+              type="datetime-local"
+              value={formData.prelaunchEndsAt ? new Date(formData.prelaunchEndsAt).toISOString().slice(0, 16) : ''}
+              onChange={(e) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  prelaunchEndsAt: e.target.value ? new Date(e.target.value).toISOString() : null,
+                }));
+                setHasChanges(true);
+              }}
+              className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500 transition-colors"
+            />
+            <p className="text-xs text-slate-500 mt-1">Countdown timer shown on frontend</p>
+          </div>
+          {formData.isPrelaunch && (
+            <button
+              onClick={async () => {
+                if (!endPrelaunchConfirm) {
+                  setEndPrelaunchConfirm(true);
+                  return;
+                }
+                try {
+                  const activated = await endPrelaunch();
+                  setSuccessMessage(`Prelaunch ended! ${activated} machines activated.`);
+                  setEndPrelaunchConfirm(false);
+                  setHasChanges(false);
+                  setTimeout(() => setSuccessMessage(null), 5000);
+                } catch {
+                  // Error handled by store
+                }
+              }}
+              disabled={isSaving}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors ${
+                endPrelaunchConfirm
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-amber-600 hover:bg-amber-700 text-white'
+              } disabled:opacity-50`}
+            >
+              <Rocket className="w-4 h-4" />
+              {endPrelaunchConfirm ? 'Confirm: End Prelaunch & Activate Machines' : 'End Prelaunch'}
+            </button>
+          )}
+        </SettingsCard>
+
         {/* General Settings */}
         <SettingsCard
           icon={Settings}

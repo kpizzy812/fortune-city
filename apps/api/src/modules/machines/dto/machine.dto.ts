@@ -71,9 +71,6 @@ export class CollectCoinsResponseDto {
   collected: number;
   machine: MachineResponseDto;
   fameEarned: number;
-  overclockApplied: boolean;
-  overclockMultiplier: number;
-  baseAmount: number;
 }
 
 export class TierInfoDto {

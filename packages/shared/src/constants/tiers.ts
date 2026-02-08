@@ -161,7 +161,6 @@ export const GAMBLE_LOSE_MULTIPLIER = 0.5;
 // Итого ~22-26% от профита на всех тирах
 export const COLLECTOR_HIRE_PERCENT = 10; // 10% of gross profit (per machine)
 export const COLLECTOR_SALARY_PERCENT = 5; // 5% of each collection
-export const COLLECTOR_HIRE_FAME_HOURS = 5; // Fame alternative: 5 hours of passive farming
 
 // Calculate collector hire cost in FORTUNE for a given tier
 // hirePercent can be overridden from admin settings
