@@ -931,6 +931,60 @@ Fame (⚡) — расходуемый ресурс прогрессии. Зар�
 
 ---
 
+## Phase 17: Pre-Launch Marketing System (COMPLETED)
+
+**Date:** 2026-02-08
+**Документация:** [docs/prelaunch.md](docs/prelaunch.md)
+
+### Концепция
+14-дневный предстарт перед официальным запуском. 5 механик:
+1. **OG Status** — бейдж + золотое кольцо аватарки для ранних юзеров
+2. **Тиры 1-3 открыты** — maxGlobalTier=3 в SystemSettings (zero code, уже работает)
+3. **Frozen Machines** — купленные автоматы заморожены до запуска (не генерируют доход)
+4. **Daily Fame Streak** — ежедневные логины накапливают Fame (уже работает)
+5. **Free Spins → Bonus Fortune** — выигрыши колеса идут в bonusFortune (дисконт на покупки)
+
+### 17.1 Schema (COMPLETED)
+- [x] User: bonusFortune Decimal @default(0), isOG Boolean @default(false)
+- [x] SystemSettings: isPrelaunch Boolean @default(false), prelaunchEndsAt DateTime?
+- [x] MachineStatus: +frozen
+
+### 17.2 Backend (COMPLETED)
+- [x] SettingsService: isPrelaunch(), getPrelaunchEndsAt()
+- [x] WithdrawalsService: блокировка вывода при prelaunch
+- [x] MachinesService: create/createFreeMachine → status='frozen' при prelaunch
+- [x] WheelService: spin payouts → bonusFortune при prelaunch (cost из fortuneBalance)
+- [x] PurchaseService: баланс = bonusFortune + fortuneBalance + referralBalance
+  - Приоритет списания: bonusFortune → fortuneBalance → referralBalance
+  - canAffordTier: +bonusFortune в ответ
+  - Проверка дубликатов: frozen тоже считается (status IN active, frozen)
+- [x] UsersService: isOG=true при регистрации во время prelaunch (все 3 метода)
+- [x] AuthController /me: +bonusFortune, isOG, isPrelaunch, prelaunchEndsAt
+- [x] Admin: POST /admin/settings/end-prelaunch
+  - isPrelaunch=false, maxGlobalTier=1
+  - Все frozen → active (пересчёт startedAt/expiresAt/lastCalculatedAt)
+- [x] DTO: UpdateAllSettingsDto + SettingsResponse обновлены
+
+### 17.3 Frontend (COMPLETED)
+- [x] Types: UserData +bonusFortune/isOG/isPrelaunch/prelaunchEndsAt, MachineStatus +'frozen', CanAffordResponse +bonusFortune
+- [x] SidebarNavigation: OG gold ring + bonusFortune balance display
+- [x] MobileHeader: OG gold ring + bonusFortune display
+- [x] ProfileModal: OG gold gradient avatar + OG badge
+- [x] MachineCard: frozen status (ice-blue border, frozen badge, disabled collect/boost)
+- [x] Cash page: prelaunch lock banner + disabled withdraw buttons
+- [x] PurchaseModal: bonusFortune в breakdown
+- [x] i18n: frozen, frozenHint, frozenDescription, withdrawalsLocked, withdrawalsLockedDesc, launchDate, bonus, bonusFortune, bonusBalance (en + ru)
+
+### Ключевые решения
+- Реферальные бонусы НЕ замораживаются (работают нормально)
+- bonusFortune НЕ выводится (только на покупки)
+- bonusFortune НЕ является свежим депозитом (без реф. бонусов при покупке)
+- При end-prelaunch: frozen → active с пересчётом таймеров
+
+**Build Status:** API и Web собираются успешно
+
+---
+
 ## Notes
 
 - Используем существующие паттерны из auth, machines, economy модулей
