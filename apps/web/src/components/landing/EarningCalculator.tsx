@@ -207,6 +207,16 @@ export function EarningCalculator() {
                 </p>
               </div>
             </div>
+
+            {/* CTA after calculator */}
+            <div className="text-center mt-8">
+              <button
+                onClick={() => document.getElementById('hero-auth')?.scrollIntoView({ behavior: 'smooth' })}
+                className="px-8 py-3.5 bg-gradient-to-r from-[#ffd700] to-[#ff8c00] text-[#1a0a2e] font-bold rounded-xl hover:shadow-[0_0_30px_rgba(255,215,0,0.3)] transition-shadow"
+              >
+                {t('calcCta')}
+              </button>
+            </div>
           </ScrollFadeIn>
         )}
       </div>

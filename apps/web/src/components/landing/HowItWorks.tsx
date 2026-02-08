@@ -14,8 +14,12 @@ const STEPS = [
 export function HowItWorks() {
   const t = useTranslations('landing');
 
+  const scrollToAuth = () => {
+    document.getElementById('hero-auth')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <section id="how-it-works" className="relative py-20 lg:py-32 px-4">
+    <section id="how-it-works" className="relative py-20 lg:py-28 px-4">
       {/* Background accent */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff2d95]/30 to-transparent" />
@@ -36,9 +40,8 @@ export function HowItWorks() {
           {STEPS.map((step, i) => (
             <ScrollFadeIn key={step.titleKey} delay={i * 0.15}>
               <div className="relative group">
-                {/* Card */}
                 <div className="relative bg-[#1a0a2e]/60 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all duration-300 h-full">
-                  {/* Step number — above card so backdrop-blur doesn't smear it */}
+                  {/* Step number */}
                   <div
                     className="absolute -top-5 -left-2 text-6xl font-bold opacity-15 pointer-events-none z-10"
                     style={{ color: step.color }}
@@ -56,8 +59,6 @@ export function HowItWorks() {
                   >
                     <step.icon className="w-7 h-7" style={{ color: step.color }} />
                   </div>
-
-                  {/* Text */}
                   <h3 className="text-lg font-bold text-white mb-2">
                     {t(step.titleKey)}
                   </h3>
@@ -69,6 +70,16 @@ export function HowItWorks() {
             </ScrollFadeIn>
           ))}
         </div>
+
+        {/* CTA */}
+        <ScrollFadeIn delay={0.6} className="text-center mt-12">
+          <button
+            onClick={scrollToAuth}
+            className="px-8 py-3.5 bg-gradient-to-r from-[#ff2d95] to-[#9333ea] text-white font-bold rounded-xl hover:shadow-[0_0_30px_rgba(255,45,149,0.4)] transition-shadow"
+          >
+            {t('cta')}
+          </button>
+        </ScrollFadeIn>
       </div>
     </section>
   );

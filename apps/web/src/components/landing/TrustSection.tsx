@@ -15,7 +15,7 @@ export function TrustSection() {
   const t = useTranslations('landing');
 
   return (
-    <section className="relative py-20 lg:py-32 px-4">
+    <section className="relative py-20 lg:py-28 px-4">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00ff88]/30 to-transparent" />
@@ -39,7 +39,6 @@ export function TrustSection() {
           {TRUST_ITEMS.map((item, i) => (
             <ScrollFadeIn key={item.titleKey} delay={i * 0.12}>
               <div className="relative bg-[#1a0a2e]/60 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all duration-300 h-full">
-                {/* Icon */}
                 <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
                   style={{
@@ -49,8 +48,6 @@ export function TrustSection() {
                 >
                   <item.icon className="w-6 h-6" style={{ color: item.color }} />
                 </div>
-
-                {/* Text */}
                 <h3 className="text-lg font-bold text-white mb-2">
                   {t(item.titleKey)}
                 </h3>
@@ -62,17 +59,12 @@ export function TrustSection() {
           ))}
         </div>
 
-        {/* Solscan link */}
+        {/* Contract badge — coming after mainnet deploy */}
         <ScrollFadeIn delay={0.5} className="text-center mt-10">
-          <a
-            href="https://solscan.io"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 border border-[#00ff88]/30 text-[#00ff88] rounded-xl hover:bg-[#00ff88]/10 transition-all text-sm font-medium"
-          >
-            <Eye className="w-4 h-4" />
-            {t('trustVerify')}
-          </a>
+          <div className="inline-flex items-center gap-2 px-6 py-3 border border-[#00ff88]/20 text-[#00ff88]/60 rounded-xl text-sm font-medium">
+            <Shield className="w-4 h-4" />
+            {t('trustContractSoon')}
+          </div>
         </ScrollFadeIn>
       </div>
     </section>

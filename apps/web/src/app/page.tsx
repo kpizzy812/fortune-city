@@ -4,14 +4,14 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { useTelegramWebApp } from '@/providers/TelegramProvider';
+import { StickyHeader } from '@/components/landing/StickyHeader';
 import { HeroSection } from '@/components/landing/HeroSection';
+import { SocialProof } from '@/components/landing/SocialProof';
 import { HowItWorks } from '@/components/landing/HowItWorks';
-import { TrustSection } from '@/components/landing/TrustSection';
 import { EarningCalculator } from '@/components/landing/EarningCalculator';
+import { TrustSection } from '@/components/landing/TrustSection';
 import { FAQSection } from '@/components/landing/FAQSection';
 import { LandingFooter } from '@/components/landing/LandingFooter';
-import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
-import { MusicToggleButton } from '@/components/layout/MusicToggleButton';
 
 export default function LandingPage() {
   const { user, token, isLoading } = useAuthStore();
@@ -48,31 +48,15 @@ export default function LandingPage() {
   }
 
   return (
-    <main className="h-screen overflow-y-auto snap-y snap-mandatory">
-      {/* Top controls */}
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-        <MusicToggleButton />
-        <LanguageSwitcher />
-      </div>
-
-      <div className="snap-start">
-        <HeroSection />
-      </div>
-      <div className="snap-start min-h-screen flex items-center">
-        <HowItWorks />
-      </div>
-      <div className="snap-start min-h-screen flex items-center">
-        <TrustSection />
-      </div>
-      <div className="snap-start min-h-screen flex items-center">
-        <EarningCalculator />
-      </div>
-      <div className="snap-start min-h-screen flex items-center">
-        <FAQSection />
-      </div>
-      <div className="snap-start min-h-screen flex items-center">
-        <LandingFooter />
-      </div>
+    <main className="min-h-screen">
+      <StickyHeader />
+      <HeroSection />
+      <SocialProof />
+      <HowItWorks />
+      <EarningCalculator />
+      <TrustSection />
+      <FAQSection />
+      <LandingFooter />
     </main>
   );
 }

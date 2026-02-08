@@ -6,14 +6,14 @@ import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ScrollFadeIn } from './ScrollFadeIn';
 
-const FAQ_KEYS = ['faq1', 'faq2', 'faq3', 'faq4', 'faq5'] as const;
+const FAQ_KEYS = ['faq1', 'faq2', 'faq3', 'faq4', 'faq5', 'faq6', 'faq7', 'faq8'] as const;
 
 export function FAQSection() {
   const t = useTranslations('landing');
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section className="relative py-20 lg:py-32 px-4">
+    <section className="relative py-20 lg:py-28 px-4">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#9333ea]/30 to-transparent" />
