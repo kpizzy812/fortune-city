@@ -168,17 +168,17 @@ export function EarningCalculator() {
                 />
                 <StatCard
                   label={t('calcTotalReturn')}
-                  value={`$${stats.totalReturn.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                  value={`$${stats.totalReturn.toFixed(2)}`}
                   color="#00d4ff"
                 />
                 <StatCard
                   label={t('calcGrossProfit')}
-                  value={`+$${stats.grossProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                  value={`+$${stats.grossProfit.toFixed(2)}`}
                   color="#00ff88"
                 />
                 <StatCard
                   label={t('calcDailyIncome')}
-                  value={`$${stats.dailyIncome.toLocaleString(undefined, { maximumFractionDigits: 2 })}/day`}
+                  value={`$${stats.dailyIncome.toFixed(2)}/day`}
                   color="#ffd700"
                 />
                 <StatCard
@@ -199,7 +199,7 @@ export function EarningCalculator() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-[#b0b0b0]">{t('calcNetProfit')}</span>
                   <span className="text-sm font-bold text-[#00ff88]">
-                    +${stats.netProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    +${stats.netProfit.toFixed(2)}
                   </span>
                 </div>
                 <p className="text-xs text-white/30 mt-2">
