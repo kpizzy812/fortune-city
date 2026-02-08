@@ -105,7 +105,11 @@ anchor test
 
 ---
 
-## Шаг 5: Deploy
+## Шаг 5: Deploy (3 шага — binary + IDL + immutable)
+
+> **Важно:** деплоим в 3 шага, чтобы загрузить IDL on-chain
+> до того как сделаем программу immutable.
+> `--final` убирает authority, после чего IDL загрузить нельзя.
 
 ### Devnet
 ```bash
@@ -114,10 +118,19 @@ solana config set --url devnet
 # Аирдроп для деплоя (если devnet)
 solana airdrop 2
 
-# Deploy (non-upgradeable)
+# 5a. Deploy binary (upgradeable пока)
 solana program deploy \
   target/deploy/treasury_vault.so \
-  --program-id target/deploy/treasury_vault-keypair.json \
+  --program-id target/deploy/treasury_vault-keypair.json
+
+# 5b. Загрузить IDL on-chain (для Solscan/верификации)
+anchor idl init \
+  --filepath target/idl/treasury_vault.json \
+  9brgETdzzaoxH9DcctMx7KprqpQkdDtcdQmM1y6pgDgD
+
+# 5c. Сделать immutable (НЕОБРАТИМО!)
+solana program set-upgrade-authority \
+  9brgETdzzaoxH9DcctMx7KprqpQkdDtcdQmM1y6pgDgD \
   --final
 ```
 
@@ -128,18 +141,32 @@ solana config set --url mainnet-beta
 # Проверить баланс (нужно ~2 SOL)
 solana balance
 
-# Deploy (NON-UPGRADEABLE — навсегда!)
+# 5a. Deploy binary (upgradeable пока)
 solana program deploy \
   target/deploy/treasury_vault.so \
-  --program-id target/deploy/treasury_vault-keypair.json \
+  --program-id target/deploy/treasury_vault-keypair.json
+
+# 5b. Загрузить IDL on-chain
+anchor idl init \
+  --filepath target/idl/treasury_vault.json \
+  9brgETdzzaoxH9DcctMx7KprqpQkdDtcdQmM1y6pgDgD
+
+# 5c. Сделать immutable (НЕОБРАТИМО!)
+solana program set-upgrade-authority \
+  9brgETdzzaoxH9DcctMx7KprqpQkdDtcdQmM1y6pgDgD \
   --final
 ```
 
+### Порядок важен!
+1. **5a** — загружаем binary (программа пока upgradeable)
+2. **5b** — загружаем IDL (пока есть authority, можно)
+3. **5c** — убираем authority навсегда (после этого IDL обновить нельзя)
+
 ### Что значит `--final`
 - Программа становится **immutable** — никто не может обновить или удалить
-- НЕ нужен x2 буфер для rent (экономия ~1.7 SOL)
 - Нет upgrade authority — максимальное доверие юзеров
 - **НЕОБРАТИМО** — убедись что контракт работает на devnet перед mainnet
+- IDL загрузить после `--final` нельзя — поэтому шаг 5b ДО шага 5c
 
 ### Если не хватает SOL
 ```bash
