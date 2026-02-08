@@ -913,11 +913,21 @@ Fame (⚡) — расходуемый ресурс прогрессии. Зар�
 - [ ] E2E тесты на devnet: initialize → deposit → create_withdrawal → claim → cancel
 - [ ] Проверить binary size после удаления pause
 
-### 16.7 Frontend (NOT STARTED)
-- [ ] Интеграция claim_withdrawal в withdrawal flow
-- [ ] Юзер подписывает claim транзакцию через WalletConnect
+### 16.7 Frontend Claim Integration (COMPLETED)
+- [x] Обновлён `PreparedAtomicWithdrawalData` тип — `claimInfo` вместо `serializedTransaction`
+- [x] Добавлена `buildClaimWithdrawalInstruction()` — строит claim_withdrawal TX на фронте
+- [x] Обновлён `handleAtomicWithdrawal` — user подписывает claim через `sendTransaction`
+- [x] Discriminator из IDL: `[118, 206, 173, 38, 239, 165, 65, 30]`
+- [x] Accounts: user(signer), authority, vault, withdrawal_request, usdt_mint, vault_token_account, user_token_account, token_program, associated_token_program, system_program
+- [x] Web lint OK, web build OK, API build OK
 
-**Build Status:** API собирается успешно
+### 16.8 Admin Balance Monitoring (TODO)
+- [ ] Endpoint `GET /admin/deposits/addresses` — список HD-адресов с балансами (SOL, USDT, FORTUNE)
+- [ ] Endpoint `GET /admin/deposits/hot-wallet-balance` — баланс hot wallet
+- [ ] UI таблица в админке — адрес, юзер, балансы, lastSweptAt, статус
+- [ ] Алерт при застрявших средствах (баланс > порога && lastSweptAt > 30 мин)
+
+**Build Status:** API + Web собираются успешно
 
 ---
 

@@ -10,6 +10,7 @@ import { needsPhantomRedirect, openInPhantom } from '@/lib/mobile-detect';
 import {
   PublicKey,
   Transaction,
+  TransactionInstruction,
   SystemProgram,
   LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
@@ -17,6 +18,7 @@ import {
   getAssociatedTokenAddress,
   createTransferInstruction,
   TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import { toast } from 'sonner';
 import {
@@ -39,11 +41,56 @@ import { OtherCryptoModal } from '@/components/shop/OtherCryptoModal';
 import { BuyCryptoGuideModal } from '@/components/cash/BuyCryptoGuideModal';
 import { TreasuryInfo } from '@/components/treasury/TreasuryInfo';
 import { CurrencyIcon } from '@/components/ui/CurrencyIcon';
-import type { DepositCurrency } from '@/lib/api';
+import type { ClaimInfo, DepositCurrency } from '@/lib/api';
 
 // Token mints (mainnet)
 const USDT_MINT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
 const FORTUNE_MINT = process.env.NEXT_PUBLIC_FORTUNE_MINT_ADDRESS;
+
+// Anchor discriminator for claim_withdrawal instruction
+// SHA256("global:claim_withdrawal")[0..8]
+const CLAIM_WITHDRAWAL_DISCRIMINATOR = Buffer.from([118, 206, 173, 38, 239, 165, 65, 30]);
+
+/**
+ * Build claim_withdrawal TransactionInstruction.
+ * User signs → USDT from vault → user ATA, PDA closed.
+ */
+async function buildClaimWithdrawalInstruction(
+  claimInfo: ClaimInfo,
+  userPubkey: PublicKey,
+): Promise<TransactionInstruction> {
+  const programId = new PublicKey(claimInfo.programId);
+  const vault = new PublicKey(claimInfo.vaultAddress);
+  const authority = new PublicKey(claimInfo.authorityAddress);
+  const usdtMint = new PublicKey(claimInfo.usdtMint);
+  const vaultTokenAccount = new PublicKey(claimInfo.vaultTokenAccount);
+  const withdrawalRequestPda = new PublicKey(claimInfo.withdrawalRequestPda);
+
+  // Derive user's ATA for USDT
+  const userTokenAccount = await getAssociatedTokenAddress(
+    usdtMint,
+    userPubkey,
+    false,
+    TOKEN_PROGRAM_ID,
+  );
+
+  return new TransactionInstruction({
+    programId,
+    keys: [
+      { pubkey: userPubkey, isSigner: true, isWritable: true },
+      { pubkey: authority, isSigner: false, isWritable: true },
+      { pubkey: vault, isSigner: false, isWritable: true },
+      { pubkey: withdrawalRequestPda, isSigner: false, isWritable: true },
+      { pubkey: usdtMint, isSigner: false, isWritable: false },
+      { pubkey: vaultTokenAccount, isSigner: false, isWritable: true },
+      { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data: CLAIM_WITHDRAWAL_DISCRIMINATOR,
+  });
+}
 
 type MainTabType = 'deposit' | 'withdraw';
 type DepositTabType = 'wallet' | 'address';
@@ -92,13 +139,12 @@ export default function CashPage() {
     previewWithdrawal,
     prepareAtomicWithdrawal,
     confirmAtomicWithdrawal,
-    cancelAtomicWithdrawal,
     createInstantWithdrawal,
     clearPreview,
     clearError: clearWithdrawalsError,
   } = useWithdrawalsStore();
 
-  const { publicKey, connected, sendTransaction, signTransaction } = useWallet();
+  const { publicKey, connected, sendTransaction } = useWallet();
   const { connection } = useConnection();
 
   // Main tab: deposit or withdraw
@@ -325,9 +371,9 @@ export default function CashPage() {
     t,
   ]);
 
-  // Handle atomic withdrawal (wallet connect)
+  // Handle atomic withdrawal (wallet connect) via on-chain claim
   const handleAtomicWithdrawal = useCallback(async () => {
-    if (!connected || !publicKey || !token || !signTransaction) {
+    if (!connected || !publicKey || !token) {
       toast.error(t('pleaseConnectWallet'));
       return;
     }
@@ -339,30 +385,29 @@ export default function CashPage() {
     }
 
     setIsSending(true);
-    let preparedId: string | null = null;
     try {
-      // Prepare withdrawal (get partially signed transaction)
+      // 1. Backend creates on-chain WithdrawalRequest PDA, returns claim info
       const prepared = await prepareAtomicWithdrawal(
         token,
         amount,
         publicKey.toBase58(),
       );
-      preparedId = prepared.withdrawalId;
 
-      // Deserialize the transaction
-      const txBuffer = Buffer.from(prepared.serializedTransaction, 'base64');
-      const transaction = Transaction.from(txBuffer);
+      // 2. Build claim_withdrawal instruction on frontend
+      const claimIx = await buildClaimWithdrawalInstruction(
+        prepared.claimInfo,
+        publicKey,
+      );
 
-      // User signs the transaction
-      const signedTx = await signTransaction(transaction);
+      const transaction = new Transaction().add(claimIx);
 
-      // Send to network
-      const signature = await connection.sendRawTransaction(signedTx.serialize());
+      // 3. User signs and sends via wallet adapter (handles blockhash + signing)
+      const signature = await sendTransaction(transaction, connection);
 
-      // Wait for confirmation
+      // 4. Wait for confirmation
       await connection.confirmTransaction(signature, 'confirmed');
 
-      // Confirm with backend
+      // 5. Confirm with backend
       await confirmAtomicWithdrawal(token, prepared.withdrawalId, signature);
 
       toast.success(t('withdrawalSuccessful', { amount: prepared.usdtAmount.toFixed(2) }));
@@ -372,14 +417,8 @@ export default function CashPage() {
       console.error('Withdrawal failed:', err);
       toast.error(err instanceof Error ? err.message : t('withdrawalFailed'));
 
-      // Cancel the prepared withdrawal if it exists
-      if (preparedId) {
-        try {
-          await cancelAtomicWithdrawal(token, preparedId);
-        } catch {
-          // Ignore cancel errors
-        }
-      }
+      // Don't cancel immediately — PDA is on-chain with expiry.
+      // User can retry claim until expiry. Cron auto-cancels after expiry.
     } finally {
       setIsSending(false);
     }
@@ -387,12 +426,11 @@ export default function CashPage() {
     connected,
     publicKey,
     token,
-    signTransaction,
     withdrawAmount,
     connection,
+    sendTransaction,
     prepareAtomicWithdrawal,
     confirmAtomicWithdrawal,
-    cancelAtomicWithdrawal,
     refreshUser,
     t,
   ]);

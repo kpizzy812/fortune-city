@@ -1532,14 +1532,23 @@ export interface WithdrawalPreviewData {
   feeSol: number;
 }
 
+export interface ClaimInfo {
+  programId: string;
+  vaultAddress: string;
+  authorityAddress: string;
+  usdtMint: string;
+  vaultTokenAccount: string;
+  withdrawalRequestPda: string;
+}
+
 export interface PreparedAtomicWithdrawalData {
   withdrawalId: string;
-  serializedTransaction: string; // Base64 encoded, partially signed
+  claimInfo: ClaimInfo;
   requestedAmount: number;
   netAmount: number;
   usdtAmount: number;
   taxAmount: number;
-  feeSol: number;
+  expiresAt: string;
   recipientAddress: string;
 }
 
