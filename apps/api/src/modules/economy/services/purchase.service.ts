@@ -7,6 +7,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { Machine, Transaction, User, Prisma } from '@prisma/client';
 import { MachinesService } from '../../machines/machines.service';
 import { AuctionService } from '../../machines/services/auction.service';
+import { TierCacheService } from '../../machines/services/tier-cache.service';
 import { TransactionsService } from './transactions.service';
 import { FundSourceService } from './fund-source.service';
 import { SettingsService } from '../../settings/settings.service';
@@ -46,6 +47,7 @@ export class PurchaseService {
     private readonly prisma: PrismaService,
     private readonly machinesService: MachinesService,
     private readonly auctionService: AuctionService,
+    private readonly tierCacheService: TierCacheService,
     private readonly transactionsService: TransactionsService,
     private readonly fundSourceService: FundSourceService,
     private readonly settingsService: SettingsService,
@@ -80,15 +82,20 @@ export class PurchaseService {
     }
 
     // Validate tier accessibility
-    // maxGlobalTier - tiers available to everyone without progression
-    // maxTierUnlocked - tier unlocked after machine expired (progression)
-    // User can buy: max(maxGlobalTier, maxTierUnlocked)
-    const maxGlobalTier = await this.settingsService.getMaxGlobalTier();
-    const maxAllowedTier = Math.max(maxGlobalTier, user.maxTierUnlocked);
-    if (input.tier > maxAllowedTier) {
-      throw new BadRequestException(
-        `Tier ${input.tier} is locked. Max available tier: ${maxAllowedTier}`,
-      );
+    // Tier is accessible if:
+    // 1. It's publicly available (admin flag), OR
+    // 2. tier <= max(maxGlobalTier, user.maxTierUnlocked)
+    const cachedTier = this.tierCacheService.getTier(input.tier);
+    const isPubliclyAvailable = cachedTier?.isPubliclyAvailable ?? false;
+
+    if (!isPubliclyAvailable) {
+      const maxGlobalTier = await this.settingsService.getMaxGlobalTier();
+      const maxAllowedTier = Math.max(maxGlobalTier, user.maxTierUnlocked);
+      if (input.tier > maxAllowedTier) {
+        throw new BadRequestException(
+          `Tier ${input.tier} is locked. Max available tier: ${maxAllowedTier}`,
+        );
+      }
     }
 
     // Check if user already has an active/frozen PAID machine of this tier
@@ -336,6 +343,11 @@ export class PurchaseService {
     const referralBalance = Number(user.referralBalance);
     const totalBalance = bonusFortune + fortuneBalance + referralBalance;
     const price = tierConfig.price;
+
+    // Check if tier is publicly available (admin flag)
+    const cachedTier = this.tierCacheService.getTier(tier);
+    const isPubliclyAvailable = cachedTier?.isPubliclyAvailable ?? false;
+
     const maxGlobalTier = await this.settingsService.getMaxGlobalTier();
     const maxAllowedTier = Math.max(maxGlobalTier, user.maxTierUnlocked);
 
@@ -375,7 +387,9 @@ export class PurchaseService {
     }
 
     // Tier unlock info (v3: auto-unlock by totalFameEarned or $ purchase)
-    const tierUnlockRequired = tier > user.maxTierUnlocked;
+    // If publicly available, no unlock required
+    const tierUnlockRequired =
+      !isPubliclyAvailable && tier > user.maxTierUnlocked;
     const autoUnlockThreshold = tierUnlockRequired
       ? getAutoUnlockThreshold(tier)
       : null;
@@ -391,7 +405,7 @@ export class PurchaseService {
       referralBalance,
       bonusFortune,
       shortfall: Math.max(0, price - totalBalance),
-      tierLocked: tier > maxAllowedTier,
+      tierLocked: !isPubliclyAvailable && tier > maxAllowedTier,
       hasActiveMachine: !!activeMachineOfSameTier,
       isUpgrade,
       nextReinvestRound,

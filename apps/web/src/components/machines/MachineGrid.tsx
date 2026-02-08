@@ -85,7 +85,7 @@ export function MachineGrid({
           {t('buyFirstMachine')}
         </p>
 
-        <Link href="/shop" className="relative z-10">
+        <Link href="/app/shop" className="relative z-10">
           <Button variant="primary" size="lg" className="group">
             <span className="flex items-center gap-2">
               {t('visitShop')}

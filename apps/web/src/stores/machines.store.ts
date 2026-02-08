@@ -41,7 +41,7 @@ interface MachinesState {
   fetchMachineIncome: (token: string, machineId: string) => Promise<void>;
   fetchAllIncomes: (token: string) => Promise<void>;
   checkAffordability: (token: string, tier: number) => Promise<void>;
-  checkAllAffordability: (token: string, maxTier: number) => Promise<void>;
+  checkAllAffordability: (token: string) => Promise<void>;
   purchaseMachine: (token: string, tier: number) => Promise<PurchaseResult>;
   collectCoins: (token: string, machineId: string) => Promise<number>;
   riskyCollect: (token: string, machineId: string) => Promise<RiskyCollectResult>;
@@ -128,9 +128,10 @@ export const useMachinesStore = create<MachinesState>((set, get) => ({
     }
   },
 
-  checkAllAffordability: async (token, maxTier) => {
-    // Check affordability for current max tier and next tier
-    const tiersToCheck = [maxTier, maxTier + 1].filter((t) => t >= 1 && t <= 10);
+  checkAllAffordability: async (token) => {
+    // Check affordability for all visible tiers
+    const { tiers } = get();
+    const tiersToCheck = tiers.map((t) => t.tier);
 
     await Promise.all(
       tiersToCheck.map((tier) => get().checkAffordability(token, tier))

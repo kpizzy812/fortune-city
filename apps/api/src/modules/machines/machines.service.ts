@@ -72,7 +72,14 @@ export class MachinesService {
   }
 
   async getActiveMachines(userId: string): Promise<Machine[]> {
-    return this.findByUserId(userId, 'active');
+    return this.prisma.machine.findMany({
+      where: {
+        userId,
+        status: { in: ['active', 'frozen'] },
+      },
+      orderBy: { createdAt: 'desc' },
+      include: { fundSource: true },
+    });
   }
 
   async create(userId: string, input: CreateMachineInput): Promise<Machine> {

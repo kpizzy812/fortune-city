@@ -70,7 +70,7 @@ export function CasinoFloor({
   const aspectRatio = isDesktop ? '16 / 9' : '9 / 16';
 
   const activeMachines = useMemo(
-    () => machines.filter(m => m.status === 'active' || m.status === 'expired').slice(0, MAX_SLOTS),
+    () => machines.filter(m => m.status === 'active' || m.status === 'frozen' || m.status === 'expired').slice(0, MAX_SLOTS),
     [machines],
   );
 
@@ -84,7 +84,7 @@ export function CasinoFloor({
             <h3 className="text-xl font-bold text-white mb-2">{t('noMachinesYet')}</h3>
             <p className="text-sm text-white/70 mb-4">{t('buyFirstMachine')}</p>
             <Link
-              href="/shop"
+              href="/app/shop"
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#ff2d95] text-white rounded-lg font-medium hover:bg-[#ff2d95]/80 transition"
             >
               {t('visitShop')}
@@ -115,7 +115,8 @@ export function CasinoFloor({
 
         const income = incomes[machine.id];
         const isExpired = machine.status === 'expired';
-        const isFull = income?.isFull || isExpired;
+        const isFrozen = machine.status === 'frozen';
+        const isFull = !isFrozen && (income?.isFull || isExpired);
         const fillPercent = income
           ? Math.min(100, (income.accumulated / income.coinBoxCapacity) * 100)
           : 0;
@@ -198,7 +199,7 @@ export function CasinoFloor({
                 </span>
               )}
               {/* Auto-collect: hire button (bottom-right) */}
-              {!isExpired && !machine.autoCollectEnabled && onAutoCollectClick && (
+              {!isExpired && !isFrozen && !machine.autoCollectEnabled && onAutoCollectClick && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onAutoCollectClick(machine.id); }}
                   className="absolute bottom-0 right-0 p-0.5 bg-[#00ff88]/30 hover:bg-[#00ff88]/50 rounded text-white/70 hover:text-white transition-colors"
@@ -219,7 +220,7 @@ export function CasinoFloor({
         return (
           <Link
             key={`empty-${slotIndex}`}
-            href="/shop"
+            href="/app/shop"
             className="absolute group"
             style={{
               left: `${slot.x * 100}%`,

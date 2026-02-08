@@ -4,12 +4,11 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, ChevronLeft, ChevronRight, Tag, TrendingDown, TrendingUp, Zap } from 'lucide-react';
+import { Lock, ChevronLeft, ChevronRight, Tag, TrendingDown, TrendingUp } from 'lucide-react';
 import type { TierInfo, CanAffordResponse, Machine } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { UnlockTierModal } from '@/components/fame/UnlockTierModal';
-import { FAME_AUTO_UNLOCK_THRESHOLDS, calculateTierUnlockFee } from '@fortune-city/shared';
 
 interface TierCarouselProps {
   tiers: TierInfo[];
@@ -50,7 +49,8 @@ interface TierCardTranslations {
   reinvestRepeatBadge: (params: { round: number }) => string;
   reinvestPenaltyTooltip: string;
   reinvestNewTierTooltip: string;
-  unlockCost: (params: { cost: string }) => string;
+  unlock: string;
+  lockedTooltip: string;
 }
 
 function TierCard({
@@ -162,11 +162,12 @@ function TierCard({
               ${tier.price.toLocaleString()}
             </p>
             {isLocked ? (
-              <span className="flex items-center gap-1 text-[#facc15] text-xs font-medium">
-                <Lock className="w-3 h-3" />
-                <Zap className="w-3 h-3" />
-                ${calculateTierUnlockFee(tier.price).toLocaleString()}
-              </span>
+              <Tooltip content={t.lockedTooltip} position="top" showIcon={false}>
+                <span className="flex items-center gap-1 text-[#ff4444] text-xs font-medium cursor-help">
+                  <Lock className="w-3.5 h-3.5" />
+                  {t.locked}
+                </span>
+              </Tooltip>
             ) : !hasActiveMachine && isUpgrade ? (
               <Tooltip content={t.reinvestNewTierTooltip} position="top" showIcon={false}>
                 <span className="flex items-center gap-1 text-[#00ff88] text-xs font-medium cursor-help">
@@ -216,8 +217,8 @@ function TierCard({
         {isLocked ? (
           <Button variant="ghost" size="sm" fullWidth onClick={onUnlock}>
             <span className="flex items-center gap-1">
-              <Zap className="w-3.5 h-3.5 text-[#facc15]" />
-              {t.unlockCost({ cost: '$' + calculateTierUnlockFee(tier.price).toLocaleString() })}
+              <Lock className="w-3.5 h-3.5 text-[#ff4444]" />
+              {t.unlock}
             </span>
           </Button>
         ) : hasActiveMachine && machine ? (
@@ -351,7 +352,8 @@ export function TierCarousel({
     reinvestRepeatBadge: (params) => tShop('reinvest.repeatBadge', params),
     reinvestPenaltyTooltip: tShop('reinvest.penaltyTooltip'),
     reinvestNewTierTooltip: tShop('reinvest.newTierTooltip'),
-    unlockCost: (params) => tFame('unlockCost', params),
+    unlock: tShop('unlock'),
+    lockedTooltip: tShop('lockedTooltip'),
   };
 
   return (

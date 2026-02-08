@@ -42,7 +42,8 @@ export class UsersService {
     referrerCode?: string,
   ): Promise<User> {
     const referralCode = nanoid(8);
-    const isOG = await this.settingsService.isPrelaunch();
+    const settings = await this.settingsService.getSettings();
+    const isOG = settings.isPrelaunch;
 
     // Find referrer by their code (if provided)
     let referrerId: string | undefined;
@@ -66,6 +67,7 @@ export class UsersService {
         referralCode,
         referredById: referrerId,
         isOG,
+        freeSpinsRemaining: settings.wheelFreeSpinsBase,
       },
     });
   }
@@ -147,7 +149,8 @@ export class UsersService {
     referrerCode?: string,
   ): Promise<User> {
     const referralCode = nanoid(8);
-    const isOG = await this.settingsService.isPrelaunch();
+    const settings = await this.settingsService.getSettings();
+    const isOG = settings.isPrelaunch;
 
     // Find referrer by their code (if provided)
     let referrerId: string | undefined;
@@ -169,6 +172,7 @@ export class UsersService {
         referralCode,
         referredById: referrerId,
         isOG,
+        freeSpinsRemaining: settings.wheelFreeSpinsBase,
       },
     });
   }
@@ -286,7 +290,8 @@ export class UsersService {
     referrerCode?: string,
   ): Promise<User> {
     const referralCode = nanoid(8);
-    const isOG = await this.settingsService.isPrelaunch();
+    const settings = await this.settingsService.getSettings();
+    const isOG = settings.isPrelaunch;
 
     // Find referrer by their code (if provided)
     let referrerId: string | undefined;
@@ -306,6 +311,7 @@ export class UsersService {
         referralCode,
         referredById: referrerId,
         isOG,
+        freeSpinsRemaining: settings.wheelFreeSpinsBase,
       },
     });
   }

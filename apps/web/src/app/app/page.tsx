@@ -81,6 +81,9 @@ export default function DashboardPage() {
 
   const userInitial = user ? getUserInitial(user) : '?';
 
+  // Count only active + frozen machines for dashboard stats
+  const ownedMachinesCount = machines.filter(m => m.status === 'active' || m.status === 'frozen').length;
+
   // Track if initial fetch was done
   const hasFetchedMachines = useRef(false);
   const hasFetchedIncomes = useRef(false);
@@ -89,7 +92,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (token && user && !hasFetchedMachines.current) {
       hasFetchedMachines.current = true;
-      fetchMachines(token, 'active');
+      fetchMachines(token);
     }
   }, [token, user, fetchMachines]);
 
@@ -255,7 +258,7 @@ export default function DashboardPage() {
             <div className="relative">
               <Gamepad2 className="w-4 h-4 text-[#ff2d95] mx-auto mb-0.5" />
               <p className="text-[10px] text-[#b0b0b0]">{tDashboard('machines')}</p>
-              <p className="text-base font-mono font-bold text-white">{machines.length}</p>
+              <p className="text-base font-mono font-bold text-white">{ownedMachinesCount}</p>
             </div>
           </div>
           <div className="relative bg-[#1a0a2e]/80 backdrop-blur-lg rounded-xl p-2.5 text-center border border-[#ffd700]/20 overflow-hidden">
@@ -297,7 +300,7 @@ export default function DashboardPage() {
             <div className="relative flex items-start justify-between">
               <div>
                 <p className="text-sm text-[#b0b0b0] mb-2">{tDashboard('totalMachines')}</p>
-                <p className="text-3xl font-mono font-bold text-white tracking-tight">{machines.length}</p>
+                <p className="text-3xl font-mono font-bold text-white tracking-tight">{ownedMachinesCount}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#ff2d95]/20 to-[#ff2d95]/5 flex items-center justify-center border border-[#ff2d95]/20 group-hover:shadow-[0_0_20px_rgba(255,45,149,0.3)] transition-shadow duration-300">
                 <Gamepad2 className="w-6 h-6 text-[#ff2d95]" />

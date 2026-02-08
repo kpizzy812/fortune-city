@@ -72,7 +72,7 @@ export default function ShopPage() {
   const machinesByTier = useMemo(() => {
     const map: Record<number, Machine> = {};
     machines
-      .filter(m => m.status === 'active' || m.status === 'listed_auction')
+      .filter(m => m.status === 'active' || m.status === 'frozen' || m.status === 'listed_auction')
       .forEach(m => {
         map[m.tier] = m;
       });

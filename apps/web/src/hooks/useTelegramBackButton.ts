@@ -7,7 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
  * Shows Telegram BackButton on non-root pages and navigates back on click.
  * On root pages (bottom nav destinations) the button is hidden.
  */
-const ROOT_PATHS = ['/', '/shop', '/wheel', '/refs', '/cash'];
+const ROOT_PATHS = ['/', '/app', '/app/shop', '/app/wheel', '/app/refs', '/app/cash'];
 
 export function useTelegramBackButton() {
   const router = useRouter();
