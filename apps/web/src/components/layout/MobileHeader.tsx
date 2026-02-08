@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/stores/auth.store';
 import { useFortuneRateStore } from '@/stores/fortune-rate.store';
@@ -26,9 +27,13 @@ export function MobileHeader() {
         <div className="flex items-center justify-between px-4 py-3">
           {/* Logo */}
           <div>
-            <h1 className="text-lg font-bold bg-gradient-to-r from-[#ff2d95] to-[#00d4ff] bg-clip-text text-transparent">
-              {tBrand('name')}
-            </h1>
+            <Image
+              src="/logo_transparent.png"
+              alt={tBrand('name')}
+              width={44}
+              height={44}
+              className="drop-shadow-[0_0_8px_rgba(255,45,149,0.4)]"
+            />
           </div>
 
           {/* User Info */}

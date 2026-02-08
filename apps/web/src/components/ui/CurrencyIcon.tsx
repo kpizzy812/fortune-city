@@ -61,8 +61,14 @@ export function CurrencyIcon({ currency, size = 'md', className = '' }: Currency
 
   // FORTUNE
   return (
-    <div className={`relative inline-flex items-center justify-center ${className}`}>
-      <span style={{ fontSize: icon }}>🎰</span>
+    <div className={`relative inline-block ${className}`}>
+      <Image
+        src="/fortune_coin.png"
+        alt="Fortune"
+        width={icon}
+        height={icon}
+        className="rounded-full"
+      />
     </div>
   );
 }

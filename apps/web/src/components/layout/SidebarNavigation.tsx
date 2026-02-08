@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -86,20 +87,23 @@ export function SidebarNavigation() {
       </button>
 
       {/* Logo */}
-      <div className={`p-4 border-b border-[#ff2d95]/10 ${sidebarCollapsed ? 'px-2' : 'p-6'}`}>
-        {sidebarCollapsed ? (
-          <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-[#ff2d95] to-[#00d4ff] flex items-center justify-center">
-            <span className="text-lg font-bold text-white">FC</span>
-          </div>
-        ) : (
-          <>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-[#ff2d95] to-[#00d4ff] bg-clip-text text-transparent">
+      <div className={`border-b border-[#ff2d95]/10 flex items-center ${sidebarCollapsed ? 'justify-center p-3' : 'gap-3 p-4'}`}>
+        <Image
+          src="/logo_transparent.png"
+          alt={tBrand('name')}
+          width={sidebarCollapsed ? 48 : 56}
+          height={sidebarCollapsed ? 48 : 56}
+          className="drop-shadow-[0_0_10px_rgba(255,45,149,0.4)] shrink-0"
+        />
+        {!sidebarCollapsed && (
+          <div>
+            <h1 className="text-lg font-bold bg-gradient-to-r from-[#ff2d95] to-[#00d4ff] bg-clip-text text-transparent leading-tight">
               {tBrand('name')}
             </h1>
-            <p className="text-[#ffd700] text-xs mt-1 italic">
+            <p className="text-[#ffd700] text-[10px] mt-0.5 italic">
               {tBrand('tagline')}
             </p>
-          </>
+          </div>
         )}
       </div>
 

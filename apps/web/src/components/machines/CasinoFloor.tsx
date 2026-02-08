@@ -50,6 +50,7 @@ export function CasinoFloor({
   incomes,
   onCollect,
   onRiskyCollect,
+  onAutoCollectClick,
   onOverclockClick,
   onMachineClick,
   isCollecting,
@@ -198,7 +199,7 @@ export function CasinoFloor({
                   <Zap className="w-2.5 h-2.5 text-[#00ff88]" />
                 </span>
               )}
-              {/* Overclock: active badge or buy button */}
+              {/* Overclock: active badge or buy button (bottom-left) */}
               {!isExpired && (
                 Number(machine.overclockMultiplier) > 0 ? (
                   <span className="absolute bottom-0 left-0 px-1.5 py-0.5 bg-[#ff2d95]/60 rounded text-[8px] font-bold text-white shadow-[0_0_6px_rgba(255,45,149,0.4)]">
@@ -212,6 +213,15 @@ export function CasinoFloor({
                     ⚡
                   </button>
                 ) : null
+              )}
+              {/* Auto-collect: hire button (bottom-right) */}
+              {!isExpired && !machine.autoCollectEnabled && onAutoCollectClick && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onAutoCollectClick(machine.id); }}
+                  className="absolute bottom-0 right-0 p-0.5 bg-[#00ff88]/30 hover:bg-[#00ff88]/50 rounded text-white/70 hover:text-white transition-colors"
+                >
+                  <Zap className="w-2.5 h-2.5" />
+                </button>
               )}
             </div>
           </div>
