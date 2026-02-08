@@ -45,6 +45,16 @@ export class SettingsService implements OnModuleInit {
     return settings.maxGlobalTier;
   }
 
+  async isPrelaunch(): Promise<boolean> {
+    const settings = await this.getSettings();
+    return settings.isPrelaunch;
+  }
+
+  async getPrelaunchEndsAt(): Promise<Date | null> {
+    const settings = await this.getSettings();
+    return settings.prelaunchEndsAt;
+  }
+
   async updateMaxGlobalTier(maxGlobalTier: number): Promise<SystemSettings> {
     if (maxGlobalTier < 1 || maxGlobalTier > 10) {
       throw new Error('maxGlobalTier must be between 1 and 10');

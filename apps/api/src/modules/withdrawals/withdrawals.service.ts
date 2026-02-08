@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SolanaRpcService } from '../deposits/services/solana-rpc.service';
 import { FundSourceService } from '../economy/services/fund-source.service';
 import { TreasuryService } from '../treasury/treasury.service';
+import { SettingsService } from '../settings/settings.service';
 import { SOLANA_TOKENS } from '../deposits/constants/tokens';
 import {
   CreateWithdrawalDto,
@@ -34,6 +35,7 @@ export class WithdrawalsService {
     private readonly solanaRpc: SolanaRpcService,
     private readonly fundSource: FundSourceService,
     private readonly treasury: TreasuryService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   /**
@@ -103,6 +105,13 @@ export class WithdrawalsService {
     amount: number,
     userWalletAddress: string,
   ): Promise<PreparedAtomicWithdrawalResponse> {
+    // Block withdrawals during prelaunch
+    if (await this.settingsService.isPrelaunch()) {
+      throw new BadRequestException(
+        'Withdrawals are disabled during pre-launch',
+      );
+    }
+
     // Validate user wallet address
     try {
       new PublicKey(userWalletAddress);
@@ -370,6 +379,13 @@ export class WithdrawalsService {
     userId: string,
     dto: CreateWithdrawalDto,
   ): Promise<InstantWithdrawalResponse> {
+    // Block withdrawals during prelaunch
+    if (await this.settingsService.isPrelaunch()) {
+      throw new BadRequestException(
+        'Withdrawals are disabled during pre-launch',
+      );
+    }
+
     const { amount, walletAddress } = dto;
 
     // Validate address

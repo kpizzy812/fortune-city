@@ -5,6 +5,7 @@ import { AuthModule } from '../auth/auth.module';
 import { DepositsModule } from '../deposits/deposits.module';
 import { EconomyModule } from '../economy/economy.module';
 import { TreasuryModule } from '../treasury/treasury.module';
+import { SettingsModule } from '../settings/settings.module';
 import { WithdrawalsController } from './withdrawals.controller';
 import { WithdrawalsService } from './withdrawals.service';
 
@@ -16,6 +17,7 @@ import { WithdrawalsService } from './withdrawals.service';
     DepositsModule, // For SolanaRpcService
     EconomyModule, // For FundSourceService
     TreasuryModule, // For vault payout before withdrawal
+    SettingsModule, // For prelaunch check
   ],
   controllers: [WithdrawalsController],
   providers: [WithdrawalsService],
