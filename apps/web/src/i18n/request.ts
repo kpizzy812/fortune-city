@@ -1,10 +1,9 @@
 import { getRequestConfig } from 'next-intl/server';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { defaultLocale, isValidLocale, type Locale } from './config';
 
 export default getRequestConfig(async () => {
-  // Locale detection: cookie (explicit user choice) or default (en)
-  // No Accept-Language auto-detection — landing must default to English
+  // Priority: 1. Cookie (user choice) → 2. Accept-Language → 3. Default (en)
 
   let locale: Locale = defaultLocale;
 
@@ -12,6 +11,24 @@ export default getRequestConfig(async () => {
   const cookieLocale = cookieStore.get('NEXT_LOCALE')?.value;
   if (cookieLocale && isValidLocale(cookieLocale)) {
     locale = cookieLocale;
+  } else {
+    const headersList = await headers();
+    const acceptLanguage = headersList.get('accept-language');
+    if (acceptLanguage) {
+      const preferredLocales = acceptLanguage
+        .split(',')
+        .map((lang) => {
+          const [code] = lang.trim().split(';');
+          return code.split('-')[0];
+        });
+
+      for (const preferredLocale of preferredLocales) {
+        if (isValidLocale(preferredLocale)) {
+          locale = preferredLocale;
+          break;
+        }
+      }
+    }
   }
 
   return {

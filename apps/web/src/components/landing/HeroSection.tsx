@@ -117,7 +117,7 @@ export function HeroSection() {
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, delay: 0.4 }}
-          className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto"
+          className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto scroll-mt-24"
         >
           <AuthFormCard />
         </motion.div>
