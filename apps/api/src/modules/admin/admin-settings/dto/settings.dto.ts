@@ -2,6 +2,8 @@ import {
   IsNumber,
   IsOptional,
   IsObject,
+  IsBoolean,
+  IsDateString,
   Min,
   Max,
   ValidateNested,
@@ -179,6 +181,15 @@ export class UpdateAllSettingsDto {
   @Min(0)
   @Max(100)
   collectorSalaryPercent?: number; // 5% default
+
+  // Prelaunch
+  @IsOptional()
+  @IsBoolean()
+  isPrelaunch?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  prelaunchEndsAt?: string | null;
 }
 
 // ============== Response DTOs ==============
@@ -208,6 +219,9 @@ export interface SettingsResponse {
   coinBoxCapacityHours: number;
   collectorHirePercent: number;
   collectorSalaryPercent: number;
+  // Prelaunch
+  isPrelaunch: boolean;
+  prelaunchEndsAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

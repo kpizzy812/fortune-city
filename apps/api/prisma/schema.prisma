@@ -143,6 +143,11 @@ model Machine {
   // Overclock (income boost for next collect, 0 = none, 1.2/1.5/2.0 = active)
   overclockMultiplier Decimal @default(0) @map("overclock_multiplier") @db.Decimal(3, 1)
 
+  // Notification dedup timestamps (reset on collect / null until notified)
+  expireSoonNotifiedAt        DateTime? @map("expire_soon_notified_at")
+  coinBoxFullNotifiedAt       DateTime? @map("coin_box_full_notified_at")
+  coinBoxAlmostFullNotifiedAt DateTime? @map("coin_box_almost_full_notified_at")
+
   // Fund source tracking
   fundSource FundSource?
 

@@ -96,6 +96,7 @@ export class AuthResponseDto {
     avatarUrl: string | null;
     fortuneBalance: string;
     referralBalance: string;
+    bonusFortune: string;
     maxTierReached: number;
     maxTierUnlocked: number;
     currentTaxRate: string;
@@ -105,6 +106,7 @@ export class AuthResponseDto {
     totalFameEarned: number;
     loginStreak: number;
     lastLoginDate: string | null;
+    isOG: boolean;
   };
 }
 

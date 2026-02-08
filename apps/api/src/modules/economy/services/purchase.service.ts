@@ -67,8 +67,10 @@ export class PurchaseService {
       throw new NotFoundException('User not found');
     }
 
-    // Check total balance (fortuneBalance + referralBalance)
-    const totalBalance = user.fortuneBalance.add(user.referralBalance);
+    // Check total balance (bonusFortune + fortuneBalance + referralBalance)
+    const totalBalance = user.bonusFortune
+      .add(user.fortuneBalance)
+      .add(user.referralBalance);
     if (totalBalance.lt(price)) {
       throw new BadRequestException(
         `Insufficient balance. Need ${tierConfig.price} $FORTUNE, have ${totalBalance.toString()}`,
@@ -87,13 +89,13 @@ export class PurchaseService {
       );
     }
 
-    // Check if user already has an active machine of this tier
+    // Check if user already has an active/frozen machine of this tier
     // Only one active machine per tier allowed
     const activeMachineOfSameTier = await this.prisma.machine.findFirst({
       where: {
         userId,
         tier: input.tier,
-        status: 'active',
+        status: { in: ['active', 'frozen'] },
       },
     });
 
@@ -124,12 +126,17 @@ export class PurchaseService {
     }
 
     // Calculate how much to take from each balance
-    // Priority: fortuneBalance first, then referralBalance
-    const fromFortuneBalance = Prisma.Decimal.min(user.fortuneBalance, price);
-    const fromReferralBalance = price.sub(fromFortuneBalance);
+    // Priority: bonusFortune first → fortuneBalance → referralBalance
+    const fromBonusFortune = Prisma.Decimal.min(user.bonusFortune, price);
+    const remainingAfterBonus = price.sub(fromBonusFortune);
+    const fromFortuneBalance = Prisma.Decimal.min(
+      user.fortuneBalance,
+      remainingAfterBonus,
+    );
+    const fromReferralBalance = remainingAfterBonus.sub(fromFortuneBalance);
 
     // Calculate fund source breakdown (how much is fresh deposit vs profit)
-    // Note: referralBalance is NOT fresh deposit, so we exclude it from fresh calculation
+    // Note: referralBalance and bonusFortune are NOT fresh deposit
     // User has totalFreshDeposits field that tracks cumulative fresh USDT deposits
     const sourceBreakdown = this.fundSourceService.calculateSourceBreakdown(
       user.fortuneBalance,
@@ -144,13 +151,21 @@ export class PurchaseService {
 
     // Execute purchase in transaction
     const result = await this.prisma.$transaction(async (tx) => {
-      // 1. Deduct balance from user (both fortuneBalance and referralBalance if needed)
+      // 1. Deduct balance from user (bonusFortune → fortuneBalance → referralBalance)
+      const deductData: Record<string, unknown> = {};
+      if (!fromBonusFortune.isZero()) {
+        deductData.bonusFortune = { decrement: fromBonusFortune };
+      }
+      if (!fromFortuneBalance.isZero()) {
+        deductData.fortuneBalance = { decrement: fromFortuneBalance };
+      }
+      if (!fromReferralBalance.isZero()) {
+        deductData.referralBalance = { decrement: fromReferralBalance };
+      }
+
       const updatedUser = await tx.user.update({
         where: { id: userId },
-        data: {
-          fortuneBalance: { decrement: fromFortuneBalance },
-          referralBalance: { decrement: fromReferralBalance },
-        },
+        data: deductData,
       });
 
       // 2. Update max tier if this is a new high
@@ -288,6 +303,7 @@ export class PurchaseService {
     currentBalance: number;
     fortuneBalance: number;
     referralBalance: number;
+    bonusFortune: number;
     shortfall: number;
     tierLocked: boolean;
     hasActiveMachine: boolean;
@@ -310,19 +326,20 @@ export class PurchaseService {
       throw new NotFoundException('User not found');
     }
 
+    const bonusFortune = Number(user.bonusFortune);
     const fortuneBalance = Number(user.fortuneBalance);
     const referralBalance = Number(user.referralBalance);
-    const totalBalance = fortuneBalance + referralBalance;
+    const totalBalance = bonusFortune + fortuneBalance + referralBalance;
     const price = tierConfig.price;
     const maxGlobalTier = await this.settingsService.getMaxGlobalTier();
     const maxAllowedTier = Math.max(maxGlobalTier, user.maxTierUnlocked);
 
-    // Check if user already has an active machine of this tier
+    // Check if user already has an active/frozen machine of this tier
     const activeMachineOfSameTier = await this.prisma.machine.findFirst({
       where: {
         userId,
         tier,
-        status: 'active',
+        status: { in: ['active', 'frozen'] },
       },
     });
 
@@ -366,6 +383,7 @@ export class PurchaseService {
       currentBalance: totalBalance,
       fortuneBalance,
       referralBalance,
+      bonusFortune,
       shortfall: Math.max(0, price - totalBalance),
       tierLocked: tier > maxAllowedTier,
       hasActiveMachine: !!activeMachineOfSameTier,

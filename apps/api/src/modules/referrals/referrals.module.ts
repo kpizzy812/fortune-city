@@ -6,12 +6,14 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { SettingsModule } from '../settings/settings.module';
 import { MachinesModule } from '../machines/machines.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     PrismaModule,
     AuthModule,
     SettingsModule,
+    NotificationsModule,
     forwardRef(() => MachinesModule),
   ],
   controllers: [ReferralsController],

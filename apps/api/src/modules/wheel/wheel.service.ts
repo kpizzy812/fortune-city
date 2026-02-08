@@ -125,20 +125,38 @@ export class WheelService implements OnModuleInit {
     const poolAmount = totalLoss * poolRate;
     const netResult = totalPayout - totalBet;
 
+    // Prelaunch: payouts go to bonusFortune instead of fortuneBalance
+    const isPrelaunch = settings.isPrelaunch;
+
     // Transaction: update everything atomically
     const [updatedUser, spin, updatedJackpot] = await this.prisma.$transaction(
       async (tx) => {
-        // Deduct balance for paid spins
-        const newBalance =
-          Number(user.fortuneBalance) - requiredBalance + totalPayout;
+        // Deduct balance for paid spins, add payout
+        const balanceUpdate: Record<string, unknown> = {
+          freeSpinsRemaining: freeSpinsAvailable - freeSpinsToUse,
+          lastSpinAt: new Date(),
+        };
+
+        if (isPrelaunch) {
+          // Prelaunch: deduct paid cost from fortuneBalance, payout → bonusFortune
+          balanceUpdate.fortuneBalance = new Decimal(
+            Number(user.fortuneBalance) - requiredBalance,
+          );
+          if (totalPayout > 0) {
+            balanceUpdate.bonusFortune = {
+              increment: new Decimal(totalPayout),
+            };
+          }
+        } else {
+          // Normal: everything goes through fortuneBalance
+          balanceUpdate.fortuneBalance = new Decimal(
+            Number(user.fortuneBalance) - requiredBalance + totalPayout,
+          );
+        }
 
         const updatedUser = await tx.user.update({
           where: { id: userId },
-          data: {
-            fortuneBalance: new Decimal(newBalance),
-            freeSpinsRemaining: freeSpinsAvailable - freeSpinsToUse,
-            lastSpinAt: new Date(),
-          },
+          data: balanceUpdate,
         });
 
         // Create spin record

@@ -1,7 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, User, ReferralBonus } from '@prisma/client';
 import { REFERRAL_RATES, REFERRAL_MAX_LEVELS } from '@fortune-city/shared';
+import { NotificationsService } from '../notifications/notifications.service';
 
 export interface ReferralStats {
   totalReferrals: number;
@@ -33,7 +34,12 @@ export interface ProcessReferralResult {
 
 @Injectable()
 export class ReferralsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(ReferralsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Process referral bonuses when a machine is purchased
@@ -400,9 +406,33 @@ export class ReferralsService {
       throw new BadRequestException('Referrer already set');
     }
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: { referredById: referrer.id },
     });
+
+    // Notify referrer about new referral (non-blocking)
+    const referralName = user?.firstName || user?.username || 'Someone';
+    const { title, message } = NotificationsService.formatNotification(
+      'referral_joined',
+      { referralName, bonusPercent: REFERRAL_RATES[1] * 100 },
+    );
+
+    this.notificationsService
+      .notify({
+        userId: referrer.id,
+        type: 'referral_joined',
+        title,
+        message,
+        data: { referralName, bonusPercent: REFERRAL_RATES[1] * 100 },
+      })
+      .catch((err) =>
+        this.logger.error(
+          `Failed to notify referral_joined for referrer ${referrer.id}`,
+          err,
+        ),
+      );
+
+    return updated;
   }
 }

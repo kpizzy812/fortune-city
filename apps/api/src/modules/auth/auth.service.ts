@@ -262,6 +262,7 @@ export class AuthService {
       avatarUrl: user.avatarUrl,
       fortuneBalance: user.fortuneBalance.toString(),
       referralBalance: user.referralBalance.toString(),
+      bonusFortune: user.bonusFortune.toString(),
       maxTierReached: user.maxTierReached,
       maxTierUnlocked: user.maxTierUnlocked,
       currentTaxRate: user.currentTaxRate.toString(),
@@ -271,6 +272,7 @@ export class AuthService {
       totalFameEarned: user.totalFameEarned,
       loginStreak: user.loginStreak,
       lastLoginDate: user.lastLoginDate?.toISOString() ?? null,
+      isOG: user.isOG,
     };
   }
 

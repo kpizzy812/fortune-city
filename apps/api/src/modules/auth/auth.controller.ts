@@ -22,6 +22,7 @@ import {
 } from './dto/telegram-auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { SupabaseAuthService } from './supabase-auth.service';
+import { SettingsService } from '../settings/settings.service';
 
 @Controller('auth')
 export class AuthController {
@@ -29,6 +30,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
     private readonly supabaseAuthService: SupabaseAuthService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   /**
@@ -79,9 +81,17 @@ export class AuthController {
    */
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async getMe(@Req() req: Request): Promise<AuthResponseDto['user']> {
+  async getMe(@Req() req: Request): Promise<
+    AuthResponseDto['user'] & {
+      isPrelaunch: boolean;
+      prelaunchEndsAt: string | null;
+    }
+  > {
     const payload = req.user as JwtPayload;
-    const user = await this.authService.getCurrentUser(payload);
+    const [user, settings] = await Promise.all([
+      this.authService.getCurrentUser(payload),
+      this.settingsService.getSettings(),
+    ]);
 
     return {
       id: user.id,
@@ -94,6 +104,7 @@ export class AuthController {
       avatarUrl: user.avatarUrl,
       fortuneBalance: user.fortuneBalance.toString(),
       referralBalance: user.referralBalance.toString(),
+      bonusFortune: user.bonusFortune.toString(),
       maxTierReached: user.maxTierReached,
       maxTierUnlocked: user.maxTierUnlocked,
       currentTaxRate: user.currentTaxRate.toString(),
@@ -103,6 +114,9 @@ export class AuthController {
       totalFameEarned: user.totalFameEarned,
       loginStreak: user.loginStreak,
       lastLoginDate: user.lastLoginDate?.toISOString() ?? null,
+      isOG: user.isOG,
+      isPrelaunch: settings.isPrelaunch,
+      prelaunchEndsAt: settings.prelaunchEndsAt?.toISOString() ?? null,
     };
   }
 

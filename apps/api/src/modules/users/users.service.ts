@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 import { User } from '@prisma/client';
 import { nanoid } from 'nanoid';
 
@@ -19,7 +20,10 @@ export interface EmailUserData {
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   async findByTelegramId(telegramId: string): Promise<User | null> {
     return this.prisma.user.findUnique({
@@ -38,6 +42,7 @@ export class UsersService {
     referrerCode?: string,
   ): Promise<User> {
     const referralCode = nanoid(8);
+    const isOG = await this.settingsService.isPrelaunch();
 
     // Find referrer by their code (if provided)
     let referrerId: string | undefined;
@@ -60,6 +65,7 @@ export class UsersService {
         avatarUrl: telegramUser.photo_url,
         referralCode,
         referredById: referrerId,
+        isOG,
       },
     });
   }
@@ -141,6 +147,7 @@ export class UsersService {
     referrerCode?: string,
   ): Promise<User> {
     const referralCode = nanoid(8);
+    const isOG = await this.settingsService.isPrelaunch();
 
     // Find referrer by their code (if provided)
     let referrerId: string | undefined;
@@ -161,6 +168,7 @@ export class UsersService {
         emailVerifiedAt: emailUser.emailVerified ? new Date() : null,
         referralCode,
         referredById: referrerId,
+        isOG,
       },
     });
   }
@@ -278,6 +286,7 @@ export class UsersService {
     referrerCode?: string,
   ): Promise<User> {
     const referralCode = nanoid(8);
+    const isOG = await this.settingsService.isPrelaunch();
 
     // Find referrer by their code (if provided)
     let referrerId: string | undefined;
@@ -296,6 +305,7 @@ export class UsersService {
         web3Address,
         referralCode,
         referredById: referrerId,
+        isOG,
       },
     });
   }

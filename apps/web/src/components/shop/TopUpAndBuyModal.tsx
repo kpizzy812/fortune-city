@@ -297,7 +297,8 @@ export function TopUpAndBuyModal({
         {/* Machine preview + Balance info combined */}
         <div className="p-3 bg-[#1a0a2e] rounded-xl">
           <div className="flex items-center gap-3 pb-3 border-b border-[#3a2a5e]">
-            <span className="text-4xl">{tier.emoji}</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={tier.imageUrl} alt={tier.name} className="w-12 h-12 object-contain" />
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-white truncate">{tier.name}</h3>
               <p className="text-[#b0b0b0] text-xs">{t('tier')} {tier.tier}</p>

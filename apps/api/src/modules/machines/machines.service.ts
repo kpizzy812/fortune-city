@@ -14,6 +14,7 @@ import {
 } from '@fortune-city/shared';
 import { FundSourceService } from '../economy/services/fund-source.service';
 import { FameService } from '../fame/fame.service';
+import { SettingsService } from '../settings/settings.service';
 import { TierCacheService } from './services/tier-cache.service';
 
 export interface CreateMachineInput {
@@ -38,6 +39,7 @@ export class MachinesService {
     @Inject(forwardRef(() => FundSourceService))
     private readonly fundSourceService: FundSourceService,
     private readonly fameService: FameService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   async findById(id: string): Promise<Machine | null> {
@@ -106,6 +108,11 @@ export class MachinesService {
       now.getTime() + tierConfig.lifespanDays * 24 * 60 * 60 * 1000,
     );
 
+    // Prelaunch: machine is frozen (purchased but not generating income)
+    // startedAt/expiresAt will be recalculated on unfreeze
+    const isPrelaunch = await this.settingsService.isPrelaunch();
+    const status = isPrelaunch ? 'frozen' : 'active';
+
     return this.prisma.machine.create({
       data: {
         userId,
@@ -120,7 +127,7 @@ export class MachinesService {
         coinBoxCapacity,
         reinvestRound,
         profitReductionRate: reductionRate,
-        status: 'active',
+        status,
       },
     });
   }
@@ -156,6 +163,9 @@ export class MachinesService {
       now.getTime() + tierConfig.lifespanDays * 24 * 60 * 60 * 1000,
     );
 
+    const isPrelaunch = await this.settingsService.isPrelaunch();
+    const status = isPrelaunch ? 'frozen' : 'active';
+
     return client.machine.create({
       data: {
         userId,
@@ -170,7 +180,7 @@ export class MachinesService {
         coinBoxCapacity,
         reinvestRound: 1,
         profitReductionRate: 0,
-        status: 'active',
+        status,
       },
     });
   }
@@ -355,7 +365,7 @@ export class MachinesService {
 
     // Atomic transaction: coinBox → fortuneBalance + create transaction record
     const result = await this.prisma.$transaction(async (tx) => {
-      // 1. Update machine: reset coinBox, track payouts, reset overclock
+      // 1. Update machine: reset coinBox, track payouts, reset overclock, reset notification dedup
       const machineUpdateData: any = {
         coinBoxCurrent: 0,
         lastCalculatedAt: new Date(),
@@ -365,6 +375,8 @@ export class MachinesService {
         principalPaidOut: {
           increment: incomeState.currentPrincipal,
         },
+        coinBoxFullNotifiedAt: null,
+        coinBoxAlmostFullNotifiedAt: null,
       };
 
       // Reset overclock after collection
@@ -460,29 +472,24 @@ export class MachinesService {
     });
   }
 
-  async checkAndExpireMachines(): Promise<number> {
+  async checkAndExpireMachines(): Promise<
+    { id: string; userId: string; tier: number; accumulatedIncome: number }[]
+  > {
     const now = new Date();
 
-    // Find all machines that need to expire (with user info)
     const machinesToExpire = await this.prisma.machine.findMany({
       where: {
         status: 'active',
         expiresAt: { lte: now },
       },
-      include: {
-        user: true,
-      },
     });
 
     if (machinesToExpire.length === 0) {
-      return 0;
+      return [];
     }
 
-    // Process each machine in a transaction
     await this.prisma.$transaction(async (tx) => {
       for (const machine of machinesToExpire) {
-        // Mark machine as expired
-        // Note: tier unlock is now handled via Fame system (POST /fame/unlock-tier)
         await tx.machine.update({
           where: { id: machine.id },
           data: { status: 'expired' },
@@ -490,7 +497,12 @@ export class MachinesService {
       }
     });
 
-    return machinesToExpire.length;
+    return machinesToExpire.map((m) => ({
+      id: m.id,
+      userId: m.userId,
+      tier: m.tier,
+      accumulatedIncome: Number(m.accumulatedIncome),
+    }));
   }
 
   enrichWithTierInfo(machine: Machine): MachineWithTierInfo {

@@ -51,4 +51,17 @@ export class AdminSettingsController {
     const adminUser = req.adminUser?.username ?? 'unknown';
     return this.settingsService.resetToDefaults(adminUser);
   }
+
+  /**
+   * POST /admin/settings/end-prelaunch
+   * End prelaunch: activate frozen machines, close tiers 2-3
+   */
+  @Post('end-prelaunch')
+  @HttpCode(HttpStatus.OK)
+  async endPrelaunch(
+    @Req() req: Request,
+  ): Promise<{ settings: SettingsResponse; machinesActivated: number }> {
+    const adminUser = req.adminUser?.username ?? 'unknown';
+    return this.settingsService.endPrelaunch(adminUser);
+  }
 }
