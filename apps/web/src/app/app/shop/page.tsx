@@ -106,7 +106,7 @@ export default function ShopPage() {
   useEffect(() => {
     if (token && user && tiers.length > 0 && !hasCheckedAffordability.current) {
       hasCheckedAffordability.current = true;
-      checkAllAffordability(token, user.maxTierReached);
+      checkAllAffordability(token);
     }
   }, [token, user, tiers.length, checkAllAffordability]);
 
@@ -128,7 +128,7 @@ export default function ShopPage() {
       fbPurchase();
       await refreshUser();
       if (user) {
-        checkAllAffordability(token, user.maxTierReached);
+        checkAllAffordability(token);
       }
       setIsModalOpen(false);
       setSelectedTier(null);
@@ -180,7 +180,7 @@ export default function ShopPage() {
     // Refresh machines and affordability
     await fetchMachines(token);
     if (user) {
-      checkAllAffordability(token, user.maxTierReached);
+      checkAllAffordability(token);
     }
   }, [token, selectedMachineForSale, fetchMachines, user, checkAllAffordability]);
 
@@ -193,7 +193,7 @@ export default function ShopPage() {
     await refreshUser();
     await fetchMachines(token);
     if (user) {
-      checkAllAffordability(token, user.maxTierReached);
+      checkAllAffordability(token);
     }
   }, [token, selectedMachineForSale, refreshUser, fetchMachines, user, checkAllAffordability]);
 
@@ -210,7 +210,7 @@ export default function ShopPage() {
     fbPurchase();
     await refreshUser();
     if (user) {
-      checkAllAffordability(token, user.maxTierReached);
+      checkAllAffordability(token);
     }
     clearPendingPurchase();
     router.push('/app');
@@ -299,7 +299,7 @@ export default function ShopPage() {
           onTopUpAndBuy={handleTopUpAndBuy}
           onTierUnlocked={() => {
             if (token && user) {
-              checkAllAffordability(token, user.maxTierReached);
+              checkAllAffordability(token);
             }
           }}
           isPurchasing={isPurchasing}
@@ -315,6 +315,7 @@ export default function ShopPage() {
           onConfirm={handleConfirmPurchase}
           isLoading={isPurchasing}
           userBalance={userBalance}
+          totalFameEarned={user.totalFameEarned ?? 0}
         />
 
         {/* Sell Modal */}

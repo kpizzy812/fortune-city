@@ -2,7 +2,11 @@
 
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
-import { AlertTriangle, XCircle, TrendingUp, TrendingDown } from 'lucide-react';
+import { Zap, XCircle, TrendingUp, TrendingDown } from 'lucide-react';
+import {
+  getFamePurchaseAmount,
+  FAME_AUTO_UNLOCK_THRESHOLDS,
+} from '@fortune-city/shared';
 import type { TierInfo, CanAffordResponse } from '@/types';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -16,6 +20,7 @@ interface PurchaseModalProps {
   onConfirm: () => void;
   isLoading: boolean;
   userBalance: number;
+  totalFameEarned: number;
 }
 
 export function PurchaseModal({
@@ -26,6 +31,7 @@ export function PurchaseModal({
   onConfirm,
   isLoading,
   userBalance,
+  totalFameEarned,
 }: PurchaseModalProps) {
   const t = useTranslations('shop');
   const tCommon = useTranslations('common');
@@ -37,11 +43,31 @@ export function PurchaseModal({
   const reductionRate = canAfford?.nextProfitReduction ?? 0;
   const actualProfit = baseProfit * (1 - reductionRate / 100);
   const totalYield = tier.price + actualProfit;
-  const balanceAfter = userBalance - tier.price;
-  const isLowBalance = balanceAfter < tier.price * 0.1; // Less than 10% of price left
   const hasReinvestPenalty = reductionRate > 0;
   const isUpgrade = canAfford?.isUpgrade ?? false;
   const reinvestRound = canAfford?.nextReinvestRound ?? 1;
+
+  // Fame reward for this purchase
+  const fameReward = getFamePurchaseAmount(tier.tier, isUpgrade);
+
+  // Find next tier to auto-unlock by fame
+  const nextUnlockTier = (() => {
+    for (let t = 2; t <= 10; t++) {
+      if ((FAME_AUTO_UNLOCK_THRESHOLDS[t] ?? Infinity) > totalFameEarned) {
+        return t;
+      }
+    }
+    return null;
+  })();
+  const nextThreshold = nextUnlockTier ? (FAME_AUTO_UNLOCK_THRESHOLDS[nextUnlockTier] ?? 0) : 0;
+  const prevThreshold = nextUnlockTier
+    ? (FAME_AUTO_UNLOCK_THRESHOLDS[nextUnlockTier - 1] ?? 0)
+    : 0;
+  const fameAfterPurchase = totalFameEarned + fameReward;
+  const progressRange = nextThreshold - prevThreshold;
+  const progressPercent = nextUnlockTier && progressRange > 0
+    ? Math.min(100, ((fameAfterPurchase - prevThreshold) / progressRange) * 100)
+    : 100;
 
   // Get ordinal suffix
   const getOrdinal = (n: number) => {
@@ -96,6 +122,18 @@ export function PurchaseModal({
               )}
             </span>
           </div>
+          <div className="flex justify-between py-2 border-b border-[#3a2a5e]">
+            <span className="text-[#b0b0b0] flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-[#facc15]" />
+              {t('fameReward')}
+            </span>
+            <span className="font-mono text-[#facc15] font-semibold">
+              +{fameReward}
+              {isUpgrade && (
+                <span className="text-xs ml-1 text-[#00ff88]">×2</span>
+              )}
+            </span>
+          </div>
         </div>
 
         {/* Balance info */}
@@ -110,23 +148,26 @@ export function PurchaseModal({
               <span className="font-mono text-[#00d4ff]">${canAfford.bonusFortune.toFixed(2)}</span>
             </div>
           )}
-          <div className="flex justify-between">
-            <span className="text-[#b0b0b0]">{t('afterPurchase')}</span>
-            <span
-              className={`font-mono ${isLowBalance ? 'text-[#ffaa00]' : 'text-white'}`}
-            >
-              ${balanceAfter.toFixed(2)}
-            </span>
-          </div>
         </div>
 
-        {/* Low balance warning */}
-        {isLowBalance && balanceAfter >= 0 && (
-          <div className="p-3 bg-[#ffaa00]/10 border border-[#ffaa00]/30 rounded-lg">
-            <p className="text-[#ffaa00] text-sm flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-              {t('lowBalanceWarning')}
-            </p>
+        {/* Fame progress to next tier */}
+        {nextUnlockTier && (
+          <div className="p-3 bg-[#1a0a2e] rounded-lg space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-[#b0b0b0] flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-[#facc15]" />
+                {t('fameProgressLabel', { tier: nextUnlockTier })}
+              </span>
+              <span className="font-mono text-[#facc15] text-xs">
+                {fameAfterPurchase.toLocaleString()} / {nextThreshold.toLocaleString()}
+              </span>
+            </div>
+            <div className="w-full h-2 bg-[#2a1a4e] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[#facc15] to-[#ff8c00] rounded-full transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
           </div>
         )}
 

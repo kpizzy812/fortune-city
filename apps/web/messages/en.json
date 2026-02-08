@@ -126,6 +126,8 @@
     "tier": "Tier",
     "tierBadge": "TIER {tier}",
     "locked": "Locked",
+    "lockedTooltip": "This tier is locked. Earn Fame to unlock it automatically, or unlock it instantly for a fee.",
+    "unlock": "Unlock",
     "duration": "Duration",
     "yield": "Yield",
     "profit": "Profit",
@@ -138,9 +140,9 @@
     "noTiersAvailable": "No tiers available",
     "price": "Price",
     "expectedYield": "Expected Yield",
-    "afterPurchase": "After purchase",
     "bonusBalance": "Bonus Fortune",
-    "lowBalanceWarning": "Your balance will be low after this purchase",
+    "fameReward": "Fame Reward",
+    "fameProgressLabel": "Tier {tier} auto-unlock",
     "insufficientBalance": "Insufficient balance. You need ${amount} more.",
     "purchaseConfirm": "Purchase {name}?",
     "reinvest": {
@@ -533,8 +535,10 @@
     "unlockDescription": "Spend Fame to unlock the next machine tier. Earn Fame from daily logins, coin collection, and machine purchases.",
     "unlockButton": "Unlock for ⚡{cost}",
     "insufficientFame": "Not enough Fame",
-    "unlockCost": "⚡{cost}",
-    "locked": "Locked"
+    "unlockCost": "Unlock {cost}",
+    "locked": "Locked",
+    "autoUnlockDescription": "Tiers unlock automatically when you earn enough Fame from daily logins, coin collection, and machine purchases. You can also unlock instantly for a fee.",
+    "unlockNow": "Unlock now for ${cost}"
   },
   "treasury": {
     "title": "On-Chain Treasury",

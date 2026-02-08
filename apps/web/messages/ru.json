@@ -126,6 +126,8 @@
     "tier": "Уровень",
     "tierBadge": "УР. {tier}",
     "locked": "Закрыто",
+    "lockedTooltip": "Этот уровень заблокирован. Зарабатывай Fame для автоматического открытия или открой мгновенно за плату.",
+    "unlock": "Разблокировать",
     "duration": "Срок",
     "yield": "Доход",
     "profit": "Прибыль",
@@ -138,9 +140,9 @@
     "noTiersAvailable": "Уровни недоступны",
     "price": "Цена",
     "expectedYield": "Ожидаемый доход",
-    "afterPurchase": "После покупки",
     "bonusBalance": "Бонус Fortune",
-    "lowBalanceWarning": "После покупки баланс будет низким",
+    "fameReward": "Награда Fame",
+    "fameProgressLabel": "Авто-открытие ур. {tier}",
     "insufficientBalance": "Недостаточно средств. Нужно ещё ${amount}.",
     "purchaseConfirm": "Купить {name}?",
     "reinvest": {
@@ -533,8 +535,10 @@
     "unlockDescription": "Потрать Fame чтобы открыть следующий уровень автоматов. Fame зарабатывается за ежедневные входы, сбор монет и покупку автоматов.",
     "unlockButton": "Открыть за ⚡{cost}",
     "insufficientFame": "Недостаточно Fame",
-    "unlockCost": "⚡{cost}",
-    "locked": "Закрыто"
+    "unlockCost": "Открыть {cost}",
+    "locked": "Закрыто",
+    "autoUnlockDescription": "Уровни открываются автоматически, когда ты заработаешь достаточно Fame за ежедневные входы, сбор монет и покупку автоматов. Также можно открыть мгновенно за плату.",
+    "unlockNow": "Открыть за ${cost}"
   },
   "treasury": {
     "title": "On-Chain Treasury",
