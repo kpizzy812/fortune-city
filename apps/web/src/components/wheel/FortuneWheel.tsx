@@ -13,16 +13,16 @@ interface FortuneWheelProps {
   onSpinComplete?: () => void;
 }
 
-// Sector colors for visual appeal
+// Sector colors — project palette (pink → purple gradient + gold jackpot)
 const SECTOR_COLORS: Record<string, { bg: string; text: string }> = {
-  '5x': { bg: '#ff2d95', text: '#fff' },      // Pink (jackpot-like)
-  '2x': { bg: '#9333ea', text: '#fff' },      // Purple
-  '1.5x': { bg: '#3b82f6', text: '#fff' },    // Blue
-  '1x': { bg: '#22c55e', text: '#fff' },      // Green (free spin)
-  '0.5x': { bg: '#f59e0b', text: '#000' },    // Amber
-  '0.2x': { bg: '#6b7280', text: '#fff' },    // Gray
-  'empty': { bg: '#1f2937', text: '#9ca3af' }, // Dark gray
-  'jackpot': { bg: '#ffd700', text: '#000' },  // Gold
+  '5x': { bg: '#ff2d95', text: '#fff' },      // Hot pink — best multiplier
+  '2x': { bg: '#c026d3', text: '#fff' },      // Magenta-purple
+  '1.5x': { bg: '#9333ea', text: '#fff' },    // Rich purple
+  '1x': { bg: '#6d28d9', text: '#e0e0ff' },   // Deep purple — break even
+  '0.5x': { bg: '#4c1d95', text: '#c4b5fd' }, // Dark purple — small loss
+  '0.2x': { bg: '#3a2a5e', text: '#a78bfa' }, // Muted purple — bigger loss
+  'empty': { bg: '#2a1a4e', text: '#facc15' }, // Darkest — fame consolation
+  'jackpot': { bg: '#ffd700', text: '#1a0a2e' }, // Gold — standout
 };
 
 const DEFAULT_COLOR = { bg: '#374151', text: '#fff' };
@@ -186,6 +186,7 @@ export function FortuneWheel({
           {sectors.map((sector, index) => {
             const color = getSectorColor(sector.sector);
             const labelPos = getLabelPosition(index);
+            const isEmpty = sector.sector === 'empty';
 
             return (
               <g key={`sector-${index}`}>
@@ -197,20 +198,32 @@ export function FortuneWheel({
                   strokeWidth="2"
                 />
 
-                {/* Sector label */}
-                <text
-                  x={labelPos.x}
-                  y={labelPos.y}
-                  fill={color.text}
-                  fontSize="12"
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  transform={`rotate(${labelPos.rotation}, ${labelPos.x}, ${labelPos.y})`}
-                  className="select-none"
-                >
-                  {formatSectorLabel(sector)}
-                </text>
+                {/* Sector label — lightning bolt SVG for empty, text for others */}
+                {isEmpty ? (
+                  <g transform={`translate(${labelPos.x}, ${labelPos.y}) rotate(${labelPos.rotation})`}>
+                    <path
+                      d="M 1,-8 L -3,0 L 0,0 L -1,8 L 3,0 L 0,0 Z"
+                      fill={color.text}
+                      stroke={color.text}
+                      strokeWidth="0.5"
+                      strokeLinejoin="round"
+                    />
+                  </g>
+                ) : (
+                  <text
+                    x={labelPos.x}
+                    y={labelPos.y}
+                    fill={color.text}
+                    fontSize="12"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    transform={`rotate(${labelPos.rotation}, ${labelPos.x}, ${labelPos.y})`}
+                    className="select-none"
+                  >
+                    {formatSectorLabel(sector)}
+                  </text>
+                )}
               </g>
             );
           })}

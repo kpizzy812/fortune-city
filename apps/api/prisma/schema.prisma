@@ -298,6 +298,7 @@ enum FameSource {
   collector_hire
   overclock_purchase
   speed_up
+  wheel_spin
   admin_adjustment
 }
 
@@ -509,6 +510,8 @@ model SystemSettings {
   wheelJackpotCap    Decimal @default(1000) @map("wheel_jackpot_cap") @db.Decimal(20, 2)
   wheelBurnRate      Decimal @default(0.80) @map("wheel_burn_rate") @db.Decimal(5, 4)   // 80% of losses burn
   wheelPoolRate      Decimal @default(0.20) @map("wheel_pool_rate") @db.Decimal(5, 4)   // 20% to jackpot
+
+  wheelFamePerSpin   Int     @default(5) @map("wheel_fame_per_spin")                    // Fame per empty spin (×multiplier)
 
   // Wheel sectors: [{sector, chance, multiplier}]
   wheelSectors Json @default("[{\"sector\":\"5x\",\"chance\":0.01,\"multiplier\":5},{\"sector\":\"2x\",\"chance\":0.05,\"multiplier\":2},{\"sector\":\"1.5x\",\"chance\":0.08,\"multiplier\":1.5},{\"sector\":\"1x\",\"chance\":0.12,\"multiplier\":1},{\"sector\":\"0.5x\",\"chance\":0.18,\"multiplier\":0.5},{\"sector\":\"0.2x\",\"chance\":0.22,\"multiplier\":0.2},{\"sector\":\"empty\",\"chance\":0.33,\"multiplier\":0},{\"sector\":\"jackpot\",\"chance\":0.01,\"multiplier\":0}]") @map("wheel_sectors")

@@ -2135,6 +2135,7 @@ export interface WheelSpinResponse {
   freeSpinsRemaining: number;
   newBalance: number;
   currentJackpotPool: number;
+  fameEarned: number;
 }
 
 export interface WheelStateResponse {

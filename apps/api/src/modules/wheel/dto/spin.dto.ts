@@ -31,6 +31,7 @@ export interface SpinResponseDto {
   freeSpinsRemaining: number;
   newBalance: number;
   currentJackpotPool: number;
+  fameEarned: number;
 }
 
 export interface WheelStateDto {

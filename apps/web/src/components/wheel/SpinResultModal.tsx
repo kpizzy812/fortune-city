@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Trophy, Flame, Sparkles, Gift } from 'lucide-react';
+import { X, Trophy, Flame, Sparkles, Gift, Zap } from 'lucide-react';
 import type { WheelSpinResponse } from '@/lib/api';
 import { Modal } from '@/components/ui/Modal';
 
@@ -90,10 +90,11 @@ export function SpinResultModal({
 
   const isWin = result.netResult > 0;
   const isBigWin = result.netResult > result.totalBet * 3;
+  const hasFame = result.fameEarned > 0;
   const sectorLabel = result.result.sector === 'jackpot'
     ? 'JACKPOT'
     : result.result.sector === 'empty'
-      ? 'EMPTY'
+      ? 'FAME'
       : result.result.sector.toUpperCase();
 
   return (
@@ -158,7 +159,9 @@ export function SpinResultModal({
                   ? 'bg-gradient-to-br from-[#ffd700]/20 to-[#ff8c00]/20'
                   : isWin
                     ? 'bg-gradient-to-br from-[#22c55e]/20 to-[#16a34a]/20'
-                    : 'bg-gradient-to-br from-[#ef4444]/20 to-[#dc2626]/20'
+                    : hasFame
+                      ? 'bg-gradient-to-br from-[#facc15]/20 to-[#a16207]/20'
+                      : 'bg-gradient-to-br from-[#ef4444]/20 to-[#dc2626]/20'
               }
             `}
           >
@@ -167,6 +170,8 @@ export function SpinResultModal({
                 <Trophy className="w-6 h-6 text-[#ffd700]" />
               ) : isWin ? (
                 <Sparkles className="w-6 h-6 text-[#22c55e]" />
+              ) : hasFame ? (
+                <Zap className="w-6 h-6 text-[#facc15]" />
               ) : (
                 <Flame className="w-6 h-6 text-[#ef4444]" />
               )}
@@ -176,20 +181,32 @@ export function SpinResultModal({
                     ? 'text-[#ffd700]'
                     : isWin
                       ? 'text-[#22c55e]'
-                      : 'text-[#ef4444]'
+                      : hasFame
+                        ? 'text-[#facc15]'
+                        : 'text-[#ef4444]'
                 }`}
               >
-                {result.jackpotWon ? 'JACKPOT WIN!' : isBigWin ? 'BIG WIN!' : isWin ? 'WIN!' : 'TRY AGAIN'}
+                {result.jackpotWon ? 'JACKPOT WIN!' : isBigWin ? 'BIG WIN!' : isWin ? 'WIN!' : hasFame ? 'FAME BONUS' : 'TRY AGAIN'}
               </span>
             </div>
 
+            {/* Fame reward for empty sector */}
+            {hasFame && (
+              <div className="flex items-center justify-center gap-1.5 text-3xl font-bold text-[#facc15] mb-1">
+                <Zap className="w-7 h-7" />
+                +{result.fameEarned} Fame
+              </div>
+            )}
+
             <div
-              className={`text-4xl font-bold ${
+              className={`${hasFame ? 'text-xl' : 'text-4xl'} font-bold ${
                 result.jackpotWon
                   ? 'text-[#ffd700]'
                   : isWin
                     ? 'text-[#22c55e]'
-                    : 'text-[#ef4444]'
+                    : hasFame
+                      ? 'text-white/50'
+                      : 'text-[#ef4444]'
               }`}
             >
               {result.netResult >= 0 ? '+' : ''}${result.netResult.toFixed(2)}

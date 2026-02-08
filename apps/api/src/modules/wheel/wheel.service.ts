@@ -21,6 +21,7 @@ import {
 } from './dto/spin.dto';
 import { WheelGateway } from './wheel.gateway';
 import { WheelNotificationService } from './wheel-notification.service';
+import { FameService } from '../fame/fame.service';
 
 interface WheelSector {
   sector: string;
@@ -41,6 +42,7 @@ export class WheelService implements OnModuleInit {
     private readonly notificationService: WheelNotificationService,
     @Inject(forwardRef(() => ReferralsService))
     private readonly referralsService: ReferralsService,
+    private readonly fameService: FameService,
   ) {}
 
   async onModuleInit() {
@@ -124,6 +126,11 @@ export class WheelService implements OnModuleInit {
     const burnAmount = totalLoss * burnRate;
     const poolAmount = totalLoss * poolRate;
     const netResult = totalPayout - totalBet;
+
+    // Fame reward for empty sector (proportional to bet multiplier)
+    const fameRewardAmount = result.sector === 'empty'
+      ? settings.wheelFamePerSpin * multiplier
+      : 0;
 
     // Prelaunch: payouts go to bonusFortune instead of fortuneBalance
     const isPrelaunch = settings.isPrelaunch;
@@ -227,6 +234,14 @@ export class WheelService implements OnModuleInit {
           });
         }
 
+        // Earn Fame on empty sector (consolation prize)
+        if (fameRewardAmount > 0) {
+          await this.fameService.earnFame(userId, fameRewardAmount, 'wheel_spin', {
+            description: `Wheel spin ${multiplier}x consolation`,
+            tx,
+          });
+        }
+
         return [updatedUser, spin, updatedJackpot];
       },
     );
@@ -284,6 +299,7 @@ export class WheelService implements OnModuleInit {
       freeSpinsRemaining: updatedUser.freeSpinsRemaining,
       newBalance: Number(updatedUser.fortuneBalance),
       currentJackpotPool: Number(updatedJackpot.currentPool),
+      fameEarned: fameRewardAmount,
     };
   }
 
