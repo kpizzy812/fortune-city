@@ -991,10 +991,3 @@ Fame (⚡) — расходуемый ресурс прогрессии. Зар�
 - JwtAuthGuard как референс для AdminGuard
 - Zustand stores как референс для admin stores
 
-## Credentials (Development)
-
-```
-Admin Login: /admin/login
-Username: admin
-Password: FortuneCity2024!
-```

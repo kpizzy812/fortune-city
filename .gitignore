@@ -36,5 +36,8 @@ prisma/*.db-journal
 *.tsbuildinfo
 .env.backup
 
+# Solana wallets / keypairs
+*-wallet.json
+
 # Backups
 backups/
